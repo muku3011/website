@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blog | Mukesh Joshi - Enterprise Architect & Technical Leader</title>
+    <title>Blog Post | Mukesh Joshi - Enterprise Architect & Technical Leader</title>
     <meta name="description" content="Technical insights, architecture patterns, and technology trends from Mukesh Joshi - Enterprise Architect with 10+ years Java experience">
     <link rel="stylesheet" href="styles/style.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css">
 </head>
 <body>
     <!-- Navigation -->
@@ -22,27 +23,15 @@
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav ms-auto">
             <li class="nav-item"><a class="nav-link text-white" href="index.html">Home</a></li>
-            <li class="nav-item"><a class="nav-link active text-white" href="blog.html">Blog</a></li>
+            <li class="nav-item"><a class="nav-link text-white" href="blog.html">Blog</a></li>
             <li class="nav-item"><a class="nav-link text-white" href="contact.html">Contact</a></li>
           </ul>
         </div>
       </div>
     </nav>
 
-    <!-- Blog Header -->
-    <section class="hero-section" style="padding: 8rem 0 4rem;">
-        <div class="container">
-            <div class="row justify-content-center text-center">
-                <div class="col-lg-8">
-                    <h1 class="hero-title">Technical Insights</h1>
-                    <p class="hero-subtitle">Architecture patterns, technology trends, and lessons learned from enterprise development</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Blog Content -->
-    <main class="container my-5">
+    <!-- Blog Post Content -->
+    <main class="container my-5" style="margin-top: 8rem !important;">
         <div class="row">
             <!-- Main Content -->
             <div class="col-lg-8">
@@ -51,80 +40,64 @@
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
-                    <p class="mt-3 text-muted">Loading blog posts...</p>
+                    <p class="mt-3 text-muted">Loading blog post...</p>
                 </div>
 
                 <!-- Error State -->
                 <div id="errorState" class="alert alert-danger d-none" role="alert">
-                    <h4 class="alert-heading">Unable to Load Blog Posts</h4>
-                    <p>There was an error loading the blog posts. Please try again later.</p>
+                    <h4 class="alert-heading">Blog Post Not Found</h4>
+                    <p>The blog post you're looking for doesn't exist or has been removed.</p>
                     <hr>
-                    <button class="btn btn-outline-danger" onclick="loadBlogPosts()">Retry</button>
+                    <a href="blog.html" class="btn btn-outline-danger">Back to Blog</a>
                 </div>
 
-                <!-- Featured Post -->
-                <div id="featuredPost" class="mb-5 d-none">
-                    <!-- Featured post will be loaded here -->
-                </div>
+                <!-- Blog Post Content -->
+                <article id="blogPost" class="d-none">
+                    <!-- Blog post content will be loaded here -->
+                </article>
 
-                <!-- Blog Posts Grid -->
-                <div id="blogPostsGrid" class="row d-none">
-                    <!-- Blog posts will be loaded here -->
+                <!-- Navigation -->
+                <div class="d-flex justify-content-between mt-5">
+                    <a href="blog.html" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Blog
+                    </a>
+                    <div class="social-share">
+                        <span class="me-2">Share:</span>
+                        <a href="#" class="btn btn-outline-primary btn-sm me-2" onclick="shareOnLinkedIn()">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                        <a href="#" class="btn btn-outline-primary btn-sm me-2" onclick="shareOnTwitter()">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="btn btn-outline-primary btn-sm" onclick="copyLink()">
+                            <i class="fas fa-link"></i>
+                        </a>
+                    </div>
                 </div>
-
-                <!-- Pagination -->
-                <nav id="pagination" aria-label="Blog pagination" class="mt-5 d-none">
-                    <!-- Pagination will be loaded here -->
-                </nav>
             </div>
 
             <!-- Sidebar -->
             <div class="col-lg-4">
                 <div class="sticky-top" style="top: 100px;">
-                    <!-- Search -->
+                    <!-- Author Info -->
                     <div class="card mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title">Search Blog</h5>
-                            <div class="input-group mb-2">
-                                <label>
-                                    <input type="text" class="form-control" placeholder="Search posts...">
-                                </label>
-                                <button class="btn btn-primary" type="button">
-                                    <i class="fas fa-search"></i>
-                                </button>
+                        <div class="card-body text-center">
+                            <div class="author-avatar mb-3">
+                                <i class="fas fa-user-circle text-primary" style="font-size: 4rem;"></i>
                             </div>
-                            <button class="btn btn-outline-secondary btn-sm w-100" onclick="blogManager.clearFilters()">
-                                <i class="fas fa-times me-1"></i>Clear All Filters
-                            </button>
+                            <h5 class="card-title">Mukesh Joshi</h5>
+                            <p class="card-text small text-muted">Enterprise Architect & Technical Leader</p>
+                            <p class="card-text small">Passionate about technology innovation, system design, and knowledge sharing. 13+ years of experience in Java development and enterprise architecture.</p>
+                            <a href="contact.html" class="btn btn-outline-primary btn-sm">Get In Touch</a>
                         </div>
                     </div>
 
-                    <!-- Categories -->
+                    <!-- Related Posts -->
                     <div class="card mb-4">
                         <div class="card-body">
-                            <h5 class="card-title">Categories</h5>
-                            <div id="categoriesList">
-                                <!-- Categories will be loaded dynamically -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Blog Statistics -->
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title">Blog Statistics</h5>
-                            <div id="blogStats">
-                                <!-- Statistics will be loaded dynamically -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Recent Posts -->
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title">Recent Posts</h5>
-                            <div id="recentPosts" class="list-group list-group-flush">
-                                <!-- Recent posts will be loaded here -->
+                            <h5 class="card-title">Related Posts</h5>
+                            <div id="relatedPosts">
+                                <!-- Related posts will be loaded here -->
                             </div>
                         </div>
                     </div>
@@ -172,7 +145,9 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
     <script src="scripts/main.js"></script>
-    <script src="scripts/blog.js"></script>
+    <script src="scripts/blog-detail.js"></script>
 </body>
 </html>
