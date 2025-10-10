@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog | Mukesh Joshi - Enterprise Architect & Technical Leader</title>
+    <meta name="description" content="Technical insights, architecture patterns, and technology trends from Mukesh Joshi - Enterprise Architect with 10+ years Java experience">
+    <link rel="stylesheet" href="styles/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+      <div class="container">
+        <a class="navbar-brand text-white" href="index.html">Mukesh Joshi</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+          aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item"><a class="nav-link text-white" href="index.html">Home</a></li>
+            <li class="nav-item"><a class="nav-link active text-white" href="blog.html">Blog</a></li>
+            <li class="nav-item"><a class="nav-link text-white" href="contact.html">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Blog Header -->
+    <section class="hero-section" style="padding: 8rem 0 4rem;">
+        <div class="container">
+            <div class="row justify-content-center text-center">
+                <div class="col-lg-8">
+                    <h1 class="hero-title">Technical Insights</h1>
+                    <p class="hero-subtitle">Architecture patterns, technology trends, and lessons learned from enterprise development</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Blog Content -->
+    <main class="container my-5">
+        <div class="row">
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Loading State -->
+                <div id="loadingState" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Loading blog posts...</p>
+                </div>
+
+                <!-- Error State -->
+                <div id="errorState" class="alert alert-danger d-none" role="alert">
+                    <h4 class="alert-heading">Unable to Load Blog Posts</h4>
+                    <p>There was an error loading the blog posts. Please try again later.</p>
+                    <hr>
+                    <button class="btn btn-outline-danger" onclick="loadBlogPosts()">Retry</button>
+                </div>
+
+                <!-- Featured Post -->
+                <div id="featuredPost" class="mb-5 d-none">
+                    <!-- Featured post will be loaded here -->
+                </div>
+
+                <!-- Blog Posts Grid -->
+                <div id="blogPostsGrid" class="row d-none">
+                    <!-- Blog posts will be loaded here -->
+                </div>
+
+                <!-- Pagination -->
+                <nav id="pagination" aria-label="Blog pagination" class="mt-5 d-none">
+                    <!-- Pagination will be loaded here -->
+                </nav>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <div class="sticky-top" style="top: 100px;">
+                    <!-- Search -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Search Blog</h5>
+                            <div class="input-group mb-2">
+                                <label>
+                                    <input type="text" class="form-control" placeholder="Search posts...">
+                                </label>
+                                <button class="btn btn-primary" type="button">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                            <button class="btn btn-outline-secondary btn-sm w-100" onclick="blogManager.clearFilters()">
+                                <i class="fas fa-times me-1"></i>Clear All Filters
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Categories -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Categories</h5>
+                            <div id="categoriesList">
+                                <!-- Categories will be loaded dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Blog Statistics -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Blog Statistics</h5>
+                            <div id="blogStats">
+                                <!-- Statistics will be loaded dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Posts -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Recent Posts</h5>
+                            <div id="recentPosts" class="list-group list-group-flush">
+                                <!-- Recent posts will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Newsletter -->
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Stay Updated</h5>
+                            <p class="card-text small">Get the latest posts delivered to your inbox.</p>
+                            <div class="input-group mb-3">
+                                <label>
+                                    <input type="email" class="form-control" placeholder="Your email">
+                                </label>
+                                <button class="btn btn-primary" type="button">Subscribe</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-6">
+                    <h5>Mukesh Joshi</h5>
+                    <p>Enterprise Architect & Technical Leader</p>
+                </div>
+                <div class="col-lg-6 text-lg-end">
+                    <div class="social-links">
+                        <a href="#" class="text-white me-3"><i class="fab fa-linkedin"></i></a>
+                        <a href="#" class="text-white me-3"><i class="fab fa-github"></i></a>
+                        <a href="#" class="text-white me-3"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-white"><i class="fas fa-envelope"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-4" style="border-color: rgba(255,255,255,0.2);">
+            <div class="text-center">
+                <p class="mb-0">&copy; 2025 Mukesh Joshi. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="scripts/main.js"></script>
+    <script src="scripts/blog.js"></script>
+</body>
+</html>
