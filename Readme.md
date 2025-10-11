@@ -1,43 +1,52 @@
-# Simple Website
+# Website
 
-This project is a simple HTML, CSS, and JavaScript website layout. It serves as a basic template for building web applications.
+A simple static website with a home page, blog listing, blog detail, and contact page. Suitable as a base for a personal site or small publication.
 
 ## Project Structure
-
-```
-simple-website
-├── src
-│   ├── index.html       # Main HTML document for the website
-│   ├── styles
-│   │   └── style.css    # CSS styles for the website
-│   └── scripts
-│       └── main.js      # JavaScript code for interactivity
-└── README.md            # Documentation for the project
-```
+- `index.html` — Home page
+- `blog.html` — Blog listing
+- `blog-detail.html` — Single post template
+- `contact.html` — Contact page
+- `styles/` — Stylesheets
+- `scripts/` — JavaScript files
+- `images/` — Static assets
 
 ## Getting Started
+1. Clone the repository:
+   - git clone <your-repo-url>
+   - cd website
+2. Open index.html in your browser.
 
-To set up and run the website, follow these steps:
+Optionally, run a local static server for a better experience:
+- Python 3: python -m http.server 8080
+- Node (http-server): npx http-server -p 8080
 
-1. **Clone the repository** (if applicable):
-   ```
-   git clone <repository-url>
-   ```
+Then visit http://localhost:8080.
 
-2. **Navigate to the project directory**:
-   ```
-   cd simple-website
-   ```
+## Editing Content
+- Update page copy directly in the HTML files.
+- Add images to the images/ directory and reference them with relative paths.
+- Add or modify styles in styles/.
+- Add behavior in scripts/.
 
-3. **Open the `index.html` file** in your web browser:
-   - You can simply double-click the `index.html` file or open it using a web server for better results.
+## Blog Workflow
+- Add new posts by duplicating blog-detail.html and updating the content.
+- Link new posts from blog.html (or generate links dynamically if you later add a build step).
 
-## Technologies Used
+## Deployment
+You can host this as static files:
+- GitHub Pages: push to main (or docs) and enable Pages in repo settings.
+- Netlify/Vercel: drag-and-drop the folder or connect your repo; publish the project root.
 
-- HTML
-- CSS
-- JavaScript
+## Conventions
+- Use semantic HTML where possible.
+- Keep assets optimized (compress images).
+- Test pages on mobile and desktop.
+
+## Contributing
+1. Create a feature branch.
+2. Make your changes with clear commit messages.
+3. Open a pull request.
 
 ## License
-
-This project is open-source and available under the MIT License.
+Add your preferred license (e.g., MIT) in a LICENSE file and reference it here.

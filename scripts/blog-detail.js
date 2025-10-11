@@ -1,5 +1,5 @@
 // Blog Detail API Configuration
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = 'https://localhost:8700/api';
 
 // Blog Detail Manager Class
 class BlogDetailManager {
