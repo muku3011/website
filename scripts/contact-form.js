@@ -4,7 +4,7 @@
   const statusEl = document.getElementById('contactStatus');
 
   // Change this to your backend URL if different (e.g., https://api.yourdomain.com)
-  const CONTACT_API_URL = 'http://localhost:8700/api/contact';
+  const CONTACT_API_URL = 'https://irku.se:8700/api/contact';
 
   function showStatus(message, ok) {
     statusEl.style.display = 'block';
