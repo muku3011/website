@@ -51,40 +51,6 @@ document.addEventListener('DOMContentLoaded', function() {
         observer.observe(el);
     });
 
-    // Contact form handling
-    const contactForm = document.getElementById('contactForm');
-    if (contactForm) {
-        contactForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Get form data
-            const formData = new FormData(this);
-            const formObject = {};
-            formData.forEach((value, key) => {
-                formObject[key] = value;
-            });
-
-            // Show loading state
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending...';
-            submitBtn.disabled = true;
-
-            // Simulate form submission (replace with actual form handling)
-            setTimeout(() => {
-                // Show success message
-                showNotification('Message sent successfully! I\'ll get back to you within 24 hours.', 'success');
-                
-                // Reset form
-                this.reset();
-                
-                // Reset button
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            }, 2000);
-        });
-    }
-
     // Blog search functionality
     const blogSearchInput = document.querySelector('input[placeholder="Search posts..."]');
     if (blogSearchInput) {
