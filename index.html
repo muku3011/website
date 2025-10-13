@@ -44,29 +44,29 @@
                     solutions. With 13+ years of experience in Java development and enterprise architecture, I
                     specialize in designing robust systems that drive digital transformation and business growth.</p>
                 <div class="hero-stats mb-4">
-                    <div class="row text-center">
-                        <div class="col-4">
+                    <div class="row text-center g-3"><!-- add gutter for spacing on mobile -->
+                        <div class="col-12 col-sm-4"><!-- stack on xs, 3-per-row from sm -->
                             <div class="stat-item"
-                                 style="background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 10px; backdrop-filter: blur(10px);">
-                                <h4 class="stat-number" style="color: #4CAF50; font-weight: 800; font-size: 2.5rem;">
+                                 style="background: rgba(255, 255, 255, 0.1); padding: 16px; border-radius: 10px; backdrop-filter: blur(10px);">
+                                <h4 class="stat-number" style="color: #4CAF50; font-weight: 800; font-size: 2rem;"><!-- smaller on mobile -->
                                     13+</h4>
                                 <p class="stat-label" style="color: #B2DFDB; font-weight: 500; margin-bottom: 0;">Years
                                     Experience</p>
                             </div>
                         </div>
-                        <div class="col-4">
+                        <div class="col-12 col-sm-4">
                             <div class="stat-item"
-                                 style="background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 10px; backdrop-filter: blur(10px);">
-                                <h4 class="stat-number" style="color: #2196F3; font-weight: 800; font-size: 2.5rem;">
+                                 style="background: rgba(255, 255, 255, 0.1); padding: 16px; border-radius: 10px; backdrop-filter: blur(10px);">
+                                <h4 class="stat-number" style="color: #2196F3; font-weight: 800; font-size: 2rem;">
                                     28</h4>
                                 <p class="stat-label" style="color: #BBDEFB; font-weight: 500; margin-bottom: 0;">
                                     Projects</p>
                             </div>
                         </div>
-                        <div class="col-4">
+                        <div class="col-12 col-sm-4">
                             <div class="stat-item"
-                                 style="background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 10px; backdrop-filter: blur(10px);">
-                                <h4 class="stat-number" style="color: #FF9800; font-weight: 800; font-size: 2.5rem;">
+                                 style="background: rgba(255, 255, 255, 0.1); padding: 16px; border-radius: 10px; backdrop-filter: blur(10px);">
+                                <h4 class="stat-number" style="color: #FF9800; font-weight: 800; font-size: 2rem;">
                                     3</h4>
                                 <p class="stat-label" style="color: #FFE0B2; font-weight: 500; margin-bottom: 0;">
                                     Countries</p>
@@ -74,8 +74,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="hero-buttons">
-                    <a href="#about" class="btn btn-primary me-3">
+                <div class="hero-buttons d-grid gap-2 d-sm-flex"><!-- stack buttons on xs -->
+                    <a href="#about" class="btn btn-primary me-sm-3">
                         <i class="fas fa-user me-2"></i>View Profile
                     </a>
                     <a href="contact.html" class="btn btn-outline-light">
@@ -83,11 +83,11 @@
                     </a>
                 </div>
             </div>
-            <div class="col-lg-6 text-center">
+            <div class="col-lg-6 text-center mt-4 mt-lg-0"><!-- add top margin on mobile -->
                 <div class="hero-image">
                     <div class="profile-card shadow-soft border-radius-lg">
                         <img src="images/6918773.jpg" alt="Mukesh Joshi Profile" class="img-fluid rounded-circle"
-                             style="width: 350px; height: 350px; object-fit: cover; border: 5px solid rgba(255,255,255,0.2);">
+                             style="width: 70vw; max-width: 350px; height: auto; aspect-ratio: 1/1; object-fit: cover; border: 5px solid rgba(255,255,255,0.2);"><!-- responsive size -->
                     </div>
                 </div>
             </div>
@@ -158,44 +158,46 @@
 <!-- Skills Section -->
 <section class="section bg-light">
     <div class="container">
-        <h2 class="section-title">Skills & Expertise</h2>
-        <div class="skills-grid">
-            <div class="skill-item">
+        <h2 class="section-title text-center text-sm-start"><!-- center on xs -->
+            Skills & Expertise
+        </h2>
+        <div class="skills-grid row g-4"><!-- use grid responsive -->
+            <div class="skill-item col-12 col-md-6 col-lg-4">
                 <div class="skill-icon">
                     <i class="fab fa-java"></i>
                 </div>
                 <h4>Java & Spring</h4>
                 <p>Java, Spring Boot, REST APIs, Microservices, Testing (JUnit), Build (Maven/Gradle)</p>
             </div>
-            <div class="skill-item">
+            <div class="skill-item col-12 col-md-6 col-lg-4">
                 <div class="skill-icon">
                     <i class="fas fa-sitemap"></i>
                 </div>
                 <h4>Architecture</h4>
                 <p>System Design, DDD, API Design, Integration Patterns, Modularization, TOGAF</p>
             </div>
-            <div class="skill-item">
+            <div class="skill-item col-12 col-md-6 col-lg-4">
                 <div class="skill-icon">
                     <i class="fas fa-users-cog"></i>
                 </div>
                 <h4>Technical Leadership</h4>
                 <p>Code Reviews, Mentoring, Architecture Decisions, Standards, Delivery Practices</p>
             </div>
-            <div class="skill-item">
+            <div class="skill-item col-12 col-md-6 col-lg-4">
                 <div class="skill-icon">
                     <i class="fas fa-database"></i>
                 </div>
                 <h4>Data & Messaging</h4>
                 <p>Oracle, PostgreSQL, MongoDB, Redis, Kafka, Data Modeling, Event-Driven Design</p>
             </div>
-            <div class="skill-item">
+            <div class="skill-item col-12 col-md-6 col-lg-4">
                 <div class="skill-icon">
                     <i class="fas fa-shield-alt"></i>
                 </div>
                 <h4>Security & Performance</h4>
                 <p>AuthN/AuthZ, Cryptography basics (PKCS#11/HSM), Performance Tuning, Observability</p>
             </div>
-            <div class="skill-item">
+            <div class="skill-item col-12 col-md-6 col-lg-4">
                 <div class="skill-icon">
                     <i class="fas fa-palette"></i>
                 </div>
@@ -394,8 +396,8 @@
                             <div class="card">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <h5 class="card-title mb-0">Design Architect · Giesecke+Devrient</h5>
-                                        <span class="badge bg-primary">May 2023 - Present · Stockholm, Sweden</span>
+                                        <h5 class="card-title mb-0">Design Architect Giesecke+Devrient</h5>
+                                        <span class="badge bg-primary text-wrap">May 2023 - Present Stockholm, Sweden</span>
                                     </div>
                                     <h6 class="text-muted mb-3">Enterprise solutions, security, and platform design</h6>
                                     <ul class="list-unstyled">
@@ -422,8 +424,8 @@
                             <div class="card">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <h5 class="card-title mb-0">Senior Software Developer · Giesecke+Devrient</h5>
-                                        <span class="badge bg-secondary">Oct 2017 - April 2023 · Barcelona, Spain</span>
+                                        <h5 class="card-title mb-0">Senior Software Developer Giesecke+Devrient</h5>
+                                        <span class="badge bg-secondary text-wrap">Oct 2017 - April 2023 Barcelona, Spain</span>
                                     </div>
                                     <h6 class="text-muted mb-3">Backend engineering, cloud, and integration</h6>
                                     <ul class="list-unstyled">
@@ -450,8 +452,8 @@
                             <div class="card">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <h5 class="card-title mb-0">Software Developer · Giesecke+Devrient</h5>
-                                        <span class="badge bg-success">Sep 2012 - Sep 2017 · Gurgaon, India</span>
+                                        <h5 class="card-title mb-0">Software Developer Giesecke+Devrient</h5>
+                                        <span class="badge bg-success text-wrap">Sep 2012 - Sep 2017 Gurgaon, India</span>
                                     </div>
                                     <h6 class="text-muted mb-3">Enterprise application development</h6>
                                     <ul class="list-unstyled">
@@ -478,8 +480,8 @@
                             <div class="card">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <h5 class="card-title mb-0">Intern · Giesecke+Devrient</h5>
-                                        <span class="badge bg-dark">Jan 2012 - Aug 2012 · Gurgaon, India</span>
+                                        <h5 class="card-title mb-0">Intern Giesecke+Devrient</h5>
+                                        <span class="badge bg-primary text-wrap">Jan 2012 - Aug 2012 Gurgaon India</span>
                                     </div>
                                     <h6 class="text-muted mb-3">Foundations in software engineering</h6>
                                     <ul class="list-unstyled">
@@ -503,12 +505,12 @@
 <!-- Footer -->
 <footer>
     <div class="container">
-        <div class="row">
-            <div class="col-lg-6">
+        <div class="row gy-3 align-items-center"><!-- better spacing on mobile -->
+            <div class="col-lg-6 text-center text-lg-start">
                 <h5>Mukesh Joshi</h5>
-                <p>Enterprise Architect, Software Architect, and Software Developer</p>
+                <p class="mb-0">Enterprise Architect, Software Architect, and Software Developer</p>
             </div>
-            <div class="col-lg-6 text-lg-end">
+            <div class="col-lg-6 text-center text-lg-end">
                 <div class="social-links">
                     <a href="https://www.linkedin.com/in/muku3011/" class="text-white me-3" target="_blank"
                        rel="noopener"><i class="fab fa-linkedin"></i></a>
@@ -532,3 +534,50 @@
 <script src="scripts/main.js"></script>
 </body>
 </html>
+
+/* Timeline mobile fixes */
+@media (max-width: 575.98px) {
+  .timeline {
+    position: relative;
+    padding-left: 0;
+    overflow: visible; /* ensure badges/content not clipped */
+  }
+  .timeline-item {
+    display: block;
+    position: relative;
+    padding-left: 0;
+    margin-left: 0;
+  }
+  .timeline-marker {
+    position: relative;      /* place above content */
+    left: 0 !important;
+    top: 0;
+    margin: 0 auto 0.75rem;  /* center marker, space below */
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .timeline-content {
+    width: 100%;
+  }
+  .timeline .card .card-body .d-flex {
+    flex-direction: column;              /* stack title and badge */
+    align-items: flex-start !important;
+    gap: .5rem;
+  }
+  .timeline .badge {
+    align-self: flex-start;              /* prevent overflow to the right */
+    white-space: normal;                 /* allow wrapping */
+    line-height: 1.2;
+  }
+  .timeline .card-title {
+    margin-right: 0;
+  }
+  /* Prevent horizontal scroll caused by long words/icons */
+  .timeline .card,
+  .timeline .card-body,
+  .timeline .list-unstyled {
+    overflow: visible;
+    word-break: break-word;
+  }
+}
