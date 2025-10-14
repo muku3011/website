@@ -584,3 +584,21 @@ function loadBlogPosts() {
         blogManager.loadBlogPosts();
     }
 }
+
+
+// After you render the blog content and show #viewCount somewhere:
+(function refreshViewCountAfterIncrement() {
+  const slug = new URLSearchParams(location.search).get('slug');
+  if (!slug) return;
+  setTimeout(async () => {
+    try {
+      const res = await fetch(`${BACKEND_BASE_URL}/blogs/slug/${encodeURIComponent(slug)}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const el = document.getElementById('viewCount');
+      if (el && typeof data.viewCount === 'number') {
+        el.textContent = data.viewCount.toString();
+      }
+    } catch(_) {}
+  }, 300); // small delay to let increment commit
+})();

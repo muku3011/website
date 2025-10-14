@@ -4,7 +4,7 @@
   const statusEl = document.getElementById('contactStatus');
 
   // Change this to your backend URL if different (e.g., https://api.yourdomain.com)
-  const CONTACT_API_URL = 'https://irku.se:8700/api/contact';
+  const CONTACT_API_URL = 'https://irku.se:8700/contact';
 
   function showStatus(message, ok) {
     statusEl.style.display = 'block';
@@ -30,6 +30,7 @@
     }
 
     try {
+      const resp = await fetch(`${API_BASE_URL}`);
       const resp = await fetch(CONTACT_API_URL, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
