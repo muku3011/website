@@ -48,8 +48,10 @@
                         <div class="col-12 col-sm-4"><!-- stack on xs, 3-per-row from sm -->
                             <div class="stat-item"
                                  style="background: rgba(255, 255, 255, 0.1); padding: 16px; border-radius: 10px; backdrop-filter: blur(10px);">
-                                <h4 class="stat-number" style="color: #4CAF50; font-weight: 800; font-size: 2rem;"><!-- smaller on mobile -->
-                                    13+</h4>
+                                <h4 class="stat-number" id="yearsExperience"
+                                    style="color: #4CAF50; font-weight: 800; font-size: 2rem;">
+                                    0+
+                                </h4>
                                 <p class="stat-label" style="color: #B2DFDB; font-weight: 500; margin-bottom: 0;">Years
                                     Experience</p>
                             </div>
@@ -57,10 +59,12 @@
                         <div class="col-12 col-sm-4">
                             <div class="stat-item"
                                  style="background: rgba(255, 255, 255, 0.1); padding: 16px; border-radius: 10px; backdrop-filter: blur(10px);">
-                                <h4 class="stat-number" style="color: #2196F3; font-weight: 800; font-size: 2rem;">
-                                    28</h4>
+                                <h4 class="stat-number" id="projectsCount"
+                                    style="color: #2196F3; font-weight: 800; font-size: 2rem;">
+                                    0
+                                </h4>
                                 <p class="stat-label" style="color: #BBDEFB; font-weight: 500; margin-bottom: 0;">
-                                    Projects</p>
+                                    Projects in GitHub</p>
                             </div>
                         </div>
                         <div class="col-12 col-sm-4">
@@ -69,7 +73,7 @@
                                 <h4 class="stat-number" style="color: #FF9800; font-weight: 800; font-size: 2rem;">
                                     3</h4>
                                 <p class="stat-label" style="color: #FFE0B2; font-weight: 500; margin-bottom: 0;">
-                                    Countries</p>
+                                    Countries & Culture</p>
                             </div>
                         </div>
                     </div>
@@ -87,7 +91,8 @@
                 <div class="hero-image">
                     <div class="profile-card shadow-soft border-radius-lg">
                         <img src="images/6918773.jpg" alt="Mukesh Joshi Profile" class="img-fluid rounded-circle"
-                             style="width: 70vw; max-width: 350px; height: auto; aspect-ratio: 1/1; object-fit: cover; border: 5px solid rgba(255,255,255,0.2);"><!-- responsive size -->
+                             style="width: 70vw; max-width: 350px; height: auto; aspect-ratio: 1/1; object-fit: cover; border: 5px solid rgba(255,255,255,0.2);">
+                        <!-- responsive size -->
                     </div>
                 </div>
             </div>
@@ -158,46 +163,46 @@
 <!-- Skills Section -->
 <section class="section bg-light">
     <div class="container">
-        <h2 class="section-title text-center text-sm-start"><!-- center on xs -->
+        <h2 class="section-title text-center text-sm-start">
             Skills & Expertise
         </h2>
-        <div class="skills-grid row g-4"><!-- use grid responsive -->
-            <div class="skill-item col-12 col-md-6 col-lg-4">
+        <div class="skills-grid row g-4 justify-content-center"><!-- center last row items -->
+            <div class="skill-item col-12 col-sm-6 col-lg-4 col-xl-3"><!-- 1/2/3/4 per row -->
                 <div class="skill-icon">
                     <i class="fab fa-java"></i>
                 </div>
                 <h4>Java & Spring</h4>
                 <p>Java, Spring Boot, REST APIs, Microservices, Testing (JUnit), Build (Maven/Gradle)</p>
             </div>
-            <div class="skill-item col-12 col-md-6 col-lg-4">
+            <div class="skill-item col-12 col-sm-6 col-lg-4 col-xl-3">
                 <div class="skill-icon">
                     <i class="fas fa-sitemap"></i>
                 </div>
                 <h4>Architecture</h4>
                 <p>System Design, DDD, API Design, Integration Patterns, Modularization, TOGAF</p>
             </div>
-            <div class="skill-item col-12 col-md-6 col-lg-4">
+            <div class="skill-item col-12 col-sm-6 col-lg-4 col-xl-3">
                 <div class="skill-icon">
                     <i class="fas fa-users-cog"></i>
                 </div>
                 <h4>Technical Leadership</h4>
                 <p>Code Reviews, Mentoring, Architecture Decisions, Standards, Delivery Practices</p>
             </div>
-            <div class="skill-item col-12 col-md-6 col-lg-4">
+            <div class="skill-item col-12 col-sm-6 col-lg-4 col-xl-3">
                 <div class="skill-icon">
                     <i class="fas fa-database"></i>
                 </div>
                 <h4>Data & Messaging</h4>
                 <p>Oracle, PostgreSQL, MongoDB, Redis, Kafka, Data Modeling, Event-Driven Design</p>
             </div>
-            <div class="skill-item col-12 col-md-6 col-lg-4">
+            <div class="skill-item col-12 col-sm-6 col-lg-4 col-xl-3">
                 <div class="skill-icon">
                     <i class="fas fa-shield-alt"></i>
                 </div>
                 <h4>Security & Performance</h4>
                 <p>AuthN/AuthZ, Cryptography basics (PKCS#11/HSM), Performance Tuning, Observability</p>
             </div>
-            <div class="skill-item col-12 col-md-6 col-lg-4">
+            <div class="skill-item col-12 col-sm-6 col-lg-4 col-xl-3">
                 <div class="skill-icon">
                     <i class="fas fa-palette"></i>
                 </div>
@@ -213,169 +218,11 @@
     <div class="container">
         <h2 class="section-title">Featured Projects</h2>
         <p class="text-center mb-5">Explore my open-source contributions and personal projects on GitHub</p>
-        <div class="row" id="github-repos">
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="card h-100 repo-card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <h5 class="card-title mb-0">
-                                <i class="fab fa-github me-2"></i>
-                                microservice-design
-                            </h5>
-                            <span class="badge bg-primary">Java</span>
-                        </div>
-                        <p class="card-text">Zuul, Eureka, and Config Server based microservices architecture
-                            demonstrating service discovery, routing, and centralized configuration.</p>
-                        <div class="repo-stats">
-                            <small class="text-muted me-3">
-                                <i class="fas fa-cogs me-1"></i> Architecture
-                            </small>
-                            <small class="text-muted me-3">
-                                <i class="fas fa-network-wired me-1"></i> Microservices
-                            </small>
-                            <small class="text-muted">
-                                <i class="fas fa-circle me-1" style="color: #28a745;"></i> Active
-                            </small>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-transparent">
-                        <a href="https://github.com/muku3011/microservice-design" class="btn btn-outline-primary btn-sm"
-                           target="_blank">View Repository</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="card h-100 repo-card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <h5 class="card-title mb-0">
-                                <i class="fab fa-github me-2"></i>
-                                crypto-using-hsm
-                            </h5>
-                            <span class="badge bg-primary">Java</span>
-                        </div>
-                        <p class="card-text">Basic crypto operations inside HSM using PKCS#11, showcasing secure key
-                            management and hardware-backed cryptography.</p>
-                        <div class="repo-stats">
-                            <small class="text-muted me-3">
-                                <i class="fas fa-shield-alt me-1"></i> Security
-                            </small>
-                            <small class="text-muted me-3">
-                                <i class="fas fa-key me-1"></i> PKCS#11
-                            </small>
-                            <small class="text-muted">
-                                <i class="fas fa-circle me-1" style="color: #28a745;"></i> Active
-                            </small>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-transparent">
-                        <a href="https://github.com/muku3011/crypto-using-hsm" class="btn btn-outline-primary btn-sm"
-                           target="_blank">View Repository</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="card h-100 repo-card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <h5 class="card-title mb-0">
-                                <i class="fab fa-github me-2"></i>
-                                couchbase-elasticsearch-app
-                            </h5>
-                            <span class="badge bg-success">Java</span>
-                        </div>
-                        <p class="card-text">Reference app integrating Couchbase as primary store with Elasticsearch for
-                            search and analytics.</p>
-                        <div class="repo-stats">
-                            <small class="text-muted me-3">
-                                <i class="fas fa-database me-1"></i> Couchbase
-                            </small>
-                            <small class="text-muted me-3">
-                                <i class="fas fa-search me-1"></i> Elasticsearch
-                            </small>
-                            <small class="text-muted">
-                                <i class="fas fa-circle me-1" style="color: #28a745;"></i> Active
-                            </small>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-transparent">
-                        <a href="https://github.com/muku3011/couchbase-elasticsearch-app"
-                           class="btn btn-outline-primary btn-sm" target="_blank">View Repository</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="card h-100 repo-card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <h5 class="card-title mb-0">
-                                <i class="fab fa-github me-2"></i>
-                                couchbase-elasticsearch-connector
-                            </h5>
-                            <span class="badge bg-success">Java</span>
-                        </div>
-                        <p class="card-text">Connector utilities to sync and index Couchbase documents into
-                            Elasticsearch clusters.</p>
-                        <div class="repo-stats">
-                            <small class="text-muted me-3">
-                                <i class="fas fa-link me-1"></i> Connector
-                            </small>
-                            <small class="text-muted me-3">
-                                <i class="fas fa-sync me-1"></i> Sync
-                            </small>
-                            <small class="text-muted">
-                                <i class="fas fa-circle me-1" style="color: #28a745;"></i> Active
-                            </small>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-transparent">
-                        <a href="https://github.com/muku3011/couchbase-elasticsearch-connector"
-                           class="btn btn-outline-primary btn-sm" target="_blank">View Repository</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="card h-100 repo-card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-start mb-3">
-                            <h5 class="card-title mb-0">
-                                <i class="fab fa-github me-2"></i>
-                                spring-cloud-gateway
-                            </h5>
-                            <span class="badge bg-success">Spring</span>
-                        </div>
-                        <p class="card-text">Gateway service using Spring Cloud Gateway featuring routing, filters, and
-                            resiliency patterns for microservices.</p>
-                        <div class="repo-stats">
-                            <small class="text-muted me-3">
-                                <i class="fas fa-cloud me-1"></i> Gateway
-                            </small>
-                            <small class="text-muted me-3">
-                                <i class="fas fa-network-wired me-1"></i> Microservices
-                            </small>
-                            <small class="text-muted">
-                                <i class="fas fa-circle me-1" style="color: #28a745;"></i> Active
-                            </small>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-transparent">
-                        <a href="https://github.com/muku3011/spring-cloud-gateway"
-                           class="btn btn-outline-primary btn-sm" target="_blank">View Repository</a>
-                    </div>
-                </div>
-            </div>
-
-
-        </div>
-
+        <div class="row justify-content-center" id="github-repos"><!-- dynamically populated --></div>
         <div class="text-center mt-5">
-            <a href="https://github.com/muku3011" class="btn btn-primary btn-lg" target="_blank">
+            <a href="https://github.com/muku3011?tab=stars" class="btn btn-primary btn-lg" target="_blank" rel="noopener">
                 <i class="fab fa-github me-2"></i>
-                View All Repositories
+                View Starred Repositories
             </a>
         </div>
     </div>
@@ -389,114 +236,84 @@
             architecture</p>
         <div class="row">
             <div class="col-lg-10 mx-auto">
-                <div class="timeline">
-                    <div class="timeline-item">
-                        <div class="timeline-marker bg-primary"></div>
-                        <div class="timeline-content">
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <h5 class="card-title mb-0">Design Architect Giesecke+Devrient</h5>
-                                        <span class="badge bg-primary text-wrap">May 2023 - Present Stockholm, Sweden</span>
-                                    </div>
-                                    <h6 class="text-muted mb-3">Enterprise solutions, security, and platform design</h6>
-                                    <ul class="list-unstyled">
-                                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Drove solution
-                                            and service design for secure digital authentication platforms
-                                        </li>
-                                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Led technical
-                                            design/specs, REST API architecture, and Spring Boot services
-                                        </li>
-                                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Improved
-                                            performance and reliability across Linux-based deployments
-                                        </li>
-                                        <li class="mb-0"><i class="fas fa-check text-success me-2"></i>Collaborated with
-                                            cross‑functional teams using Agile/Scrum and Jira
-                                        </li>
-                                    </ul>
+                <div class="timeline-elegant">
+                    <div class="timeline-line"></div>
+
+                    <div class="timeline-entry">
+                        <div class="timeline-dot bg-primary"></div>
+                        <div class="timeline-card card shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex flex-wrap justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">Design Architect · Giesecke+Devrient</h5>
+                                    <span class="badge bg-primary text-wrap">May 2023 – Present · Stockholm, Sweden</span>
                                 </div>
+                                <h6 class="text-muted mb-3">Enterprise solutions, security, and platform design</h6>
+                                <ul class="mb-0">
+                                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Drove solution and service design for secure digital authentication platforms</li>
+                                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Led technical design/specs, REST API architecture, and Spring Boot services</li>
+                                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Improved performance and reliability across Linux-based deployments</li>
+                                    <li class="mb-0"><i class="fas fa-check text-success me-2"></i>Collaborated with cross‑functional teams using Agile/Scrum and Jira</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
-                    <div class="timeline-item">
-                        <div class="timeline-marker bg-secondary"></div>
-                        <div class="timeline-content">
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <h5 class="card-title mb-0">Senior Software Developer Giesecke+Devrient</h5>
-                                        <span class="badge bg-secondary text-wrap">Oct 2017 - April 2023 Barcelona, Spain</span>
-                                    </div>
-                                    <h6 class="text-muted mb-3">Backend engineering, cloud, and integration</h6>
-                                    <ul class="list-unstyled">
-                                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Built and
-                                            maintained RESTful services with Spring Boot and Java
-                                        </li>
-                                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Delivered
-                                            features on AWS, Dockerized services, and automated testing
-                                        </li>
-                                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Owned integration
-                                            testing and performance tuning for critical systems
-                                        </li>
-                                        <li class="mb-0"><i class="fas fa-check text-success me-2"></i>Contributed to
-                                            leadership, code design, and team enablement
-                                        </li>
-                                    </ul>
+
+                    <div class="timeline-entry">
+                        <div class="timeline-dot bg-secondary"></div>
+                        <div class="timeline-card card shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex flex-wrap justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">Senior Software Developer · Giesecke+Devrient</h5>
+                                    <span class="badge bg-secondary text-wrap">Oct 2017 – Apr 2023 · Barcelona, Spain</span>
                                 </div>
+                                <h6 class="text-muted mb-3">Backend engineering, cloud, and integration</h6>
+                                <ul class="mb-0">
+                                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Built and maintained RESTful services with Spring Boot and Java</li>
+                                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Delivered features on AWS, Dockerized services, and automated testing</li>
+                                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Owned integration testing and performance tuning for critical systems</li>
+                                    <li class="mb-0"><i class="fas fa-check text-success me-2"></i>Contributed to leadership, code design, and team enablement</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
-                    <div class="timeline-item">
-                        <div class="timeline-marker bg-success"></div>
-                        <div class="timeline-content">
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <h5 class="card-title mb-0">Software Developer Giesecke+Devrient</h5>
-                                        <span class="badge bg-success text-wrap">Sep 2012 - Sep 2017 Gurgaon, India</span>
-                                    </div>
-                                    <h6 class="text-muted mb-3">Enterprise application development</h6>
-                                    <ul class="list-unstyled">
-                                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Implemented
-                                            Java/Spring Boot services and WildFly-based components
-                                        </li>
-                                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Authored
-                                            technical specifications and REST API designs
-                                        </li>
-                                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Drove integration
-                                            testing, quality, and performance improvements
-                                        </li>
-                                        <li class="mb-0"><i class="fas fa-check text-success me-2"></i>Worked in
-                                            Agile/Scrum teams using Jira for delivery tracking
-                                        </li>
-                                    </ul>
+
+                    <div class="timeline-entry">
+                        <div class="timeline-dot bg-success"></div>
+                        <div class="timeline-card card shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex flex-wrap justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">Software Developer · Giesecke+Devrient</h5>
+                                    <span class="badge bg-success text-wrap">Sep 2012 – Sep 2017 · Gurgaon, India</span>
                                 </div>
+                                <h6 class="text-muted mb-3">Enterprise application development</h6>
+                                <ul class="mb-0">
+                                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Implemented Java/Spring Boot services and WildFly-based components</li>
+                                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Authored technical specifications and REST API designs</li>
+                                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Drove integration testing, quality, and performance improvements</li>
+                                    <li class="mb-0"><i class="fas fa-check text-success me-2"></i>Worked in Agile/Scrum teams using Jira for delivery tracking</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
-                    <div class="timeline-item">
-                        <div class="timeline-marker bg-dark"></div>
-                        <div class="timeline-content">
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-start mb-3">
-                                        <h5 class="card-title mb-0">Intern Giesecke+Devrient</h5>
-                                        <span class="badge bg-primary text-wrap">Jan 2012 - Aug 2012 Gurgaon India</span>
-                                    </div>
-                                    <h6 class="text-muted mb-3">Foundations in software engineering</h6>
-                                    <ul class="list-unstyled">
-                                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Contributed to
-                                            feature development and testing on enterprise systems
-                                        </li>
-                                        <li class="mb-0"><i class="fas fa-check text-success me-2"></i>Built
-                                            fundamentals in Java, REST, and team collaboration
-                                        </li>
-                                    </ul>
+
+                    <div class="timeline-entry">
+                        <div class="timeline-dot bg-dark"></div>
+                        <div class="timeline-card card shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex flex-wrap justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">Intern · Giesecke+Devrient</h5>
+                                    <span class="badge bg-dark text-wrap">Jan 2012 – Aug 2012 · Gurgaon, India</span>
                                 </div>
+                                <h6 class="text-muted mb-3">Foundations in software engineering</h6>
+                                <ul class="mb-0">
+                                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Contributed to feature development and testing on enterprise systems</li>
+                                    <li class="mb-0"><i class="fas fa-check text-success me-2"></i>Built fundamentals in Java, REST, and team collaboration</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
-                </div>
+
+                </div><!-- /.timeline-elegant -->
             </div>
         </div>
     </div>
@@ -531,53 +348,8 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Add Chart.js before your main.js (once per page) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="scripts/main.js"></script>
 </body>
 </html>
-
-/* Timeline mobile fixes */
-@media (max-width: 575.98px) {
-  .timeline {
-    position: relative;
-    padding-left: 0;
-    overflow: visible; /* ensure badges/content not clipped */
-  }
-  .timeline-item {
-    display: block;
-    position: relative;
-    padding-left: 0;
-    margin-left: 0;
-  }
-  .timeline-marker {
-    position: relative;      /* place above content */
-    left: 0 !important;
-    top: 0;
-    margin: 0 auto 0.75rem;  /* center marker, space below */
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-  }
-  .timeline-content {
-    width: 100%;
-  }
-  .timeline .card .card-body .d-flex {
-    flex-direction: column;              /* stack title and badge */
-    align-items: flex-start !important;
-    gap: .5rem;
-  }
-  .timeline .badge {
-    align-self: flex-start;              /* prevent overflow to the right */
-    white-space: normal;                 /* allow wrapping */
-    line-height: 1.2;
-  }
-  .timeline .card-title {
-    margin-right: 0;
-  }
-  /* Prevent horizontal scroll caused by long words/icons */
-  .timeline .card,
-  .timeline .card-body,
-  .timeline .list-unstyled {
-    overflow: visible;
-    word-break: break-word;
-  }
-}

@@ -1230,3 +1230,191 @@ img {
         transform: none !important;
     }
 }
+
+
+/* Timeline mobile fixes */
+@media (max-width: 575.98px) {
+  .timeline {
+    position: relative;
+    padding-left: 0;
+    overflow: visible; /* ensure badges/content not clipped */
+  }
+  .timeline-item {
+    display: block;
+    position: relative;
+    padding-left: 0;
+    margin-left: 0;
+  }
+  .timeline-marker {
+    position: relative;      /* place above content */
+    left: 0 !important;
+    top: 0;
+    margin: 0 auto 0.75rem;  /* center marker, space below */
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .timeline-content {
+    width: 100%;
+  }
+  .timeline .card .card-body .d-flex {
+    flex-direction: column;              /* stack title and badge */
+    align-items: flex-start !important;
+    gap: .5rem;
+  }
+  .timeline .badge {
+    align-self: flex-start;              /* prevent overflow to the right */
+    white-space: normal;                 /* allow wrapping */
+    line-height: 1.2;
+  }
+  .timeline .card-title {
+    margin-right: 0;
+  }
+  /* Prevent horizontal scroll caused by long words/icons */
+  .timeline .card,
+  .timeline .card-body,
+  .timeline .list-unstyled {
+    overflow: visible;
+    word-break: break-word;
+  }
+}
+
+
+/* Ensure equal-height, centered cards and tidy last row */
+.skills-grid .skill-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+@media (min-width: 992px) and (max-width: 1199.98px) {
+  /* At lg, keep 3 per row without awkward gaps */
+  .skills-grid .skill-item { min-width: 0; }
+}
+
+/* Featured Projects: ensure equal-height and tidy rows */
+#github-repos > [class*="col-"] .card {
+  display: flex;
+  flex-direction: column;
+}
+#github-repos > [class*="col-"] .card-body {
+  flex: 1 1 auto;
+}
+
+
+/* Featured Projects equal-height layout */
+#github-repos > [class*="col-"] .card {
+  display: flex;
+  flex-direction: column;
+}
+#github-repos > [class*="col-"] .card-body {
+  flex: 1 1 auto;
+}
+
+
+
+/* Elegant Timeline */
+.timeline-elegant {
+  position: relative;
+  display: grid;
+  gap: 2rem 0;
+}
+.timeline-elegant .timeline-line {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, #3498db 0%, #2ecc71 50%, #f39c12 100%);
+  opacity: 0.25;
+}
+.timeline-entry {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+}
+.timeline-entry:nth-child(odd) .timeline-card {
+  grid-column: 1 / 2;
+  margin-right: 2rem;
+}
+.timeline-entry:nth-child(even) .timeline-card {
+  grid-column: 2 / 3;
+  margin-left: 2rem;
+}
+.timeline-dot {
+  position: absolute;
+  left: 50%;
+  top: 1rem;
+  transform: translate(-50%, 0);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.15);
+}
+.timeline-card {
+  border: 1px solid #e9ecef;
+  border-radius: 14px;
+  transition: transform .25s ease, box-shadow .25s ease;
+  background: #fff;
+}
+.timeline-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+  border-color: rgba(52,152,219,0.35);
+}
+.timeline-card .badge {
+  white-space: normal;
+  line-height: 1.2;
+}
+
+/* Mobile/Tablet: stack vertically and keep the line to the left */
+@media (max-width: 991.98px) {
+  .timeline-elegant .timeline-line {
+    left: 18px;
+    transform: none;
+    width: 2px;
+  }
+  .timeline-entry {
+    grid-template-columns: 1fr;
+  }
+  .timeline-entry .timeline-card {
+    grid-column: 1 / -1 !important;
+    margin: 0 0 0 2.25rem;
+  }
+  .timeline-dot {
+    left: 18px;
+    transform: translate(-50%, 0);
+    width: 12px;
+    height: 12px;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+  }
+}
+
+/* List spacing inside timeline cards */
+.timeline-card ul {
+  padding-left: 0;
+  list-style: none;
+}
+.timeline-card li i {
+  width: 18px;
+  text-align: center;
+}
+
+/* Add spacing between title and duration in timeline cards */
+.timeline-card .card-body .d-flex {
+  gap: .75rem 1rem; /* row-gap, column-gap */
+}
+.timeline-card .card-title {
+  margin-right: 1rem; /* extra space before the badge/duration */
+}
+@media (max-width: 991.98px) {
+  .timeline-card .card-body .d-flex {
+    gap: .5rem 0.75rem;
+  }
+  .timeline-card .card-title {
+    margin-right: 0;
+    margin-bottom: .25rem; /* subtle vertical spacing when stacked */
+  }
+}

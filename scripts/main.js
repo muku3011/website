@@ -308,3 +308,129 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+// Update Projects count from GitHub
+(async function updateProjectsCount() {
+  try {
+    const username = 'muku3011'; // change if needed
+    const resp = await fetch(`https://api.github.com/users/${username}`, {
+      headers: { 'Accept': 'application/vnd.github+json' }
+    });
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const el = document.getElementById('projectsCount');
+    if (!el) return;
+
+    // public_repos returns public repo count
+    const count = typeof data.public_repos === 'number' ? data.public_repos : 0;
+    el.textContent = count.toString();
+  } catch (e) {
+    // silently ignore to avoid breaking UI
+  }
+})();
+
+
+// Dynamically compute years of experience since Jan 2012
+(function updateYearsExperience() {
+  const start = new Date(2012, 0, 1); // Jan = 0
+  const now = new Date();
+
+  // Calculate whole years difference, adjusting if current date is before the anniversary
+  let years = now.getFullYear() - start.getFullYear();
+  const hasHadAnniversaryThisYear =
+    now.getMonth() > start.getMonth() ||
+    (now.getMonth() === start.getMonth() && now.getDate() >= start.getDate());
+  if (!hasHadAnniversaryThisYear) years--;
+
+  const el = document.getElementById('yearsExperience');
+  if (el) el.textContent = `${years}+`;
+})();
+
+
+
+
+// Populate Featured Projects with starred repos (public)
+(async function loadStarredRepos() {
+  const container = document.getElementById('github-repos');
+  if (!container) return;
+
+  const username = 'muku3011'; // change if needed
+  const endpoint = `https://api.github.com/users/${encodeURIComponent(username)}/starred?per_page=12&sort=created`;
+
+  try {
+    const res = await fetch(endpoint, {
+      headers: { 'Accept': 'application/vnd.github+json' }
+    });
+    if (!res.ok) throw new Error('Failed to load starred repos');
+    const starred = await res.json();
+
+    if (!Array.isArray(starred) || starred.length === 0) {
+      container.innerHTML = `
+        <div class="col-12">
+          <div class="alert alert-light border text-center" role="alert">
+            No starred repositories found.
+          </div>
+        </div>`;
+      return;
+    }
+
+    // Render cards responsively (1/2/3/4 per row)
+    container.innerHTML = starred.map(repo => {
+      const name = repo.full_name?.split('/')[1] || repo.name || 'Repository';
+      const desc = repo.description ? repo.description : 'No description provided.';
+      const lang = repo.language || 'Repo';
+      const link = repo.html_url;
+      const stars = repo.stargazers_count ?? 0;
+      const forks = repo.forks_count ?? 0;
+      const topics = Array.isArray(repo.topics) ? repo.topics.slice(0, 3) : [];
+
+      const badgeClass = (() => {
+        const l = (lang || '').toLowerCase();
+        if (l.includes('java') || l.includes('kotlin')) return 'bg-primary';
+        if (l.includes('spring')) return 'bg-success';
+        if (l.includes('typescript') || l.includes('javascript')) return 'bg-warning text-dark';
+        if (l.includes('python')) return 'bg-info text-dark';
+        return 'bg-secondary';
+      })();
+
+      const topicsHtml = topics.map(t =>
+        `<span class="badge rounded-pill bg-light text-muted border me-1 mb-1">${t}</span>`
+      ).join('');
+
+      return `
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3 mb-4">
+          <div class="card h-100 repo-card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <h5 class="card-title mb-0">
+                  <i class="fab fa-github me-2"></i>${name}
+                </h5>
+                <span class="badge ${badgeClass}">${lang}</span>
+              </div>
+              <p class="card-text">${desc}</p>
+              ${topicsHtml ? `<div class="mb-2">${topicsHtml}</div>` : ''}
+              <div class="repo-stats d-flex align-items-center flex-wrap gap-3">
+                <small class="text-muted">
+                  <i class="fas fa-star me-1"></i>${stars}
+                </small>
+                <small class="text-muted">
+                  <i class="fas fa-code-branch me-1"></i>${forks}
+                </small>
+              </div>
+            </div>
+            <div class="card-footer bg-transparent">
+              <a href="${link}" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener">View Repository</a>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+
+  } catch (e) {
+    container.innerHTML = `
+      <div class="col-12">
+        <div class="alert alert-light border text-center" role="alert">
+          Unable to load starred repositories at the moment. Please try again later.
+        </div>
+      </div>`;
+  }
+})();
