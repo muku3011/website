@@ -1418,3 +1418,16 @@ img {
     margin-bottom: .25rem; /* subtle vertical spacing when stacked */
   }
 }
+
+/* Center the About lead paragraph text */
+#about .lead {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+/* Keep it centered on small screens too */
+@media (max-width: 768px) {
+  #about .lead {
+    text-align: center;
+  }
+}
