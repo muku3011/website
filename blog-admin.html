@@ -24,7 +24,6 @@
                 <li class="nav-item"><a class="nav-link text-white" href="index.html">Home</a></li>
                 <li class="nav-item"><a class="nav-link text-white" href="blog.html">Blog</a></li>
                 <li class="nav-item"><a class="nav-link text-white" href="contact.html">Contact</a></li>
-                <!--                <li class="nav-item"><a class="nav-link active text-white" href="blog-admin.html"><i class="fa-solid fa-toolbox me-1"></i>Admin</a></li>-->
             </ul>
         </div>
     </div>
@@ -56,9 +55,16 @@
                         <input class="form-control" id="author" placeholder="Author name" required>
                     </div>
                     <div class="col-12 col-md-6">
+                        <label for="status" class="form-label">Status</label>
+                        <select id="status" class="form-control">
+                            <option value="DRAFT">DRAFT</option>
+                            <option value="PUBLISHED">PUBLISHED</option>
+                        </select>
+                    </div>
+ <!--                   <div class="col-12 col-md-6">
                         <label for="tags" class="form-label">Tags (comma-separated)</label>
                         <input class="form-control" id="tags" placeholder="java,architecture">
-                    </div>
+                    </div>-->
                     <div class="col-12">
                         <label for="summary" class="form-label">Summary</label>
                         <textarea class="form-control" id="summary" rows="2" placeholder="Short summary"></textarea>
