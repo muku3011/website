@@ -23,11 +23,7 @@
         featuredImageUrl: el('featuredImageUrl') ? el('featuredImageUrl').value.trim() : '',
         slug: el('slug').value.trim(),
         status: (el('status')?.value || 'DRAFT'),
-        viewCount: 0,
         isFeatured: true,
-        createdAt: nowIso,
-        updatedAt: nowIso,
-        publishedAt: nowIso
       };
     }
 
