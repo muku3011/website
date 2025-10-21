@@ -111,18 +111,26 @@
       const id = el('postId').value;
       const payload = toPayload();
       try {
-        if (id) await API.update(id, payload);
-        else await API.create(payload);
-        resetForm();
+        if (id) {
+          await API.update(id, payload);
+          // keep form data as-is after update
+        } else {
+          const created = await API.create(payload);
+          // populate returned id but keep other fields intact
+          if (created && created.id) {
+            el('postId').value = created.id;
+          }
+        }
+        // do NOT reset the form; only refresh the list
         await loadList();
       } catch (err) {
         alert('Save failed');
       }
     });
 
+    // Remove auto-reset on "New" only if you still want clearing when explicitly requested, keep as is:
     el('resetFormBtn').addEventListener('click', resetForm);
     el('newPostBtn').addEventListener('click', resetForm);
-    el('searchInput').addEventListener('input', applySearch);
 
     // Init
     loadList();
