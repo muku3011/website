@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin · Blog Manager</title>
+    <meta name="description" content="Admin panel to manage blog posts (create, read, update, delete).">
+    <link rel="stylesheet" href="styles/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+          rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+    <div class="container">
+        <a class="navbar-brand text-white" href="index.html">Mukesh Joshi</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link text-white" href="index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="blog.html">Blog</a></li>
+                <li class="nav-item"><a class="nav-link text-white" href="contact.html">Contact</a></li>
+                <!--                <li class="nav-item"><a class="nav-link active text-white" href="blog-admin.html"><i class="fa-solid fa-toolbox me-1"></i>Admin</a></li>-->
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<section class="section" style="padding-top: 100px;">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <h2 class="section-title mb-0">Blog Manager</h2>
+            <button id="newPostBtn" class="btn btn-primary">
+                <i class="fa-solid fa-plus me-2"></i>New Post
+            </button>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <form id="postForm" class="row g-3">
+                    <input type="hidden" id="postId">
+                    <div class="col-12 col-md-6">
+                        <label for="title" class="form-label">Title</label>
+                        <input class="form-control" id="title" placeholder="Post title" required>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label for="slug" class="form-label">Slug</label>
+                        <input class="form-control" id="slug" placeholder="unique-slug" required>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label for="author" class="form-label">Author</label>
+                        <input class="form-control" id="author" placeholder="Author name" required>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label for="tags" class="form-label">Tags (comma-separated)</label>
+                        <input class="form-control" id="tags" placeholder="java,architecture">
+                    </div>
+                    <div class="col-12">
+                        <label for="summary" class="form-label">Summary</label>
+                        <textarea class="form-control" id="summary" rows="2" placeholder="Short summary"></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label for="content" class="form-label">Content (Markdown supported)</label>
+                        <textarea class="form-control" id="content" rows="8" placeholder="# Heading Content..."
+                                  required></textarea>
+                    </div>
+                    <div class="col-12 d-flex gap-2">
+                        <button type="submit" class="btn btn-success"><i class="fa-solid fa-floppy-disk me-2"></i>Save
+                        </button>
+                        <button type="button" id="resetFormBtn" class="btn btn-outline-secondary">Reset</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-between">
+            <h3 class="mb-3">All Posts</h3>
+            <div class="input-group" style="max-width: 340px;">
+                <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <label for="searchInput"></label><input id="searchInput" class="form-control" placeholder="Search title, tag, author">
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                <tr>
+                    <th>Title</th>
+                    <th class="d-none d-md-table-cell">Author</th>
+                    <th class="d-none d-md-table-cell">Tags</th>
+                    <th>Updated</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+                </thead>
+                <tbody id="postsTbody"></tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div class="container">
+        <div class="row gy-3 align-items-center">
+            <div class="col-lg-6 text-center text-lg-start">
+                <h5>Mukesh Joshi</h5>
+                <p class="mb-0">Enterprise Architect, Software Architect, and Software Developer</p>
+            </div>
+            <div class="col-lg-6 text-center text-lg-end">
+                <div class="social-links">
+                    <a href="https://www.linkedin.com/in/muku3011/" class="text-white me-3" target="_blank"
+                       rel="noopener"><i class="fab fa-linkedin"></i></a>
+                    <a href="https://github.com/muku3011" class="text-white me-3" target="_blank" rel="noopener"><i
+                            class="fab fa-github"></i></a>
+                    <a href="https://twitter.com/muku3011" class="text-white me-3" target="_blank" rel="noopener"><i
+                            class="fab fa-twitter"></i></a>
+                    <a href="https://instagram.com/muku3011" class="text-white" target="_blank" rel="noopener"><i
+                            class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+        <hr class="my-4" style="border-color: rgba(255,255,255,0.2);">
+        <div class="text-center">
+            <p class="mb-0">&copy; 2025 Mukesh Joshi. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="scripts/blog-admin.js"></script>
+</body>
+</html>
