@@ -304,11 +304,11 @@ class BlogManager {
                 const badgeClass = this.getCategoryBadgeClass(category);
                 return `
                     <li class="mb-2">
-                        <a href="#" class="text-decoration-none category-link" data-category="${category}">
-                            <i class="${icon} me-2"></i>
-                            ${category}
-                            <span class="badge bg-light text-dark ms-2">${count}</span>
-                        </a>
+                                    <class="text-decoration-none category-link" data-category="${category}">
+                                        <i class="${icon} me-2"></i>
+                                        ${category}
+                                        <span class="badge bg-light text-dark ms-2">${count}</span>
+                                    </a>
                     </li>
                 `;
             }).join('');

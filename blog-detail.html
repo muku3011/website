@@ -108,15 +108,18 @@
 
                 <!-- Newsletter -->
                 <div class="card">
-                    <div class="card-body text-center">
-                        <h5 class="card-title">Stay Updated</h5>
-                        <p class="card-text small">Get the latest posts delivered to your inbox.</p>
-                        <div class="input-group mb-3">
-                            <label>
-                                <input type="email" class="form-control" placeholder="Your email">
-                            </label>
-                            <button class="btn btn-primary" type="button">Subscribe</button>
-                        </div>
+                    <div class="card-body">
+                        <h5 class="card-title text-center">Stay Updated</h5>
+                        <p class="card-text small text-center">Get the latest posts delivered to your inbox.</p>
+                        <form class="row g-2">
+                            <div class="col-12 col-sm-8">
+                                <label class="visually-hidden" for="newsletterEmail">Email</label>
+                                <input id="newsletterEmail" type="email" class="form-control" placeholder="Your email">
+                            </div>
+                            <div class="col-12 col-sm-4 d-grid">
+                                <button class="btn btn-primary" type="button">Subscribe</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
