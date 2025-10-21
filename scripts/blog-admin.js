@@ -4,23 +4,30 @@
  // Basic API client: adjust base URL if backend runs elsewhere
     const API = {
       list: () => fetch(`${API_BASE_URL}`).then(r => r.json()),
-      get: (id) => fetch(`${API_BASE_URL}` + id).then(r => r.json()),
+      get: (id) => fetch(`${API_BASE_URL}`+ "/" + id).then(r => r.json()),
       create: (payload) => fetch(`${API_BASE_URL}`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}).then(r=>r.json()),
-      update: (id, payload) => fetch(`${API_BASE_URL}` + id, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}).then(r=>r.json()),
-      delete: (id) => fetch(`${API_BASE_URL}` + id, {method:'DELETE'}).then(r=>r.ok)
+      update: (id, payload) => fetch(`${API_BASE_URL}` + "/" + id, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}).then(r=>r.json()),
+      delete: (id) => fetch(`${API_BASE_URL}` + "/" + id, {method:'DELETE'}).then(r=>r.ok)
     };
 
     const el = (id) => document.getElementById(id);
     const tbody = el('postsTbody');
-
     function toPayload() {
+      const nowIso = new Date().toISOString();
       return {
+        id: 0,
         title: el('title').value.trim(),
+        content: el('content').value,
+        excerpt: el('summary').value.trim(),
+        author: el('author').value.trim() || 'Mukesh Joshi',
+        featuredImageUrl: el('featuredImageUrl') ? el('featuredImageUrl').value.trim() : '',
         slug: el('slug').value.trim(),
-        author: el('author').value.trim(),
-        tags: el('tags').value.split(',').map(t=>t.trim()).filter(Boolean),
-        summary: el('summary').value.trim(),
-        content: el('content').value
+        status: 'PUBLISHED',
+        viewCount: 0,
+        isFeatured: true,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+        publishedAt: nowIso
       };
     }
 
@@ -30,12 +37,12 @@
       el('slug').value = p.slug ?? '';
       el('author').value = p.author ?? '';
       el('tags').value = Array.isArray(p.tags) ? p.tags.join(', ') : (p.tags ?? '');
-      el('summary').value = p.summary ?? '';
+      el('summary').value = p.excerpt ?? '';
       el('content').value = p.content ?? '';
     }
 
     function resetForm() {
-      fillForm({id:'', title:'', slug:'', author:'', tags:'', summary:'', content:''});
+      fillForm({id:'', title:'', slug:'', author:'', tags:'', excerpt:'', content:''});
     }
 
     function rowTemplate(p) {

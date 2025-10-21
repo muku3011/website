@@ -111,20 +111,12 @@ class BlogDetailManager {
                 ${this.formatContent(post.content)}
             </div>
             
-            <footer class="mt-5 pt-4 border-top">
+           <footer class="mt-5 pt-4 border-top">
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="post-meta">
-                        <small class="text-muted">
+                        <small class="text-white ps-3">
                             Published on ${publishedDate} • ${readTime} min read
                         </small>
-                    </div>
-                    <div class="post-actions">
-                        <button class="btn btn-outline-primary btn-sm me-2" onclick="blogDetailManager.likePost()">
-                            <i class="fas fa-heart me-1"></i>Like
-                        </button>
-                        <button class="btn btn-outline-primary btn-sm" onclick="blogDetailManager.bookmarkPost()">
-                            <i class="fas fa-bookmark me-1"></i>Bookmark
-                        </button>
                     </div>
                 </div>
             </footer>
