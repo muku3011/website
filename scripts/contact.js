@@ -1,6 +1,5 @@
 // Minimal client-side submission to backend API
 
-// Change this to your backend URL if different (e.g., https://api.yourdomain.com)
 const CONTACT_API_URL = 'https://irku.se:8700/contact';
 
 (function() {
