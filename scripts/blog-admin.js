@@ -1,5 +1,5 @@
-// Blog API Configuration
-const API_BASE_URL = 'https://irku.se:8700/api/blogs';
+// Blog API Configuration for blog management
+const API_BASE_URL = window.API_CONFIG?.BLOG_ADMIN_BASE || 'https://irku.se:8700/api/blogs';
 
 // Basic API client: adjust base URL if backend runs elsewhere
 const API = {

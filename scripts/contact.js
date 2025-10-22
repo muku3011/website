@@ -1,5 +1,5 @@
 // Minimal client-side submission to backend API
-const CONTACT_BASE = 'https://irku.se:8700/api/contact';
+const CONTACT_BASE = window.API_CONFIG?.CONTACT_BASE || 'https://irku.se:8700/api/contact';
 
 const API = {
   contact: (payload) =>
@@ -12,15 +12,19 @@ const API = {
 
 const el = (id) => document.getElementById(id);
 
-function showStatus(message, ok = true) {
-  const statusEl = el('contactStatus');
-  if (statusEl) {
-    statusEl.style.display = 'block';
-    statusEl.className = ok ? 'alert alert-success' : 'alert alert-danger';
-    statusEl.textContent = message;
+// Unified notifications like the rest of the site
+function notify(message, ok = true) {
+  if (typeof showNotification === 'function') {
+    showNotification(message, ok ? 'success' : 'info'); // align with site's notification types
+  } else {
+    // Fallback to inline status if global notifier isn't available yet
+    const statusEl = el('contactStatus');
+    if (statusEl) {
+      statusEl.style.display = 'block';
+      statusEl.className = ok ? 'alert alert-success' : 'alert alert-danger';
+      statusEl.textContent = message;
+    }
   }
-  // If admin popup exists, use it as well for consistent UX
-  if (typeof showPopup === 'function') showPopup(message, ok ? 'success' : 'error');
 }
 
 function toPayload() {
@@ -52,38 +56,34 @@ function toPayload() {
     if (submitBtn) submitBtn.dataset.busy = '1';
 
     const payload = toPayload();
-    // basic validation
     if (!payload.firstName || !payload.lastName || !payload.email || !payload.subject || !payload.message) {
-      showStatus('Please fill all required fields.', false);
+      notify('Please fill all required fields.', false);
       if (submitBtn) delete submitBtn.dataset.busy;
       return;
     }
 
     try {
-      console.debug('Submitting contact payload', payload);
       const resp = await API.contact(payload);
 
-      // If server returns JSON body, prefer that message; otherwise use text.
       let bodyText = '';
       try {
         const json = await resp.clone().json().catch(() => null);
         if (json && (json.message || json.error)) bodyText = json.message || json.error;
-      } catch (_) { /* ignore */ }
+      } catch (_) {}
       if (!bodyText) {
         bodyText = await resp.clone().text().catch(() => '');
       }
 
       if (resp.ok) {
-        showStatus(bodyText || 'Thanks! Your message has been sent.', true);
+        notify(bodyText || 'Thanks! Your message has been sent.', true);
         form.reset();
       } else {
-        showStatus(bodyText || 'Failed to send message. Please try again later.', false);
+        notify(bodyText || 'Failed to send message. Please try again later.', false);
         console.warn('Contact POST failed', { status: resp.status, text: bodyText });
       }
     } catch (err) {
       console.error('Contact submit error', err);
-      // This is often a CORS/preflight/network failure
-      showStatus('Network error or CORS issue. Open DevTools network tab to inspect.', false);
+      notify('Network error or CORS issue. Please try again later.', false);
     } finally {
       if (submitBtn) delete submitBtn.dataset.busy;
     }

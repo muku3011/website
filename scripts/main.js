@@ -1,3 +1,15 @@
+// Centralized API endpoints
+window.API_CONFIG = (function() {
+  //const BACKEND_BASE_URL = 'http://localhost:8700';
+  const BACKEND_BASE_URL = 'https://irku.se:8700';
+  return {
+    BACKEND_BASE_URL,
+    BLOG_API_BASE: `${BACKEND_BASE_URL}/api`,
+    BLOG_ADMIN_BASE: `${BACKEND_BASE_URL}/api/blogs`,
+    CONTACT_BASE: `${BACKEND_BASE_URL}/api/contact`
+  };
+})();
+
 // Professional Portfolio JavaScript
 document.addEventListener('DOMContentLoaded', function() {
     

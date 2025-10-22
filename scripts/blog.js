@@ -1,5 +1,5 @@
 // Blog API Configuration
-const API_BASE_URL = 'https://irku.se:8700/api';
+const API_BASE_URL = window.API_CONFIG?.BLOG_API_BASE || 'https://irku.se:8700/api';
 
 // Blog Management Class
 class BlogManager {
