@@ -21,14 +21,12 @@ const CONTACT_API_URL = 'https://irku.se:8700/contact';
     statusEl.textContent = message;
   }
 
+  // Use the simpler fetch shape (like blog-admin) — let browser choose mode.
   async function postJson(data) {
+    console.debug('Contact POST (JSON) start', { origin: location.origin, url: CONTACT_API_URL });
     return fetch(CONTACT_API_URL, {
       method: 'POST',
-      mode: 'cors',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
       cache: 'no-cache'
     });
@@ -37,10 +35,10 @@ const CONTACT_API_URL = 'https://irku.se:8700/contact';
   async function postFormEncoded(data) {
     const formBody = new URLSearchParams();
     Object.entries(data).forEach(([k, v]) => formBody.append(k, typeof v === 'boolean' ? (v ? '1' : '0') : (v ?? '')));
+    console.debug('Contact POST (form) start', { origin: location.origin, url: CONTACT_API_URL });
     return fetch(CONTACT_API_URL, {
       method: 'POST',
-      mode: 'cors',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'text/plain, */*' },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: formBody.toString(),
       cache: 'no-cache'
     });
