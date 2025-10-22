@@ -1,91 +1,91 @@
 // Minimal client-side submission to backend API
+const CONTACT_BASE = 'https://irku.se:8700/api/contact';
 
-const CONTACT_API_URL = 'https://irku.se:8700/contact';
+const API = {
+  contact: (payload) =>
+    fetch(`${CONTACT_BASE}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+};
 
-(function() {
-  const form = document.getElementById('contactForm');
-  const statusEl = document.getElementById('contactStatus');
+const el = (id) => document.getElementById(id);
 
-  if (!form) {
-    console.error('contactForm element not found');
-    return;
-  }
-  if (!statusEl) {
-    console.error('contactStatus element not found');
-    return;
-  }
-
-  function showStatus(message, ok) {
+function showStatus(message, ok = true) {
+  const statusEl = el('contactStatus');
+  if (statusEl) {
     statusEl.style.display = 'block';
     statusEl.className = ok ? 'alert alert-success' : 'alert alert-danger';
     statusEl.textContent = message;
   }
+  // If admin popup exists, use it as well for consistent UX
+  if (typeof showPopup === 'function') showPopup(message, ok ? 'success' : 'error');
+}
 
-  // Use the simpler fetch shape (like blog-admin) — let browser choose mode.
-  async function postJson(data) {
-    console.debug('Contact POST (JSON) start', { origin: location.origin, url: CONTACT_API_URL });
-    return fetch(CONTACT_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-      cache: 'no-cache'
-    });
+function toPayload() {
+  return {
+    firstName: el('firstName')?.value.trim() || '',
+    lastName: el('lastName')?.value.trim() || '',
+    email: el('email')?.value.trim() || '',
+    subject: el('subject')?.value.trim() || '',
+    message: el('message')?.value.trim() || '',
+    newsletter: !!el('newsletter')?.checked
+  };
+}
+
+// Guard: ensure only ONE submit handler exists (same style as blog-admin)
+(function ensureSingleSubmitHandler() {
+  const form = el('contactForm');
+  if (!form) {
+    console.error('contactForm not found');
+    return;
   }
+  if (form.__saveHandlerAttached) return;
+  form.__saveHandlerAttached = true;
 
-  async function postFormEncoded(data) {
-    const formBody = new URLSearchParams();
-    Object.entries(data).forEach(([k, v]) => formBody.append(k, typeof v === 'boolean' ? (v ? '1' : '0') : (v ?? '')));
-    console.debug('Contact POST (form) start', { origin: location.origin, url: CONTACT_API_URL });
-    return fetch(CONTACT_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: formBody.toString(),
-      cache: 'no-cache'
-    });
-  }
-
-  form.addEventListener('submit', async function(e) {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const data = {
-      firstName: document.getElementById('firstName')?.value.trim() || '',
-      lastName: document.getElementById('lastName')?.value.trim() || '',
-      email: document.getElementById('email')?.value.trim() || '',
-      subject: document.getElementById('subject')?.value.trim() || '',
-      message: document.getElementById('message')?.value.trim() || '',
-      newsletter: !!document.getElementById('newsletter')?.checked
-    };
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (submitBtn?.dataset.busy === '1') return;
+    if (submitBtn) submitBtn.dataset.busy = '1';
 
-    if (!data.firstName || !data.lastName || !data.email || !data.subject || !data.message) {
+    const payload = toPayload();
+    // basic validation
+    if (!payload.firstName || !payload.lastName || !payload.email || !payload.subject || !payload.message) {
       showStatus('Please fill all required fields.', false);
+      if (submitBtn) delete submitBtn.dataset.busy;
       return;
     }
 
     try {
-      // Try JSON POST first (preferred). If it fails due to preflight/CORS, try form-encoded fallback.
-      let resp = await postJson(data);
+      console.debug('Submitting contact payload', payload);
+      const resp = await API.contact(payload);
 
-      // If server rejects JSON (CORS preflight or 4xx), attempt form-encoded fallback once.
-      if (!resp.ok) {
-        // quick heuristic: if preflight blocked you'll often get network error; still attempt fallback
-        console.warn('JSON POST failed, attempting form-encoded fallback', { status: resp.status, url: CONTACT_API_URL });
-        resp = await postFormEncoded(data);
+      // If server returns JSON body, prefer that message; otherwise use text.
+      let bodyText = '';
+      try {
+        const json = await resp.clone().json().catch(() => null);
+        if (json && (json.message || json.error)) bodyText = json.message || json.error;
+      } catch (_) { /* ignore */ }
+      if (!bodyText) {
+        bodyText = await resp.clone().text().catch(() => '');
       }
-
-      // Helpful debug info (inspect network/headers when debugging CORS)
-      console.log('Contact POST response', { status: resp.status, headers: Array.from(resp.headers.entries()) });
 
       if (resp.ok) {
-        showStatus('Thanks! Your message has been sent.', true);
+        showStatus(bodyText || 'Thanks! Your message has been sent.', true);
         form.reset();
       } else {
-        const text = await resp.text().catch(() => '');
-        showStatus('Failed to send message. ' + (text || 'Please try again later.'), false);
+        showStatus(bodyText || 'Failed to send message. Please try again later.', false);
+        console.warn('Contact POST failed', { status: resp.status, text: bodyText });
       }
     } catch (err) {
-      // If this is a CORS/preflight failure the browser typically blocks the response and throws
       console.error('Contact submit error', err);
-      showStatus('Network or CORS error. Open DevTools network tab to inspect the request/response.', false);
+      // This is often a CORS/preflight/network failure
+      showStatus('Network error or CORS issue. Open DevTools network tab to inspect.', false);
+    } finally {
+      if (submitBtn) delete submitBtn.dataset.busy;
     }
   });
 })();

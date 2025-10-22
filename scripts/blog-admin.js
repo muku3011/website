@@ -13,7 +13,6 @@ const API = {
 const el = (id) => document.getElementById(id);
 const tbody = el('postsTbody');
 function toPayload() {
-  const nowIso = new Date().toISOString();
   return {
     id: 0,
     title: el('title').value.trim(),
