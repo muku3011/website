@@ -143,6 +143,8 @@ function resetForm() {
 
 function rowTemplate(p) {
   const updated = p.updatedAt ? new Date(p.updatedAt).toLocaleString() : '';
+  const status = (p.status || 'DRAFT').toUpperCase();
+  const statusBadgeClass = status === 'PUBLISHED' ? 'bg-success' : status === 'ARCHIVED' ? 'bg-dark' : 'bg-secondary';
   return `
         <tr data-id="${p.id}">
           <td>
@@ -151,6 +153,7 @@ function rowTemplate(p) {
           </td>
           <td class="d-none d-md-table-cell">${p.author || ''}</td>
           <td>${updated}</td>
+          <td class="d-none d-md-table-cell"><span class="badge ${statusBadgeClass}">${status}</span></td>
           <td class="text-end">
             <button class="btn btn-sm btn-outline-primary me-2 edit-btn"><i class="fa-solid fa-pen-to-square me-1"></i>Edit</button>
             <button class="btn btn-sm btn-outline-danger delete-btn"><i class="fa-regular fa-trash-can me-1"></i>Delete</button>
