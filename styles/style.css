@@ -1539,3 +1539,28 @@ html {
         padding-bottom: 3rem;
     }
 }
+
+
+/* Keep text visible on hover for outline-light and links in dark banner/modals */
+  #cookie-banner .btn-outline-light,
+  .modal-content .btn-outline-light {
+    color: #E0F2F1 !important;
+    border-color: rgba(255,255,255,0.35) !important;
+  }
+  #cookie-banner .btn-outline-light:hover,
+  #cookie-banner .btn-outline-light:focus,
+  #cookie-banner .btn-outline-light:active,
+  .modal-content .btn-outline-light:hover,
+  .modal-content .btn-outline-light:focus,
+  .modal-content .btn-outline-light:active {
+    color: #121212 !important;             /* dark text */
+    background-color: #E0F2F1 !important;  /* light bg to preserve contrast */
+    border-color: #E0F2F1 !important;
+  }
+  #cookie-banner a:hover,
+  #cookie-banner a:focus,
+  .modal-content a:hover,
+  .modal-content a:focus {
+    color: #90CAF9 !important;
+    text-decoration: underline;
+  }
