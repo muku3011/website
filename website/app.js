@@ -102,12 +102,16 @@ updateMetrics(); // Initial load
 // -------------------------------------------------------------
 const openButtons = document.querySelectorAll('.open-dialog-btn');
 const closeButtons = document.querySelectorAll('.close-dialog-btn');
+const dialogs = document.querySelectorAll('dialog');
+
+let dialogTriggerElement = null;
 
 openButtons.forEach(btn => {
     btn.addEventListener('click', () => {
         const dialogId = btn.getAttribute('data-target');
         const dialog = document.getElementById(dialogId);
         if (dialog) {
+            dialogTriggerElement = btn;
             dialog.showModal();
         }
     });
@@ -123,9 +127,15 @@ closeButtons.forEach(btn => {
     });
 });
 
-// Light dismiss: Close modal if clicking outside its bounds
-const dialogs = document.querySelectorAll('dialog');
 dialogs.forEach(dialog => {
+    dialog.addEventListener('close', () => {
+        if (dialogTriggerElement) {
+            dialogTriggerElement.focus();
+            dialogTriggerElement = null;
+        }
+    });
+
+    // Light dismiss: Close modal if clicking outside its bounds
     dialog.addEventListener('click', (e) => {
         const rect = dialog.getBoundingClientRect();
         const isInDialog = (

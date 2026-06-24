@@ -59,4 +59,18 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         console.log("CSS View Timeline natively supported. Scroll animations managed via GPU thread.");
     }
+
+    // Scroll progress fallback for Safari / iOS
+    const progressIndicator = document.getElementById('scroll-progress');
+    const supportsCssScrollTimeline = CSS.supports('(animation-timeline: scroll())');
+    
+    if (!supportsCssScrollTimeline && progressIndicator) {
+        console.log("CSS Scroll Timeline not fully supported. Initializing scroll listener fallback for progress bar.");
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+            progressIndicator.style.width = scrolled + '%';
+        });
+    }
 });

@@ -183,6 +183,19 @@
     }
 }
 
+.social-icons-row a {
+    color: var(--text-secondary);
+    transition: var(--transition-smooth);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.social-icons-row a:hover {
+    color: var(--primary-glow) !important;
+    transform: translateY(-2px) scale(1.15);
+}
+
 /* Main Sections Layout */
 .portfolio-section {
     max-width: 1000px;
@@ -259,9 +272,19 @@
 }
 
 .whoami-card:hover {
-    transform: translateY(-4px);
-    border-color: hsla(var(--hue-primary), 100%, 65%, 0.2);
-    box-shadow: 0 12px 40px var(--shadow-color);
+    transform: translateY(-5px) scale(1.01);
+    border-color: hsla(var(--hue-primary), 100%, 65%, 0.35);
+    box-shadow: 0 16px 40px rgba(var(--hue-primary), 100%, 60%, 0.12);
+}
+
+.whoami-card:nth-child(2):hover {
+    border-color: hsla(var(--hue-secondary), 90%, 65%, 0.35);
+    box-shadow: 0 16px 40px rgba(var(--hue-secondary), 90%, 65%, 0.1);
+}
+
+.whoami-card:nth-child(3):hover {
+    border-color: hsla(var(--hue-success), 80%, 50%, 0.35);
+    box-shadow: 0 16px 40px rgba(var(--hue-success), 80%, 50%, 0.1);
 }
 
 .whoami-icon {
@@ -365,8 +388,14 @@
 }
 
 .timeline-item:hover .timeline-content {
-    border-color: var(--card-border);
-    box-shadow: 0 12px 36px var(--shadow-color);
+    transform: translateY(-4px) scale(1.005);
+    border-color: hsla(var(--hue-primary), 100%, 65%, 0.35);
+    box-shadow: 0 16px 40px rgba(var(--hue-primary), 100%, 60%, 0.1);
+}
+
+.timeline-item:nth-child(even):hover .timeline-content {
+    border-color: hsla(var(--hue-secondary), 90%, 65%, 0.35);
+    box-shadow: 0 16px 40px rgba(var(--hue-secondary), 90%, 65%, 0.08);
 }
 
 .timeline-header {
@@ -451,9 +480,9 @@
 }
 
 .project-card:hover {
-    transform: translateY(-5px);
-    border-color: hsla(var(--hue-primary), 100%, 65%, 0.2);
-    box-shadow: 0 16px 40px var(--shadow-color);
+    transform: translateY(-5px) scale(1.01);
+    border-color: hsla(var(--hue-primary), 100%, 65%, 0.35);
+    box-shadow: 0 16px 40px rgba(var(--hue-primary), 100%, 60%, 0.12);
 }
 
 /* Dashboard Featured Glow */

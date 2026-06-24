@@ -200,6 +200,29 @@ body {
     color: var(--primary-glow);
 }
 
+.nav-link::before {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 8px;
+    right: 8px;
+    height: 2px;
+    background: var(--primary-glow);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 2px;
+}
+
+.nav-link:hover::before {
+    transform: scaleX(1);
+    transform-origin: left;
+}
+
+.nav-link.active::before {
+    display: none;
+}
+
 .nav-link.active {
     color: var(--primary-glow);
     font-weight: 600;
@@ -934,6 +957,26 @@ input:checked + .slider:before {
 .app-footer p {
     font-size: 0.75rem;
     color: var(--text-muted);
+}
+
+/* -------------------------------------------------------------
+   ACCESSIBILITY & KEYBOARD FOCUS STYLES
+   ------------------------------------------------------------- */
+:focus {
+    outline: none;
+}
+
+:focus-visible {
+    outline: 2px solid var(--primary-glow);
+    outline-offset: 4px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 2px solid var(--primary-glow);
+    outline-offset: 3px;
 }
 
 /* -------------------------------------------------------------
