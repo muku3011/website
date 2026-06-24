@@ -276,3 +276,37 @@ Certbot automatically configures a systemd timer to renew your certificates twic
 sudo systemctl status certbot.timer
 ```
 
+---
+
+## Step 8: Automate Deployments via GitHub Actions (CI/CD)
+
+To automatically deploy changes to your Raspberry Pi Apache server when you push to the `main` branch:
+
+### 1. Register the Self-Hosted Runner on the Pi
+1. Go to your GitHub repository > **Settings** > **Actions** > **Runners**.
+2. Click **New self-hosted runner** and select **Linux** and **ARM64**.
+3. SSH into your Raspberry Pi (`192.168.1.150`) and run the setup commands:
+   ```bash
+   mkdir actions-runner && cd actions-runner
+   # (Execute the curl and config commands shown in your GitHub instructions)
+   ```
+
+### 2. Configure the Runner as a Background Service
+Running `./run.sh` runs the runner in the foreground (stopping when you close your SSH session). To run it permanently in the background and auto-start it on boot:
+```bash
+# Register the runner as a systemd service
+sudo ./svc.sh install
+
+# Start the service
+sudo ./svc.sh start
+```
+
+Useful management commands:
+* **Check status:** `sudo ./svc.sh status`
+* **Stop service:** `sudo ./svc.sh stop`
+* **Start service:** `sudo ./svc.sh start`
+
+### 3. Pipeline Execution
+The workflow is defined at `.github/workflows/deploy.yml`. When you push changes to the `main` branch under the `website/` folder, the pipeline automatically checks out your repository on the Pi and copies the files directly to Apache's web root (`/var/www/html/`).
+
+
