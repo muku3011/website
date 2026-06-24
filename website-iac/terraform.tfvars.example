@@ -1,0 +1,8 @@
+# Required: Your GCP Project ID
+project_id = "gcp-project-499019"
+
+# Optional: Default values (can be overridden if needed)
+# region      = "us-central1"
+# domain_name = "hutta.in"
+# dns_zone_name = "hutta-in-zone"
+# initial_ip  = "127.0.0.1"

@@ -1,0 +1,21 @@
+name: Deploy Website (Self-Hosted)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'website/**'
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Copy Assets to Apache Web Root
+        run: |
+          sudo cp -r website/* /var/www/html/
+          sudo chown -R www-data:www-data /var/www/html/
+          sudo chmod -R 755 /var/www/html/

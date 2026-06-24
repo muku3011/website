@@ -1,0 +1,42 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.env
+.venv/
+venv/
+
+# Terraform
+website-iac/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Secrets / credentials
+/website-iac/service-account-key.json
+*.pem
+*.key
+*.crt
+
+# Logs
+*.log
+
+# Node / frontend, if added later
+node_modules/
+dist/
+build/
+
+# IDE/editor
+.idea/
+.vscode/

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hutta.in | Home Server Dashboard</title>
+    <meta name="description" content="Personal home server status, active services, and dynamic DNS administration dashboard for hutta.in.">
+    <!-- Blocking Session Authentication Guard -->
+    <script>
+        if (sessionStorage.getItem('hutta_auth') !== 'true') {
+            window.location.replace('login.html?redirect=' + encodeURIComponent(window.location.pathname));
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body class="dark-theme">
+    <!-- Scroll Progress Indicator -->
+    <div id="scroll-progress" aria-hidden="true"></div>
+
+    <!-- Navigation Header -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <a href="index.html" class="brand-link">
+                    <div class="logo-orb"></div>
+                    <h1>hutta.in <span class="badge" id="role-badge" style="display: none;">Role: --</span></h1>
+                </a>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="dashboard.html" class="nav-link active">Dashboard</a>
+            </nav>
+            
+            <div class="system-time" id="clock" aria-label="System Time">--:--:--</div>
+
+            <div class="header-actions">
+                <div class="network-status" aria-label="Network Status">
+                    <span class="pulse-indicator"></span>
+                    <span class="status-text">Server Online</span>
+                </div>
+                <button id="theme-toggle" class="btn-icon" aria-label="Toggle light and dark theme" title="Toggle Theme">
+                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                </button>
+                <button id="logout-btn" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" title="Logout">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-grid">
+        <!-- Section: Hero & Core Stats -->
+        <section class="span-large widget-card hero-widget">
+            <div class="hero-bg-glow"></div>
+            <div class="hero-content">
+                <h2>Raspberry Pi 5 Status</h2>
+                <p class="subtitle">Debian GNU/Linux 12 (Bookworm) • Kernel 6.18</p>
+                
+                <div class="metrics-container">
+                    <div class="metric-circle" aria-label="CPU usage">
+                        <svg class="progress-ring" width="120" height="120">
+                            <circle class="progress-ring__bg" stroke="var(--border-color)" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
+                            <circle class="progress-ring__circle" id="cpu-ring" stroke="var(--primary-glow)" stroke-width="8" stroke-dasharray="314.15" stroke-dashoffset="314.15" fill="transparent" r="50" cx="60" cy="60"/>
+                        </svg>
+                        <div class="metric-value"><span id="cpu-value">--</span>%</div>
+                        <div class="metric-label">CPU Load</div>
+                    </div>
+
+                    <div class="metric-circle" aria-label="Memory usage">
+                        <svg class="progress-ring" width="120" height="120">
+                            <circle class="progress-ring__bg" stroke="var(--border-color)" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
+                            <circle class="progress-ring__circle" id="mem-ring" stroke="var(--secondary-glow)" stroke-width="8" stroke-dasharray="314.15" stroke-dashoffset="314.15" fill="transparent" r="50" cx="60" cy="60"/>
+                        </svg>
+                        <div class="metric-value"><span id="mem-value">--</span>%</div>
+                        <div class="metric-label">Memory</div>
+                    </div>
+
+                    <div class="metric-circle" aria-label="Core Temperature">
+                        <svg class="progress-ring" width="120" height="120">
+                            <circle class="progress-ring__bg" stroke="var(--border-color)" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
+                            <circle class="progress-ring__circle" id="temp-ring" stroke="var(--warning-glow)" stroke-width="8" stroke-dasharray="314.15" stroke-dashoffset="314.15" fill="transparent" r="50" cx="60" cy="60"/>
+                        </svg>
+                        <div class="metric-value"><span id="temp-value">--</span>°C</div>
+                        <div class="metric-label">Temp</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Dynamic DNS Widget -->
+        <section class="widget-card ddns-widget" id="ddns-status-card">
+            <div class="card-header">
+                <div class="header-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
+                    <h3>Dynamic DNS</h3>
+                </div>
+                <span class="status-badge success">Active</span>
+            </div>
+            
+            <div class="dns-info">
+                <div class="info-row">
+                    <span class="label">Domain</span>
+                    <span class="value">hutta.in</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Public IP</span>
+                    <span class="value code-text" id="public-ip">--</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Last Verified</span>
+                    <span class="value" id="last-ddns-time">Never</span>
+                </div>
+            </div>
+
+            <div class="ddns-console">
+                <div class="console-header">
+                    <span>Recent Execution Logs</span>
+                    <button class="btn-text" id="clear-logs">Clear</button>
+                </div>
+                <div class="console-body" id="log-console">
+                    <div class="log-line info">Console initialized. Awaiting DNS validation...</div>
+                </div>
+            </div>
+
+            <div class="card-footer">
+                <button class="btn btn-primary" id="btn-sync-dns">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                    Verify DNS
+                </button>
+            </div>
+        </section>
+
+        <!-- Section: Hosted Services -->
+        <section class="span-medium widget-card services-widget">
+            <div class="card-header">
+                <div class="header-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+                    <h3>Hosted Services</h3>
+                </div>
+                <span class="services-count">4 Configured</span>
+            </div>
+
+            <div class="services-list">
+                <div class="service-item">
+                    <div class="service-meta">
+                        <div>
+                            <h4>Home Assistant</h4>
+                            <p class="service-desc">Smart Home Automation Hub</p>
+                        </div>
+                    </div>
+                    <div class="service-actions">
+                        <span class="value code-text">Port 8123</span>
+                        <button class="btn btn-secondary open-dialog-btn" data-target="dialog-ha">Manage</button>
+                    </div>
+                </div>
+
+                <div class="service-item">
+                    <div class="service-meta">
+                        <div>
+                            <h4>Plex Media Server</h4>
+                            <p class="service-desc">Media Streaming & Transcoding</p>
+                        </div>
+                    </div>
+                    <div class="service-actions">
+                        <span class="value code-text">Port 32400</span>
+                        <button class="btn btn-secondary open-dialog-btn" data-target="dialog-plex">Manage</button>
+                    </div>
+                </div>
+
+                <div class="service-item">
+                    <div class="service-meta">
+                        <div>
+                            <h4>Pi-hole DNS</h4>
+                            <p class="service-desc">Network-wide Ad Blocker</p>
+                        </div>
+                    </div>
+                    <div class="service-actions">
+                        <span class="value code-text">Port 8080</span>
+                        <button class="btn btn-secondary open-dialog-btn" data-target="dialog-pihole">Manage</button>
+                    </div>
+                </div>
+
+                <div class="service-item">
+                    <div class="service-meta">
+                        <div>
+                            <h4>Nginx Proxy Manager</h4>
+                            <p class="service-desc">Reverse Proxy & SSL Manager</p>
+                        </div>
+                    </div>
+                    <div class="service-actions">
+                        <span class="value code-text">Port 443</span>
+                        <button class="btn btn-secondary open-dialog-btn" data-target="dialog-nginx">Manage</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Network & Smart Home Controls -->
+        <section class="widget-card controls-widget">
+            <div class="card-header">
+                <div class="header-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    <h3>Smart Controls</h3>
+                </div>
+            </div>
+
+            <div class="controls-list">
+                <div class="control-row">
+                    <span>Outdoor Lighting</span>
+                    <label class="switch">
+                        <input type="checkbox" id="ctrl-light" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="control-row">
+                    <span>Block Ads (Pi-hole)</span>
+                    <label class="switch">
+                        <input type="checkbox" id="ctrl-pihole" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="control-row">
+                    <span>Home Security Mode</span>
+                    <label class="switch">
+                        <input type="checkbox" id="ctrl-security">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="control-row">
+                    <span>External Web Access</span>
+                    <label class="switch">
+                        <input type="checkbox" id="ctrl-nginx" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Storage Disk Usage -->
+        <section class="widget-card storage-widget">
+            <div class="card-header">
+                <div class="header-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                    <h3>Disk Allocation</h3>
+                </div>
+            </div>
+
+            <div class="storage-details">
+                <div class="storage-item">
+                    <div class="storage-meta">
+                        <span class="storage-name">MicroSD (OS)</span>
+                        <span class="storage-values" id="disk-values">--GB / --GB</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="disk-bar" style="width: 0%; background: var(--primary-glow)"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Accessible Native Dialog Modals -->
+    
+    <!-- Dialog: Home Assistant -->
+    <dialog class="modal-dialog" id="dialog-ha">
+        <div class="dialog-header">
+            <h3>Home Assistant Configuration</h3>
+            <button class="btn-icon close-dialog-btn" aria-label="Close dialog" data-close="dialog-ha">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="dialog-body">
+            <p>Home Assistant container runs securely in network bridge mode.</p>
+            
+            <form method="dialog" class="dialog-form">
+                <div class="form-group">
+                    <label for="ha-restart-select">Auto Restart Policy</label>
+                    <select id="ha-restart-select" name="restart-policy">
+                        <option value="always" selected>Always</option>
+                        <option value="unless-stopped">Unless Stopped</option>
+                        <option value="no">Never</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="button" class="btn btn-secondary close-dialog-btn" data-close="dialog-ha">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
+    <!-- Dialog: Plex -->
+    <dialog class="modal-dialog" id="dialog-plex">
+        <div class="dialog-header">
+            <h3>Plex Media Server</h3>
+            <button class="btn-icon close-dialog-btn" aria-label="Close dialog" data-close="dialog-plex">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="dialog-body">
+            <p>Plex container handles media streams with Hardware Acceleration enabled.</p>
+            <div class="form-actions" style="margin-top: 1.5rem;">
+                <button type="button" class="btn btn-primary close-dialog-btn" data-close="dialog-plex">Close Settings</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Dialog: Pi-hole -->
+    <dialog class="modal-dialog" id="dialog-pihole">
+        <div class="dialog-header">
+            <h3>Pi-hole Ad Blocker</h3>
+            <button class="btn-icon close-dialog-btn" aria-label="Close dialog" data-close="dialog-pihole">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="dialog-body">
+            <p>Pi-hole provides network-wide advertisement filtering and local DNS resolution.</p>
+            <div class="form-actions" style="margin-top: 1.5rem;">
+                <button type="button" class="btn btn-primary close-dialog-btn" data-close="dialog-pihole">Close Settings</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Dialog: Nginx -->
+    <dialog class="modal-dialog" id="dialog-nginx">
+        <div class="dialog-header">
+            <h3>Nginx Proxy Manager</h3>
+            <button class="btn-icon close-dialog-btn" aria-label="Close dialog" data-close="dialog-nginx">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="dialog-body">
+            <p>Nginx manages SSL termination and HTTP reverse proxies for subdomains.</p>
+            <div class="form-actions" style="margin-top: 1.5rem;">
+                <button type="button" class="btn btn-primary close-dialog-btn" data-close="dialog-nginx">Close Settings</button>
+            </div>
+        </div>
+    </dialog>
+
+    <footer class="app-footer">
+        <p>&copy; 2026 hutta.in. Created by Mukesh Joshi. Built with HTML5, CSS Grid, and vanilla JS. Powered by Raspberry Pi & GCP.</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
