@@ -1,34 +1,58 @@
 /* Custom styles injected into the Authelia login portal (Light Theme Only) */
 
 /* ==============================================================================
-   BACK TO HUTTA.IN BUTTON (Positioned below the Sign-In button)
+   BUTTON GROUP LAYOUT (Sign-In and Back Button Side-by-Side)
    ============================================================================== */
-.back-to-hutta-container {
-    margin-top: 1.25rem;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    box-sizing: border-box;
+.button-group-wrapper {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    width: 100% !important;
+    margin-top: 1.25rem !important;
+    margin-bottom: 0.5rem !important;
+    box-sizing: border-box !important;
 }
 
+/* Force equal 50/50 sizing and remove default margins */
+#button-group-wrapper #sign-in-button,
+#button-group-wrapper .back-to-hutta-container {
+    flex: 1 1 50% !important;
+    width: 50% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    box-sizing: border-box !important;
+}
+
+#button-group-wrapper .back-to-hutta-container {
+    margin-top: 0 !important;
+}
+
+/* ==============================================================================
+   BACK TO HUTTA.IN BUTTON (Themed complementary to Sign-In button)
+   ============================================================================== */
 .back-to-hutta-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    width: 100%;
-    padding: 0.7rem 1.5rem;
-    border-radius: 8px;
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
-    text-decoration: none;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    background: rgba(0, 0, 0, 0.03);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    color: rgba(0, 0, 0, 0.6);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-    box-sizing: border-box;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+    height: 48px !important; /* Match primary button height exactly */
+    border-radius: 8px !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    text-transform: none !important;
+    text-decoration: none !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-sizing: border-box !important;
+    
+    /* Elegant outline style with matching brand accent */
+    background: rgba(255, 255, 255, 0.8) !important;
+    border: 1.5px solid hsl(212, 100%, 60%) !important;
+    color: hsl(212, 100%, 55%) !important;
+    box-shadow: 0 4px 12px rgba(47, 137, 252, 0.08) !important;
 }
 
 .back-to-hutta-btn svg {
@@ -36,19 +60,18 @@
     height: 16px;
     stroke: currentColor;
     fill: none;
-    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .back-to-hutta-btn:hover {
-    background: rgba(0, 0, 0, 0.06);
-    border-color: rgba(0, 0, 0, 0.15);
-    color: rgba(0, 0, 0, 0.85);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background: hsl(212, 100%, 60%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 18px rgba(47, 137, 252, 0.25) !important;
+    transform: translateY(-1px) !important;
 }
 
 .back-to-hutta-btn:hover svg {
-    transform: translateX(-3px);
+    transform: translateX(-3px) !important;
 }
 
 /* ==============================================================================
@@ -116,7 +139,7 @@ body[data-theme="light"] .MuiButton-textPrimary:hover {
 }
 
 /* ==============================================================================
-   COMMON PORTAL STYLES
+   COMMON PORTAL STYLES & PRIMARY BUTTON
    ============================================================================== */
 h1, h2, h3, h4, h5, h6, .MuiTypography-h5, .MuiTypography-root {
     font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
@@ -130,9 +153,14 @@ h1, h2, h3, h4, h5, h6, .MuiTypography-h5, .MuiTypography-root {
     font-weight: 600 !important;
     text-transform: none !important;
     border-radius: 8px !important;
-    padding: 0.7rem 1.5rem !important;
+    height: 48px !important; /* Make sure it matches back button height exactly */
+    padding: 0 !important; /* Let width handle centering */
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     box-shadow: 0 4px 14px rgba(47, 137, 252, 0.25) !important;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-sizing: border-box !important;
 }
 
 #sign-in-button:hover, .MuiButton-containedPrimary:hover {
