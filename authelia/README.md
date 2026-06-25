@@ -167,8 +167,27 @@ For non-browser clients (such as Python scripts, curl, or mobile apps) that cann
    Alternatively, you can instruct Apache to validate Bearer tokens directly using `mod_auth_openidc`:
    ```apache
    <Location /api>
-       AuthType oauth2
-       Require valid-user
-   </Location>
-   ```
+        AuthType oauth2
+        Require valid-user
+    </Location>
+    ```
 
+### 3. Logout & Session Invalidation
+Since Authelia does not natively advertise or support the OpenID Connect RP-Initiated Logout specification (meaning `mod_auth_openidc` cannot automatically discover a logout endpoint), you must invalidate both the local Apache proxy session and the global Authelia SSO session programmatically:
+
+1. **Local Apache Session**: Invalidate by calling the `mod_auth_openidc` redirect URI with the `logout` parameter:
+   `https://hutta.in/redirect_uri?logout=TARGET_URL`
+2. **Authelia SSO Session**: Invalidate by sending a `POST` request to Authelia's logout API endpoint:
+   `https://hutta.in/authelia/api/logout`
+
+#### Implementation Example (JavaScript):
+```javascript
+// 1. Invalidate Apache session cookie in the background
+await fetch('/redirect_uri?logout=https%3A%2F%2Fhutta.in%2F');
+
+// 2. Invalidate Authelia session cookie in the background (POST method is required)
+await fetch('/authelia/api/logout', { method: 'POST' });
+
+// 3. Redirect back to landing page
+window.location.replace('https://hutta.in/');
+```
