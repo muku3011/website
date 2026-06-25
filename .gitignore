@@ -40,3 +40,8 @@ build/
 # IDE/editor
 .idea/
 .vscode/
+
+# Java / Maven
+**/target/
+smdp_server.log
+
