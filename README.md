@@ -21,7 +21,7 @@ graph TD
 
 ## Projects & Repository Layout
 
-This repository is split into two main projects:
+This repository is split into three main areas:
 
 ### 1. [Infrastructure as Code & DDNS Automation (website-iac/)](website-iac/README.md)
 Contains all GCP infrastructure provisioning and backend Dynamic DNS setup:
@@ -36,3 +36,9 @@ Contains the server dashboard and portfolio site assets deployed on the Raspberr
 - Deployment configuration for Apache HTTP Server and HTTPS (SSL/TLS) via Let's Encrypt.
 - GitHub Actions CI/CD setup via self-hosted runners.
 - **Go to [website/README.md](website/README.md) for frontend deployment and automation setup instructions.**
+
+### 3. [Authelia Authentication Setup (authelia/)](authelia/README.md)
+Contains bare-metal installation scripts, password hash generators, and Apache server integration configuration for Authelia:
+- Automated installation script (`install_authelia.sh`) for Raspberry Pi 5 / Debian systems.
+- Apache web server OIDC configuration script (`configure_apache.sh`).
+- **Go to [authelia/README.md](authelia/README.md) for detailed deployment and setup instructions.**
