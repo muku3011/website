@@ -159,8 +159,13 @@ while true; do
 done
 
 echo -e "${YELLOW}[*] Hashing password (this may take a few seconds)...${NC}"
-PASS_HASH=$(/usr/local/bin/authelia crypto hash-password "$ADMIN_PASS")
-CLIENT_SECRET_HASH=$(/usr/local/bin/authelia crypto hash-password "$CLIENT_SECRET")
+if /usr/local/bin/authelia crypto hash generate --help &>/dev/null; then
+    PASS_HASH=$(/usr/local/bin/authelia crypto hash generate argon2 --password "$ADMIN_PASS" | cut -d' ' -f2)
+    CLIENT_SECRET_HASH=$(/usr/local/bin/authelia crypto hash generate argon2 --password "$CLIENT_SECRET" | cut -d' ' -f2)
+else
+    PASS_HASH=$(/usr/local/bin/authelia crypto hash-password "$ADMIN_PASS")
+    CLIENT_SECRET_HASH=$(/usr/local/bin/authelia crypto hash-password "$CLIENT_SECRET")
+fi
 
 # 9. Backup Existing Configurations if they exist
 if [ -f "/etc/authelia/configuration.yml" ]; then
