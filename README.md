@@ -42,3 +42,11 @@ Contains bare-metal installation scripts, password hash generators, and Apache s
 - Automated installation script (`install_authelia.sh`) for Raspberry Pi 5 / Debian systems.
 - Apache web server OIDC configuration script (`configure_apache.sh`).
 - **Go to [authelia/README.md](authelia/README.md) for detailed deployment and setup instructions.**
+
+### 4. [SM-DP+ eSIM Server (smdp-plus/)](smdp-plus/README.md)
+Contains a reference implementation of a GSMA SGP.22 v3.1 compliant Subscription Manager Data Preparation+ (SM-DP+) server:
+- REST API controllers for ES2+ (Operator) and ES9+ (LPA client) interfaces.
+- Lightweight embedded database and in-memory session manager for Raspberry Pi resource efficiency.
+- Auto-deployment via self-hosted GitHub Actions workflows and systemd service.
+- **Go to [smdp-plus/README.md](smdp-plus/README.md) for build, testing, and deployment instructions.**
+
