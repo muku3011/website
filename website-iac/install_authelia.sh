@@ -226,7 +226,7 @@ authentication_backend:
     password:
       algorithm: argon2
       argon2:
-        variant: id
+        variant: argon2id
         iterations: 3
         memory: 65536
         parallelism: 4
