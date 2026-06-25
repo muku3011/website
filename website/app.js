@@ -295,9 +295,9 @@ let displayName = '';
 
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 if (isLocal) {
-    // Local dev fallback to sessionStorage
-    userRole = sessionStorage.getItem('hutta_role') || 'viewer';
-    displayName = userRole === 'admin' ? 'Local Admin' : 'Local Guest';
+    // Local development mode: default to Admin with full access
+    userRole = 'admin';
+    displayName = 'Local Dev';
 } else {
     // Production OIDC Authelia authentication (using cookies set by Apache)
     const username = getCookie('hutta_user');
@@ -341,7 +341,6 @@ document.addEventListener('DOMContentLoaded', enforceRolePermissions);
 
 if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
-        sessionStorage.clear();
         if (isLocal) {
             window.location.replace('index.html');
         } else {

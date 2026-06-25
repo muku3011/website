@@ -6,7 +6,7 @@ This directory contains the frontend website assets (HTML/CSS/JS) for the `hutta
 - **`index.html`**: The main landing page.
 - **`dashboard.html`**: The server status dashboard showing CPU, memory, temp, disk usage, and docker containers.
 - **`index.css` / `portfolio.css`**: Styling sheets.
-- **`app.js` / `portfolio.js` / `login.js`**: Frontend interactivity logic.
+- **`app.js` / `portfolio.js`**: Frontend interactivity logic.
 
 ---
 
