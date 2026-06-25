@@ -351,9 +351,9 @@ if (logoutBtn) {
                 console.warn("Apache logout request failed:", err);
             }
             
-            // 2. Clear Authelia SSO session cookie in the background
+            // 2. Clear Authelia SSO session cookie in the background (POST method required)
             try {
-                await fetch('/authelia/logout');
+                await fetch('/authelia/api/logout', { method: 'POST' });
             } catch (err) {
                 console.warn("Authelia logout request failed:", err);
             }
