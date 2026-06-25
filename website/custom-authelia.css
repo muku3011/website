@@ -1,29 +1,34 @@
-/* Custom styles injected into the Authelia login portal */
+/* Custom styles injected into the Authelia login portal (Light Theme Only) */
 
 /* ==============================================================================
-   BACK BUTTON & THEME TOGGLE COMMON STYLING
+   BACK TO HUTTA.IN BUTTON (Positioned below the Sign-In button)
    ============================================================================== */
 .back-to-hutta-container {
-    position: fixed;
-    top: 1.5rem;
-    left: 1.5rem;
-    z-index: 9999;
+    margin-top: 1.25rem;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    box-sizing: border-box;
 }
 
 .back-to-hutta-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
-    padding: 0.65rem 1.2rem;
+    width: 100%;
+    padding: 0.7rem 1.5rem;
     border-radius: 8px;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    font-size: 0.85rem;
-    font-weight: 500;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
     text-decoration: none;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    box-sizing: border-box;
 }
 
 .back-to-hutta-btn svg {
@@ -34,137 +39,20 @@
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.back-to-hutta-btn:hover {
+    background: rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.15);
+    color: rgba(0, 0, 0, 0.85);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
 .back-to-hutta-btn:hover svg {
     transform: translateX(-3px);
 }
 
-.theme-toggle-container {
-    position: fixed;
-    top: 1.5rem;
-    right: 1.5rem;
-    z-index: 9999;
-}
-
-.theme-toggle-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 1px solid transparent;
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-}
-
-.theme-toggle-btn:hover {
-    transform: translateY(-1px);
-}
-
-.theme-toggle-btn svg {
-    display: none;
-    width: 20px;
-    height: 20px;
-    stroke: currentColor;
-    fill: none;
-}
-
 /* ==============================================================================
-   DARK THEME (data-theme="dark")
-   ============================================================================== */
-body[data-theme="dark"] {
-    background: radial-gradient(circle at center, hsla(212, 100%, 60%, 0.05) 0%, transparent 60%),
-                linear-gradient(135deg, hsl(222, 24%, 7%), hsl(222, 24%, 12%)) !important;
-    background-attachment: fixed !important;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-    color: hsl(210, 40%, 98%) !important;
-}
-
-body[data-theme="dark"] .back-to-hutta-btn {
-    background: rgba(26, 26, 26, 0.45);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.6);
-}
-body[data-theme="dark"] .back-to-hutta-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-}
-
-body[data-theme="dark"] .theme-toggle-btn {
-    background: rgba(26, 26, 26, 0.45);
-    border-color: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.6);
-}
-body[data-theme="dark"] .theme-toggle-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
-}
-
-body[data-theme="dark"] .theme-toggle-btn .sun-icon {
-    display: block;
-}
-
-body[data-theme="dark"] .MuiPaper-root {
-    background-color: hsla(222, 24%, 15%, 0.6) !important;
-    border: 1px solid hsla(222, 20%, 25%, 0.4) !important;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45) !important;
-    color: hsl(210, 40%, 98%) !important;
-}
-body[data-theme="dark"] .MuiPaper-root:hover {
-    border-color: hsla(212, 100%, 60%, 0.15) !important;
-}
-
-body[data-theme="dark"] .MuiOutlinedInput-root {
-    background-color: hsl(222, 24%, 6%) !important;
-    color: hsl(210, 40%, 98%) !important;
-}
-body[data-theme="dark"] .MuiOutlinedInput-notchedOutline {
-    border-color: hsla(222, 20%, 25%, 0.3) !important;
-}
-body[data-theme="dark"] .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
-    border-color: hsla(212, 100%, 60%, 0.3) !important;
-}
-body[data-theme="dark"] .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
-    border-color: hsl(212, 100%, 60%) !important;
-    box-shadow: 0 0 12px rgba(47, 137, 252, 0.2) !important;
-}
-body[data-theme="dark"] .MuiInputBase-input {
-    color: hsl(210, 40%, 98%) !important;
-}
-body[data-theme="dark"] .MuiInputLabel-root {
-    color: hsl(210, 20%, 65%) !important;
-}
-body[data-theme="dark"] .MuiInputLabel-root.Mui-focused {
-    color: hsl(212, 100%, 60%) !important;
-}
-body[data-theme="dark"] .MuiFormControlLabel-label {
-    color: hsl(210, 20%, 75%) !important;
-}
-body[data-theme="dark"] .MuiCheckbox-root {
-    color: hsl(210, 20%, 65%) !important;
-}
-body[data-theme="dark"] .MuiCheckbox-root.Mui-checked {
-    color: hsl(212, 100%, 60%) !important;
-}
-body[data-theme="dark"] #reset-password-button, 
-body[data-theme="dark"] .MuiLink-root, 
-body[data-theme="dark"] .MuiButton-textPrimary {
-    color: hsl(210, 20%, 75%) !important;
-}
-body[data-theme="dark"] #reset-password-button:hover, 
-body[data-theme="dark"] .MuiLink-root:hover, 
-body[data-theme="dark"] .MuiButton-textPrimary:hover {
-    color: hsl(212, 100%, 60%) !important;
-}
-
-/* ==============================================================================
-   LIGHT THEME (data-theme="light")
+   LIGHT THEME OVERRIDES (data-theme="light")
    ============================================================================== */
 body[data-theme="light"] {
     background: radial-gradient(circle at center, hsla(212, 100%, 60%, 0.03) 0%, transparent 60%),
@@ -172,33 +60,6 @@ body[data-theme="light"] {
     background-attachment: fixed !important;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     color: hsl(222, 24%, 12%) !important;
-}
-
-body[data-theme="light"] .back-to-hutta-btn {
-    background: rgba(255, 255, 255, 0.65);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    color: rgba(0, 0, 0, 0.6);
-}
-body[data-theme="light"] .back-to-hutta-btn:hover {
-    background: rgba(0, 0, 0, 0.04);
-    border-color: rgba(0, 0, 0, 0.15);
-    color: #000000;
-}
-
-body[data-theme="light"] .theme-toggle-btn {
-    background: rgba(255, 255, 255, 0.65);
-    border-color: rgba(0, 0, 0, 0.08);
-    color: rgba(0, 0, 0, 0.6);
-}
-body[data-theme="light"] .theme-toggle-btn:hover {
-    background: rgba(0, 0, 0, 0.04);
-    border-color: rgba(0, 0, 0, 0.15);
-    color: #000000;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-}
-
-body[data-theme="light"] .theme-toggle-btn .moon-icon {
-    display: block;
 }
 
 body[data-theme="light"] .MuiPaper-root {
@@ -255,7 +116,7 @@ body[data-theme="light"] .MuiButton-textPrimary:hover {
 }
 
 /* ==============================================================================
-   COMMON PORTAL STYLES (Both Themes)
+   COMMON PORTAL STYLES
    ============================================================================== */
 h1, h2, h3, h4, h5, h6, .MuiTypography-h5, .MuiTypography-root {
     font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
@@ -294,27 +155,4 @@ h1, h2, h3, h4, h5, h6, .MuiTypography-h5, .MuiTypography-root {
     background-color: rgba(76, 175, 80, 0.15) !important;
     color: #4caf50 !important;
     border: 1px solid rgba(76, 175, 80, 0.3) !important;
-}
-
-@media (max-width: 768px) {
-    .back-to-hutta-container {
-        top: 1rem;
-        left: 1rem;
-    }
-    .back-to-hutta-btn {
-        padding: 0.5rem 1rem;
-        font-size: 0.8rem;
-    }
-    .theme-toggle-container {
-        top: 1rem;
-        right: 1rem;
-    }
-    .theme-toggle-btn {
-        width: 36px;
-        height: 36px;
-    }
-    .theme-toggle-btn svg {
-        width: 18px;
-        height: 18px;
-    }
 }
