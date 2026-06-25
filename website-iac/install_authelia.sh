@@ -121,16 +121,37 @@ cd - >/dev/null
 rm -rf "$TEMP_DIR"
 TEMP_DIR=""
 
-# 7. Generate Secure Secrets
-echo -e "${YELLOW}[*] Generating cryptographic secrets...${NC}"
-JWT_SECRET=$(openssl rand -hex 64)
-SESSION_SECRET=$(openssl rand -hex 64)
-STORAGE_KEY=$(openssl rand -hex 64)
-OIDC_HMAC_SECRET=$(openssl rand -hex 64)
+# 7. Generate or Load Secure Secrets
+JWT_SECRET=""
+SESSION_SECRET=""
+STORAGE_KEY=""
+OIDC_HMAC_SECRET=""
+CLIENT_SECRET=""
+OIDC_PRIVATE_KEY=""
+
+if [ -f "/etc/authelia/configuration.yml" ]; then
+    echo -e "${YELLOW}[*] Existing configuration found. Retaining security keys...${NC}"
+    JWT_SECRET=$(grep 'jwt_secret:' /etc/authelia/configuration.yml | sed -E 's/.*jwt_secret:[[:space:]]*"([^"]*)".*/\1/')
+    SESSION_SECRET=$(grep -A 5 'session:' /etc/authelia/configuration.yml | grep 'secret:' | sed -E 's/.*secret:[[:space:]]*"([^"]*)".*/\1/')
+    STORAGE_KEY=$(grep 'encryption_key:' /etc/authelia/configuration.yml | sed -E 's/.*encryption_key:[[:space:]]*"([^"]*)".*/\1/')
+    OIDC_HMAC_SECRET=$(grep 'hmac_secret:' /etc/authelia/configuration.yml | sed -E 's/.*hmac_secret:[[:space:]]*"([^"]*)".*/\1/')
+    
+    # Extract existing private key
+    OIDC_PRIVATE_KEY=$(sed -n '/issuer_private_key: |/,/clients:/p' /etc/authelia/configuration.yml | grep -v 'issuer_private_key: |' | grep -v 'clients:' | sed 's/^[[:space:]]*//' || echo "")
+fi
+
+# Generate new keys if they don't exist
+if [ -z "$JWT_SECRET" ]; then JWT_SECRET=$(openssl rand -hex 64); fi
+if [ -z "$SESSION_SECRET" ]; then SESSION_SECRET=$(openssl rand -hex 64); fi
+if [ -z "$STORAGE_KEY" ]; then STORAGE_KEY=$(openssl rand -hex 64); fi
+if [ -z "$OIDC_HMAC_SECRET" ]; then OIDC_HMAC_SECRET=$(openssl rand -hex 64); fi
 CLIENT_SECRET=$(openssl rand -hex 32)
 
-echo -e "${YELLOW}[*] Generating RSA Private Key for OIDC...${NC}"
-OIDC_PRIVATE_KEY=$(openssl genrsa 2048 2>/dev/null)
+if [ -z "$OIDC_PRIVATE_KEY" ]; then
+    echo -e "${YELLOW}[*] Generating RSA Private Key for OIDC...${NC}"
+    OIDC_PRIVATE_KEY=$(openssl genrsa 2048 2>/dev/null)
+fi
+
 # Indent the private key so it aligns correctly under YAML key block
 OIDC_PRIVATE_KEY_INDENTED=$(echo "$OIDC_PRIVATE_KEY" | sed 's/^/          /')
 
