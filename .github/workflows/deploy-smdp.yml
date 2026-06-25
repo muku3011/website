@@ -1,0 +1,28 @@
+name: Deploy SM-DP+ Server (Self-Hosted)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'smdp-plus/**'
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Spring Boot JAR
+        run: |
+          cd smdp-plus
+          mvn clean package -DskipTests
+
+      - name: Copy JAR to App Directory
+        run: |
+          cp smdp-plus/target/smdp-plus-1.0.0.jar /home/rbpi/smdp-plus/smdp-plus.jar
+
+      - name: Restart SM-DP+ Service
+        run: |
+          sudo systemctl restart smdp-plus.service
