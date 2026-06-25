@@ -238,7 +238,7 @@ ${OIDC_PRIVATE_KEY_INDENTED}
         public: false
         authorization_policy: one_factor
         redirect_uris:
-          - https://hutta.in/dashboard/redirect_uri
+          - https://hutta.in/redirect_uri
 
 storage:
   local:
@@ -312,6 +312,6 @@ echo -e "TOTP Link Log:  /var/lib/authelia/notification.txt"
 echo -e "${BLUE}----------------------------------------------------${NC}"
 echo -e "${YELLOW}IMPORTANT COPY-PASTE DATA FOR APACHE:${NC}"
 echo -e "OIDCClientID:      apache-portal"
-echo -e "OIDCClientSecret:  ${CLIENT_SECRET}"
-echo -e "OIDRedirectURI:    https://hutta.in/dashboard/redirect_uri"
+echo -e "OIDCClientSecret:  \${CLIENT_SECRET}"
+echo -e "OIDRedirectURI:    https://hutta.in/redirect_uri"
 echo -e "${BLUE}====================================================${NC}"
