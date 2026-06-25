@@ -67,8 +67,8 @@ if [ "$ARCH" = "aarch64" ]; then
     echo -e "${GREEN}[+] Detected 64-bit architecture (ARM64) - Ideal for Pi 5${NC}"
     DOWNLOAD_ARCH="arm64"
 elif [[ "$ARCH" =~ ^armv7 ]]; then
-    echo -e "${GREEN}[+] Detected 32-bit architecture (ARMhf)${NC}"
-    DOWNLOAD_ARCH="armhf"
+    echo -e "${GREEN}[+] Detected 32-bit architecture (ARM)${NC}"
+    DOWNLOAD_ARCH="arm"
 else
     echo -e "${RED}Error: Unsupported architecture: $ARCH. This installer is for Raspberry Pi (ARM).${NC}"
     exit 1
@@ -105,8 +105,8 @@ echo -e "${YELLOW}[*] Downloading Authelia binary...${NC}"
 TEMP_DIR=$(mktemp -d)
 cd "$TEMP_DIR"
 
-TAR_FILE="authelia-linux-${DOWNLOAD_ARCH}.tar.gz"
-DOWNLOAD_URL="https://github.com/authelia/authelia/releases/download/${LATEST_VERSION}/authelia-linux-${DOWNLOAD_ARCH}.tar.gz"
+TAR_FILE="authelia-${LATEST_VERSION}-linux-${DOWNLOAD_ARCH}.tar.gz"
+DOWNLOAD_URL="https://github.com/authelia/authelia/releases/download/${LATEST_VERSION}/${TAR_FILE}"
 
 wget -q --show-progress "$DOWNLOAD_URL"
 
