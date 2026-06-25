@@ -117,6 +117,7 @@ chmod +x /usr/local/bin/authelia
 echo -e "${GREEN}[+] Authelia binary installed successfully.${NC}"
 
 # Clean up download directory
+cd - >/dev/null
 rm -rf "$TEMP_DIR"
 TEMP_DIR=""
 
