@@ -344,8 +344,8 @@ if (logoutBtn) {
         if (isLocal) {
             window.location.replace('index.html');
         } else {
-            // Redirect to Apache mod_auth_openidc logout URI, which destroys session and goes back to index.html
-            window.location.replace('/redirect_uri?logout=https%3A%2F%2Fhutta.in%2Findex.html');
+            // Redirect to Apache mod_auth_openidc logout URI, which destroys session and then redirects to Authelia's logout page to destroy the SSO session
+            window.location.replace('/redirect_uri?logout=https%3A%2F%2Fhutta.in%2Fauthelia%2Flogout');
         }
     });
 }
