@@ -281,18 +281,42 @@ document.head.appendChild(style);
 // -------------------------------------------------------------
 const roleBadge = document.getElementById('role-badge');
 const logoutBtn = document.getElementById('logout-btn');
-const userRole = sessionStorage.getItem('hutta_role') || 'viewer';
+
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return decodeURIComponent(parts.pop().split(';').shift());
+    return null;
+}
+
+// Determine auth/role
+let userRole = 'viewer';
+let displayName = '';
+
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+if (isLocal) {
+    // Local dev fallback to sessionStorage
+    userRole = sessionStorage.getItem('hutta_role') || 'viewer';
+    displayName = userRole === 'admin' ? 'Local Admin' : 'Local Guest';
+} else {
+    // Production OIDC Authelia authentication (using cookies set by Apache)
+    const username = getCookie('hutta_user');
+    const groups = getCookie('hutta_groups') || '';
+    const isAdmin = groups.split(',').includes('admins');
+    userRole = isAdmin ? 'admin' : 'viewer';
+    displayName = username || 'Viewer';
+}
 
 function enforceRolePermissions() {
     if (roleBadge) {
         roleBadge.style.display = 'inline-block';
         if (userRole === 'admin') {
-            roleBadge.textContent = 'Admin';
+            roleBadge.textContent = `Admin: ${displayName}`;
             roleBadge.style.background = 'hsla(145, 80%, 50%, 0.15)';
             roleBadge.style.color = 'var(--success-glow)';
             roleBadge.style.border = '1px solid hsla(145, 80%, 50%, 0.3)';
         } else {
-            roleBadge.textContent = 'Viewer';
+            roleBadge.textContent = `Viewer: ${displayName}`;
             roleBadge.style.background = 'hsla(14, 90%, 60%, 0.15)';
             roleBadge.style.color = 'var(--warning-glow)';
             roleBadge.style.border = '1px solid hsla(14, 90%, 60%, 0.3)';
@@ -318,7 +342,12 @@ document.addEventListener('DOMContentLoaded', enforceRolePermissions);
 if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
         sessionStorage.clear();
-        window.location.replace('index.html');
+        if (isLocal) {
+            window.location.replace('index.html');
+        } else {
+            // Redirect to Apache mod_auth_openidc logout URI, which destroys session and goes back to index.html
+            window.location.replace('/redirect_uri?logout=https%3A%2F%2Fhutta.in%2Findex.html');
+        }
     });
 }
 

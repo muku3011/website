@@ -7,7 +7,8 @@
     <meta name="description" content="Personal home server status, active services, and dynamic DNS administration dashboard for hutta.in.">
     <!-- Blocking Session Authentication Guard -->
     <script>
-        if (sessionStorage.getItem('hutta_auth') !== 'true') {
+        const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (isLocalDev && sessionStorage.getItem('hutta_auth') !== 'true') {
             window.location.replace('login.html?redirect=' + encodeURIComponent(window.location.pathname));
         }
     </script>
