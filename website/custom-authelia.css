@@ -1,5 +1,8 @@
 /* Custom styles injected into the Authelia login portal */
 
+/* ==============================================================================
+   BACK BUTTON & THEME TOGGLE COMMON STYLING
+   ============================================================================== */
 .back-to-hutta-container {
     position: fixed;
     top: 1.5rem;
@@ -12,26 +15,15 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.65rem 1.2rem;
-    background: rgba(26, 26, 26, 0.45);
-    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
-    color: rgba(255, 255, 255, 0.6);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     font-size: 0.85rem;
     font-weight: 500;
     text-decoration: none;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-}
-
-.back-to-hutta-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-    transform: translateY(-1px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
 }
 
 .back-to-hutta-btn svg {
@@ -46,23 +38,44 @@
     transform: translateX(-3px);
 }
 
-/* Ensure the button is visible over Authelia's background */
-@media (max-width: 768px) {
-    .back-to-hutta-container {
-        top: 1rem;
-        left: 1rem;
-    }
-    .back-to-hutta-btn {
-        padding: 0.5rem 1rem;
-        font-size: 0.8rem;
-    }
+.theme-toggle-container {
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 9999;
+}
+
+.theme-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.theme-toggle-btn:hover {
+    transform: translateY(-1px);
+}
+
+.theme-toggle-btn svg {
+    display: none;
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
 }
 
 /* ==============================================================================
-   AUTHELIA PORTAL CUSTOM THEME (hutta.in style)
+   DARK THEME (data-theme="dark")
    ============================================================================== */
-
-body {
+body[data-theme="dark"] {
     background: radial-gradient(circle at center, hsla(212, 100%, 60%, 0.05) 0%, transparent 60%),
                 linear-gradient(135deg, hsl(222, 24%, 7%), hsl(222, 24%, 12%)) !important;
     background-attachment: fixed !important;
@@ -70,77 +83,184 @@ body {
     color: hsl(210, 40%, 98%) !important;
 }
 
-/* Base text elements */
+body[data-theme="dark"] .back-to-hutta-btn {
+    background: rgba(26, 26, 26, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.6);
+}
+body[data-theme="dark"] .back-to-hutta-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+body[data-theme="dark"] .theme-toggle-btn {
+    background: rgba(26, 26, 26, 0.45);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.6);
+}
+body[data-theme="dark"] .theme-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+body[data-theme="dark"] .theme-toggle-btn .sun-icon {
+    display: block;
+}
+
+body[data-theme="dark"] .MuiPaper-root {
+    background-color: hsla(222, 24%, 15%, 0.6) !important;
+    border: 1px solid hsla(222, 20%, 25%, 0.4) !important;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45) !important;
+    color: hsl(210, 40%, 98%) !important;
+}
+body[data-theme="dark"] .MuiPaper-root:hover {
+    border-color: hsla(212, 100%, 60%, 0.15) !important;
+}
+
+body[data-theme="dark"] .MuiOutlinedInput-root {
+    background-color: hsl(222, 24%, 6%) !important;
+    color: hsl(210, 40%, 98%) !important;
+}
+body[data-theme="dark"] .MuiOutlinedInput-notchedOutline {
+    border-color: hsla(222, 20%, 25%, 0.3) !important;
+}
+body[data-theme="dark"] .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+    border-color: hsla(212, 100%, 60%, 0.3) !important;
+}
+body[data-theme="dark"] .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+    border-color: hsl(212, 100%, 60%) !important;
+    box-shadow: 0 0 12px rgba(47, 137, 252, 0.2) !important;
+}
+body[data-theme="dark"] .MuiInputBase-input {
+    color: hsl(210, 40%, 98%) !important;
+}
+body[data-theme="dark"] .MuiInputLabel-root {
+    color: hsl(210, 20%, 65%) !important;
+}
+body[data-theme="dark"] .MuiInputLabel-root.Mui-focused {
+    color: hsl(212, 100%, 60%) !important;
+}
+body[data-theme="dark"] .MuiFormControlLabel-label {
+    color: hsl(210, 20%, 75%) !important;
+}
+body[data-theme="dark"] .MuiCheckbox-root {
+    color: hsl(210, 20%, 65%) !important;
+}
+body[data-theme="dark"] .MuiCheckbox-root.Mui-checked {
+    color: hsl(212, 100%, 60%) !important;
+}
+body[data-theme="dark"] #reset-password-button, 
+body[data-theme="dark"] .MuiLink-root, 
+body[data-theme="dark"] .MuiButton-textPrimary {
+    color: hsl(210, 20%, 75%) !important;
+}
+body[data-theme="dark"] #reset-password-button:hover, 
+body[data-theme="dark"] .MuiLink-root:hover, 
+body[data-theme="dark"] .MuiButton-textPrimary:hover {
+    color: hsl(212, 100%, 60%) !important;
+}
+
+/* ==============================================================================
+   LIGHT THEME (data-theme="light")
+   ============================================================================== */
+body[data-theme="light"] {
+    background: radial-gradient(circle at center, hsla(212, 100%, 60%, 0.03) 0%, transparent 60%),
+                linear-gradient(135deg, hsl(210, 30%, 93%), hsl(210, 30%, 97%)) !important;
+    background-attachment: fixed !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    color: hsl(222, 24%, 12%) !important;
+}
+
+body[data-theme="light"] .back-to-hutta-btn {
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.6);
+}
+body[data-theme="light"] .back-to-hutta-btn:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.15);
+    color: #000000;
+}
+
+body[data-theme="light"] .theme-toggle-btn {
+    background: rgba(255, 255, 255, 0.65);
+    border-color: rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.6);
+}
+body[data-theme="light"] .theme-toggle-btn:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.15);
+    color: #000000;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+}
+
+body[data-theme="light"] .theme-toggle-btn .moon-icon {
+    display: block;
+}
+
+body[data-theme="light"] .MuiPaper-root {
+    background-color: hsla(0, 0%, 100%, 0.65) !important;
+    border: 1px solid hsla(210, 30%, 80%, 0.5) !important;
+    box-shadow: 0 16px 48px rgba(100, 110, 140, 0.15) !important;
+    color: hsl(222, 24%, 12%) !important;
+}
+body[data-theme="light"] .MuiPaper-root:hover {
+    border-color: hsla(212, 100%, 50%, 0.2) !important;
+}
+
+body[data-theme="light"] .MuiOutlinedInput-root {
+    background-color: hsl(210, 30%, 90%) !important;
+    color: hsl(222, 24%, 12%) !important;
+}
+body[data-theme="light"] .MuiOutlinedInput-notchedOutline {
+    border-color: hsla(210, 30%, 80%, 0.4) !important;
+}
+body[data-theme="light"] .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+    border-color: hsla(212, 100%, 50%, 0.3) !important;
+}
+body[data-theme="light"] .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+    border-color: hsl(212, 100%, 50%) !important;
+    box-shadow: 0 0 12px rgba(47, 137, 252, 0.12) !important;
+}
+body[data-theme="light"] .MuiInputBase-input {
+    color: hsl(222, 24%, 12%) !important;
+}
+body[data-theme="light"] .MuiInputLabel-root {
+    color: hsl(222, 15%, 35%) !important;
+}
+body[data-theme="light"] .MuiInputLabel-root.Mui-focused {
+    color: hsl(212, 100%, 50%) !important;
+}
+body[data-theme="light"] .MuiFormControlLabel-label {
+    color: hsl(222, 15%, 35%) !important;
+}
+body[data-theme="light"] .MuiCheckbox-root {
+    color: hsl(222, 15%, 35%) !important;
+}
+body[data-theme="light"] .MuiCheckbox-root.Mui-checked {
+    color: hsl(212, 100%, 50%) !important;
+}
+body[data-theme="light"] #reset-password-button, 
+body[data-theme="light"] .MuiLink-root, 
+body[data-theme="light"] .MuiButton-textPrimary {
+    color: hsl(222, 15%, 35%) !important;
+}
+body[data-theme="light"] #reset-password-button:hover, 
+body[data-theme="light"] .MuiLink-root:hover, 
+body[data-theme="light"] .MuiButton-textPrimary:hover {
+    color: hsl(212, 100%, 50%) !important;
+}
+
+/* ==============================================================================
+   COMMON PORTAL STYLES (Both Themes)
+   ============================================================================== */
 h1, h2, h3, h4, h5, h6, .MuiTypography-h5, .MuiTypography-root {
     font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
-/* Authelia Card / Container (Paper component) */
-.MuiPaper-root {
-    background-color: hsla(222, 24%, 15%, 0.6) !important;
-    border: 1px solid hsla(222, 20%, 25%, 0.4) !important;
-    border-radius: 16px !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45) !important;
-    color: hsl(210, 40%, 98%) !important;
-    transition: all 0.3s ease !important;
-}
-
-.MuiPaper-root:hover {
-    border-color: hsla(212, 100%, 60%, 0.15) !important;
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55), 0 0 40px rgba(47, 137, 252, 0.03) !important;
-}
-
-/* Inputs and forms styling */
-.MuiOutlinedInput-root {
-    background-color: hsl(222, 24%, 6%) !important;
-    border-radius: 8px !important;
-    color: hsl(210, 40%, 98%) !important;
-    transition: all 0.2s ease !important;
-}
-
-.MuiOutlinedInput-notchedOutline {
-    border-color: hsla(222, 20%, 25%, 0.3) !important;
-    transition: all 0.2s ease !important;
-}
-
-.MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
-    border-color: hsla(212, 100%, 60%, 0.3) !important;
-}
-
-.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
-    border-color: hsl(212, 100%, 60%) !important;
-    border-width: 1px !important;
-    box-shadow: 0 0 12px rgba(47, 137, 252, 0.2) !important;
-}
-
-/* Input label styling */
-.MuiInputLabel-root {
-    color: hsl(210, 20%, 65%) !important;
-    font-family: 'Inter', sans-serif !important;
-}
-
-.MuiInputLabel-root.Mui-focused {
-    color: hsl(212, 100%, 60%) !important;
-}
-
-/* Checkbox styling */
-.MuiCheckbox-root {
-    color: hsl(210, 20%, 65%) !important;
-}
-
-.MuiCheckbox-root.Mui-checked {
-    color: hsl(212, 100%, 60%) !important;
-}
-
-.MuiFormControlLabel-label {
-    color: hsl(210, 20%, 75%) !important;
-    font-family: 'Inter', sans-serif !important;
-    font-size: 0.9rem !important;
-}
-
-/* Primary Button (Sign In) */
 #sign-in-button, .MuiButton-containedPrimary {
     background: linear-gradient(135deg, hsl(212, 100%, 60%), hsl(275, 90%, 65%)) !important;
     border: none !important;
@@ -159,20 +279,6 @@ h1, h2, h3, h4, h5, h6, .MuiTypography-h5, .MuiTypography-root {
     transform: translateY(-1px) !important;
 }
 
-/* Secondary Button (Reset Password) & general links */
-#reset-password-button, .MuiLink-root, .MuiButton-textPrimary {
-    color: hsl(210, 20%, 75%) !important;
-    font-family: 'Inter', sans-serif !important;
-    font-size: 0.85rem !important;
-    text-transform: none !important;
-}
-
-#reset-password-button:hover, .MuiLink-root:hover, .MuiButton-textPrimary:hover {
-    color: hsl(212, 100%, 60%) !important;
-    background-color: transparent !important;
-}
-
-/* Alert dialogs or warning boxes inside Authelia */
 .MuiAlert-root {
     border-radius: 8px !important;
     font-family: 'Inter', sans-serif !important;
@@ -190,3 +296,25 @@ h1, h2, h3, h4, h5, h6, .MuiTypography-h5, .MuiTypography-root {
     border: 1px solid rgba(76, 175, 80, 0.3) !important;
 }
 
+@media (max-width: 768px) {
+    .back-to-hutta-container {
+        top: 1rem;
+        left: 1rem;
+    }
+    .back-to-hutta-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
+    }
+    .theme-toggle-container {
+        top: 1rem;
+        right: 1rem;
+    }
+    .theme-toggle-btn {
+        width: 36px;
+        height: 36px;
+    }
+    .theme-toggle-btn svg {
+        width: 18px;
+        height: 18px;
+    }
+}
