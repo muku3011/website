@@ -264,8 +264,11 @@ ${OIDC_PRIVATE_KEY_INDENTED}
         client_secret: "${CLIENT_SECRET_HASH}"
         public: false
         authorization_policy: one_factor
+        consent_mode: implicit
         redirect_uris:
           - https://hutta.in/redirect_uri
+        post_logout_redirect_uris:
+          - https://hutta.in/
 
 storage:
   local:

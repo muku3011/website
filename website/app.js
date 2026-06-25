@@ -340,12 +340,26 @@ function enforceRolePermissions() {
 document.addEventListener('DOMContentLoaded', enforceRolePermissions);
 
 if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
+    logoutBtn.addEventListener('click', async () => {
         if (isLocal) {
             window.location.replace('index.html');
         } else {
-            // Redirect to Apache mod_auth_openidc logout URI, which destroys session and then redirects to Authelia's logout page to destroy the SSO session
-            window.location.replace('/redirect_uri?logout=https%3A%2F%2Fhutta.in%2Fauthelia%2Flogout');
+            // 1. Clear Apache mod_auth_openidc session cookie in the background
+            try {
+                await fetch('/redirect_uri?logout=https%3A%2F%2Fhutta.in%2F');
+            } catch (err) {
+                console.warn("Apache logout request failed:", err);
+            }
+            
+            // 2. Clear Authelia SSO session cookie in the background
+            try {
+                await fetch('/authelia/logout');
+            } catch (err) {
+                console.warn("Authelia logout request failed:", err);
+            }
+            
+            // 3. Redirect back to hutta.in home page
+            window.location.replace('https://hutta.in/');
         }
     });
 }
