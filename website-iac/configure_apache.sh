@@ -48,11 +48,11 @@ cat << 'EOF' > /etc/apache2/sites-available/000-default-le-ssl.conf
 
 	# OpenID Connect settings
 	OIDCProviderMetadataURL https://hutta.in/authelia/.well-known/openid-configuration
-	OIDClientID apache-portal
-	OIDClientSecret "308e656e77d9a2b393f350268e9b865840b643e95421dcc41ed4f15e9111843c"
-	OIDRedirectURI https://hutta.in/redirect_uri
-	OIDCryptoPassphrase "308e656e77d9a2b393f350268e9b865840b643e95421dcc41ed4f15e9111843c"
-	OIDScope "openid profile email"
+	OIDCClientID apache-portal
+	OIDCClientSecret "308e656e77d9a2b393f350268e9b865840b643e95421dcc41ed4f15e9111843c"
+	OIDCRedirectURI https://hutta.in/redirect_uri
+	OIDCCryptoPassphrase "308e656e77d9a2b393f350268e9b865840b643e95421dcc41ed4f15e9111843c"
+	OIDCScope "openid profile email"
 
 	# Protect the Redirect URI itself so mod_auth_openidc can intercept it
 	<Location /redirect_uri>
