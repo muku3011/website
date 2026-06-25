@@ -10,7 +10,7 @@ fi
 
 # Enable required Apache modules
 echo "[*] Enabling Apache modules..."
-a2enmod proxy proxy_http auth_openidc ssl || true
+a2enmod proxy proxy_http auth_openidc ssl headers || true
 
 # Backup existing config
 echo "[*] Backing up /etc/apache2/sites-available/000-default-le-ssl.conf..."
@@ -35,6 +35,9 @@ cat << 'EOF' > /etc/apache2/sites-available/000-default-le-ssl.conf
 
 	# Exclude the redirect callback from proxying so mod_auth_openidc intercepts it
 	ProxyPass /redirect_uri !
+
+	# Set X-Forwarded-Proto header so Authelia knows it is secure HTTPS
+	RequestHeader set X-Forwarded-Proto "https"
 
 	# Reverse Proxy for Authelia subpath
 	ProxyPreserveHost On
