@@ -68,7 +68,7 @@ cat << 'EOF' > /etc/apache2/sites-available/000-default-le-ssl.conf
 	OIDCClientSecret "308e656e77d9a2b393f350268e9b865840b643e95421dcc41ed4f15e9111843c"
 	OIDCRedirectURI https://hutta.in/redirect_uri
 	OIDCCryptoPassphrase "308e656e77d9a2b393f350268e9b865840b643e95421dcc41ed4f15e9111843c"
-	OIDCScope "openid profile email"
+	OIDCScope "openid profile email groups"
 
 	# Protect the Redirect URI itself so mod_auth_openidc can intercept it
 	<Location /redirect_uri>
