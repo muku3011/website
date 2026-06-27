@@ -8,11 +8,13 @@ const body = document.body;
 const savedTheme = localStorage.getItem('theme') || 'dark';
 setTheme(savedTheme);
 
-themeToggle.addEventListener('click', () => {
-    const currentTheme = body.classList.contains('dark-theme') ? 'dark' : 'light';
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-});
+if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = body.classList.contains('dark-theme') ? 'dark' : 'light';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        setTheme(newTheme);
+    });
+}
 
 function setTheme(theme) {
     if (theme === 'dark') {
@@ -30,92 +32,509 @@ function setTheme(theme) {
 // -------------------------------------------------------------
 const clockElement = document.getElementById('clock');
 function updateClock() {
-    const now = new Date();
-    clockElement.textContent = now.toLocaleTimeString();
+    if (clockElement) {
+        const now = new Date();
+        clockElement.textContent = now.toLocaleTimeString();
+    }
 }
 setInterval(updateClock, 1000);
 updateClock();
 
 // -------------------------------------------------------------
-// METRICS (REAL-TIME STATS)
+// BACKEND CONFIGURATION
 // -------------------------------------------------------------
-const cpuRing = document.getElementById('cpu-ring');
-const cpuVal = document.getElementById('cpu-value');
-const memRing = document.getElementById('mem-ring');
-const memVal = document.getElementById('mem-value');
-const tempRing = document.getElementById('temp-ring');
-const tempVal = document.getElementById('temp-value');
+const BACKEND_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://localhost:8092' 
+    : `${window.location.protocol}//${window.location.hostname}:8092`;
 
-const RING_CIRCUMFERENCE = 314.159; // 2 * pi * r (r=50)
+// -------------------------------------------------------------
+// RSP CONSOLE LOGGING
+// -------------------------------------------------------------
+const rspConsole = document.getElementById('rsp-console');
+const clearConsoleBtn = document.getElementById('clear-console-logs');
 
-function setProgress(circle, value) {
-    const offset = RING_CIRCUMFERENCE - (value / 100) * RING_CIRCUMFERENCE;
-    circle.style.strokeDashoffset = offset;
+function addLogLine(text, type = 'info') {
+    if (!rspConsole) return;
+    const line = document.createElement('div');
+    line.className = `log-line ${type}`;
+    
+    // Inline styling for log levels matching existing system colors
+    if (type === 'success') {
+        line.style.color = 'var(--success-glow)';
+    } else if (type === 'error') {
+        line.style.color = 'var(--warning-glow)';
+    } else if (type === 'info') {
+        line.style.color = 'var(--text-secondary)';
+    } else if (type === 'code') {
+        line.style.color = 'var(--primary-glow)';
+        line.style.fontFamily = 'monospace';
+        line.style.background = 'rgba(0,0,0,0.15)';
+        line.style.padding = '0.2rem 0.4rem';
+        line.style.borderRadius = '4px';
+        line.style.wordBreak = 'break-all';
+        line.style.marginTop = '0.2rem';
+        line.style.marginBottom = '0.2rem';
+    } else if (type === 'secondary') {
+        line.style.color = 'var(--secondary-glow)';
+    }
+
+    const now = new Date();
+    const timestamp = now.toLocaleTimeString([], { hour12: false });
+    line.textContent = `[${timestamp}] ${text}`;
+    
+    // Animation
+    line.style.opacity = '0';
+    line.style.transform = 'translateY(5px)';
+    line.style.transition = 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
+    
+    rspConsole.appendChild(line);
+    
+    setTimeout(() => {
+        line.style.opacity = '1';
+        line.style.transform = 'translateY(0)';
+    }, 15);
+
+    rspConsole.scrollTop = rspConsole.scrollHeight;
 }
 
-async function updateMetrics() {
+if (clearConsoleBtn) {
+    clearConsoleBtn.addEventListener('click', () => {
+        rspConsole.innerHTML = '<div class="log-line info" style="color: var(--text-muted);">Console initialized. Ready for GSMA RSP operations.</div>';
+    });
+}
+
+// -------------------------------------------------------------
+// PROFILE REGISTRY MANAGEMENT
+// -------------------------------------------------------------
+let currentProfiles = [];
+
+async function fetchProfiles() {
+    const stateFilter = document.getElementById('state-filter').value;
+    let url = `${BACKEND_BASE}/gsma/rsp/v2/admin/profiles`;
+    if (stateFilter !== 'ALL') {
+        url += `?state=${stateFilter}`;
+    }
+    
     try {
-        const response = await fetch('stats.json');
+        const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-        const data = await response.json();
-
-        // Update CPU Ring
-        if (data.cpu !== undefined) {
-            cpuVal.textContent = data.cpu;
-            setProgress(cpuRing, data.cpu);
-        }
-
-        // Update Memory Ring
-        if (data.memory !== undefined) {
-            memVal.textContent = data.memory;
-            setProgress(memRing, data.memory);
-        }
-
-        // Update Core Temperature (scaling it max 80°C)
-        if (data.temp !== undefined) {
-            tempVal.textContent = data.temp;
-            setProgress(tempRing, (data.temp / 80) * 100);
-        }
-
-        // Update MicroSD OS Storage values & progress bar
-        if (data.disk_pct !== undefined && data.disk_used_gb !== undefined && data.disk_total_gb !== undefined) {
-            const diskValues = document.getElementById('disk-values');
-            const diskBar = document.getElementById('disk-bar');
-            if (diskValues) {
-                diskValues.textContent = `${data.disk_used_gb}GB / ${data.disk_total_gb}GB`;
-            }
-            if (diskBar) {
-                diskBar.style.width = `${data.disk_pct}%`;
-            }
-        }
+        currentProfiles = await response.json();
+        renderProfiles();
     } catch (err) {
-        console.warn("Could not retrieve system stats.json. Server metrics will display loading state.", err);
+        console.error("Failed to fetch profiles", err);
+        addLogLine(`Failed to fetch profiles: ${err.message}`, "error");
+        document.getElementById('profiles-list-body').innerHTML = `
+            <tr>
+                <td colspan="4" class="table-empty" style="color: var(--warning-glow);">Error connecting to SM-DP+ backend. Ensure server is running on 8092.</td>
+            </tr>
+        `;
     }
 }
 
-// Check every 15 seconds to avoid over-burdening SD card/network
-setInterval(updateMetrics, 15000);
-updateMetrics(); // Initial load
+function renderProfiles() {
+    const listBody = document.getElementById('profiles-list-body');
+    const countVal = document.getElementById('profile-count-val');
+    const searchInput = document.getElementById('search-input');
+    const searchVal = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    
+    if (!listBody) return;
+    
+    const filtered = currentProfiles.filter(p => {
+        return !searchVal || 
+            p.iccid.toLowerCase().includes(searchVal) || 
+            (p.eid && p.eid.toLowerCase().includes(searchVal));
+    });
+
+    if (countVal) {
+        countVal.textContent = filtered.length;
+    }
+    
+    if (filtered.length === 0) {
+        listBody.innerHTML = `
+            <tr>
+                <td colspan="4" class="table-empty">No profiles found.</td>
+            </tr>
+        `;
+        return;
+    }
+
+    listBody.innerHTML = filtered.map(profile => {
+        const stateClass = profile.state ? profile.state.toLowerCase() : 'available';
+        
+        let actionButton = '';
+        if (profile.state === 'AVAILABLE') {
+            actionButton = `<button class="btn btn-action-trigger btn-primary-action" onclick="openOrderModal('${profile.iccid}')">Order</button>`;
+        } else if (profile.state === 'ORDERED') {
+            actionButton = `<button class="btn btn-action-trigger btn-secondary-action" onclick="triggerRelease('${profile.iccid}')">Release</button>`;
+        } else if (profile.state === 'RELEASED') {
+            actionButton = `<button class="btn btn-action-trigger btn-success-action" onclick="triggerLpaDownload('${profile.iccid}')">Download (LPA)</button>`;
+        } else if (profile.state === 'DOWNLOADED') {
+            actionButton = `
+                <span style="font-size: 0.85rem; color: var(--success-glow); font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    Completed
+                </span>`;
+        }
+
+        const deleteDisabled = (window.userRole === 'viewer') ? 'disabled' : '';
+
+        return `
+            <tr>
+                <td class="code-text-mono">${profile.iccid}</td>
+                <td class="code-text-mono">${profile.eid || '<span style="color: var(--text-muted);">--</span>'}</td>
+                <td><span class="status-pill ${stateClass}">${profile.state}</span></td>
+                <td>
+                    <div class="btn-actions">
+                        ${actionButton}
+                        <button class="btn btn-action-trigger btn-delete" onclick="deleteProfile('${profile.iccid}')" ${deleteDisabled}>Delete</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Attach event listeners for search and filters
+const searchInput = document.getElementById('search-input');
+const stateFilter = document.getElementById('state-filter');
+
+if (searchInput) {
+    searchInput.addEventListener('input', renderProfiles);
+}
+if (stateFilter) {
+    stateFilter.addEventListener('change', fetchProfiles);
+}
 
 // -------------------------------------------------------------
-// ACCESSIBLE MODAL DIALOGS
+// PROFILE IMPORT & DROPZONE
 // -------------------------------------------------------------
-const openButtons = document.querySelectorAll('.open-dialog-btn');
-const closeButtons = document.querySelectorAll('.close-dialog-btn');
-const dialogs = document.querySelectorAll('dialog');
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('profile-file-input');
+const overrideIccidInput = document.getElementById('override-iccid');
+const btnImport = document.getElementById('btn-import-profile');
+let selectedFile = null;
 
-let dialogTriggerElement = null;
-
-openButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-        const dialogId = btn.getAttribute('data-target');
-        const dialog = document.getElementById(dialogId);
-        if (dialog) {
-            dialogTriggerElement = btn;
-            dialog.showModal();
+if (dropzone) {
+    dropzone.addEventListener('click', () => fileInput.click());
+    
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+    });
+    
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.classList.remove('dragover');
+    });
+    
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0) {
+            selectedFile = e.dataTransfer.files[0];
+            updateDropzoneUI();
         }
     });
-});
+}
+
+if (fileInput) {
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+            selectedFile = fileInput.files[0];
+            updateDropzoneUI();
+        }
+    });
+}
+
+function updateDropzoneUI() {
+    if (selectedFile && dropzone) {
+        dropzone.querySelector('.dropzone-text').textContent = `Selected: ${selectedFile.name}`;
+        dropzone.querySelector('.dropzone-subtext').textContent = `Size: ${(selectedFile.size / 1024).toFixed(2)} KB`;
+    }
+}
+
+if (btnImport) {
+    btnImport.addEventListener('click', async () => {
+        if (!selectedFile) {
+            addLogLine("Error: Please select a file to import first", "error");
+            return;
+        }
+
+        btnImport.disabled = true;
+        const originalText = btnImport.innerHTML;
+        btnImport.innerHTML = 'Importing...';
+
+        addLogLine(`Uploading profile file: ${selectedFile.name}...`, "info");
+
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        
+        const overrideIccid = overrideIccidInput.value.trim();
+        if (overrideIccid) {
+            formData.append('iccid', overrideIccid);
+        }
+
+        try {
+            const response = await fetch(`${BACKEND_BASE}/gsma/rsp/v2/admin/importProfile`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || `HTTP ${response.status}`);
+            }
+
+            addLogLine(`Profile imported successfully!`, "success");
+            
+            // Reset state
+            selectedFile = null;
+            fileInput.value = '';
+            overrideIccidInput.value = '';
+            if (dropzone) {
+                dropzone.querySelector('.dropzone-text').textContent = 'Drag & drop profile file or click to browse';
+                dropzone.querySelector('.dropzone-subtext').textContent = 'Supports .der, .bin, or base64 files';
+            }
+
+            fetchProfiles();
+        } catch (err) {
+            console.error("Import failed", err);
+            addLogLine(`Import failed: ${err.message}`, "error");
+        } finally {
+            btnImport.disabled = false;
+            btnImport.innerHTML = originalText;
+        }
+    });
+}
+
+// -------------------------------------------------------------
+// PROFILE OPERATIONS IMPLEMENTATION
+// -------------------------------------------------------------
+
+// 1. Delete Profile
+async function deleteProfile(iccid) {
+    if (!confirm(`Are you sure you want to delete profile with ICCID ${iccid}?`)) {
+        return;
+    }
+
+    addLogLine(`Sending delete request for profile ${iccid}...`, "info");
+    
+    try {
+        const response = await fetch(`${BACKEND_BASE}/gsma/rsp/v2/admin/profiles/${iccid}`, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error ${response.status}`);
+        }
+
+        addLogLine(`Profile ${iccid} deleted successfully.`, "success");
+        fetchProfiles();
+    } catch (err) {
+        console.error("Delete failed", err);
+        addLogLine(`Delete failed: ${err.message}`, "error");
+    }
+}
+
+// 2. Order Profile Modal
+const orderDialog = document.getElementById('dialog-order');
+const orderForm = document.getElementById('order-form');
+
+function openOrderModal(iccid) {
+    if (window.userRole === 'viewer') return;
+    document.getElementById('order-iccid').value = iccid;
+    if (orderDialog) {
+        orderDialog.showModal();
+    }
+}
+
+if (orderForm) {
+    orderForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (orderDialog) {
+            orderDialog.close();
+        }
+
+        const iccid = document.getElementById('order-iccid').value;
+        const eid = document.getElementById('order-eid').value.trim();
+        const profileType = document.getElementById('order-profile-type').value.trim();
+        const requester = document.getElementById('order-requester').value.trim();
+        const callId = document.getElementById('order-callid').value.trim();
+
+        addLogLine(`Submitting downloadOrder to ES2+ interface for ICCID ${iccid}...`, "info");
+
+        const payload = {
+            header: {
+                functionRequesterIdentifier: requester,
+                functionCallIdentifier: callId
+            },
+            eid: eid,
+            iccid: iccid,
+            profileType: profileType
+        };
+
+        try {
+            const response = await fetch(`${BACKEND_BASE}/gsma/rsp/v2/es2plus/downloadOrder`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Admin-Protocol': 'gsma/rsp/v3.1.0'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                const reason = (data.header && data.header.functionExecutionStatus) 
+                    ? data.header.functionExecutionStatus.statusMessage 
+                    : `HTTP ${response.status}`;
+                throw new Error(reason);
+            }
+
+            addLogLine(`ES2+ downloadOrder Success! Profile has been reserved.`, "success");
+            fetchProfiles();
+        } catch (err) {
+            console.error("Order failed", err);
+            addLogLine(`Order failed: ${err.message}`, "error");
+        }
+    });
+}
+
+// 3. Release Profile
+async function triggerRelease(iccid) {
+    addLogLine(`Submitting releaseProfile to ES2+ interface for ICCID ${iccid}...`, "info");
+
+    const payload = {
+        header: {
+            functionRequesterIdentifier: "OperatorX",
+            functionCallIdentifier: "TX-101"
+        },
+        iccid: iccid
+    };
+
+    try {
+        const response = await fetch(`${BACKEND_BASE}/gsma/rsp/v2/es2plus/releaseProfile`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Admin-Protocol': 'gsma/rsp/v3.1.0'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            const reason = (data.header && data.header.functionExecutionStatus) 
+                ? data.header.functionExecutionStatus.statusMessage 
+                : `HTTP ${response.status}`;
+            throw new Error(reason);
+        }
+
+        addLogLine(`ES2+ releaseProfile Success! Profile released for download.`, "success");
+        fetchProfiles();
+    } catch (err) {
+        console.error("Release failed", err);
+        addLogLine(`Release failed: ${err.message}`, "error");
+    }
+}
+
+// 4. LPA Download Flow (ES9+)
+async function triggerLpaDownload(iccid) {
+    addLogLine(`Starting client LPA profile provisioning sequence for ICCID ${iccid}...`, "secondary");
+
+    try {
+        // Step A: Initiate Authentication
+        addLogLine("ES9+ initiateAuthentication: Requesting challenge signature from SM-DP+...", "info");
+        const initPayload = {
+            euiccChallenge: "11223344556677889900AABBCCDDEEFF",
+            smdpAddress: "localhost:8092",
+            euiccInfo1: "MOCK_EUICC_INFO_1"
+        };
+
+        const initRes = await fetch(`${BACKEND_BASE}/gsma/rsp/v2/es9plus/initiateAuthentication`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Admin-Protocol': 'gsma/rsp/v3.1.0'
+            },
+            body: JSON.stringify(initPayload)
+        });
+
+        if (!initRes.ok) {
+            throw new Error(`initiateAuthentication failed (HTTP ${initRes.status})`);
+        }
+
+        const initData = await initRes.json();
+        const txId = initData.transactionId;
+        addLogLine(`SM-DP+ Response: Received transactionId: ${txId}`, "success");
+        addLogLine(`smdpSignature2 generated: ${initData.smdpSignature2.substring(0, 32)}...`, "code");
+
+        // Step B: Authenticate Client
+        addLogLine("ES9+ authenticateClient: Verifying client eUICC security signature...", "info");
+        const authPayload = {
+            transactionId: txId,
+            authenticateServerResponse: "MOCK_EUICC_AUTHENTICATE_RESPONSE_SIGNATURE"
+        };
+
+        const authRes = await fetch(`${BACKEND_BASE}/gsma/rsp/v2/es9plus/authenticateClient`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Admin-Protocol': 'gsma/rsp/v3.1.0'
+            },
+            body: JSON.stringify(authPayload)
+        });
+
+        if (!authRes.ok) {
+            throw new Error(`authenticateClient failed (HTTP ${authRes.status})`);
+        }
+
+        const authData = await authRes.json();
+        addLogLine(`SM-DP+ Response: Client eUICC authenticated successfully!`, "success");
+        addLogLine(`smdpSignature3 generated: ${authData.smdpSignature3.substring(0, 32)}...`, "code");
+
+        // Step C: Get Bound Profile Package (BPP)
+        addLogLine("ES9+ getBoundProfilePackage: Retrieving encrypted eSIM BPP payload...", "info");
+        const bppPayload = {
+            transactionId: txId,
+            prepareDownloadResponse: "MOCK_EUICC_PREPARE_DOWNLOAD_RESPONSE"
+        };
+
+        const bppRes = await fetch(`${BACKEND_BASE}/gsma/rsp/v2/es9plus/getBoundProfilePackage`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Admin-Protocol': 'gsma/rsp/v3.1.0'
+            },
+            body: JSON.stringify(bppPayload)
+        });
+
+        if (!bppRes.ok) {
+            throw new Error(`getBoundProfilePackage failed (HTTP ${bppRes.status})`);
+        }
+
+        const bppData = await bppRes.json();
+        addLogLine(`SM-DP+ Response: Bound Profile Package generated!`, "success");
+        addLogLine(`Bound Profile Package (Base64): ${bppData.boundProfilePackage.substring(0, 50)}...`, "code");
+        
+        addLogLine(`LPA Provisioning Complete! Profile state updated to DOWNLOADED.`, "success");
+        fetchProfiles();
+    } catch (err) {
+        console.error("LPA flow failed", err);
+        addLogLine(`LPA download failed: ${err.message}`, "error");
+    }
+}
+
+// Expose functions globally for table event handlers
+window.openOrderModal = openOrderModal;
+window.triggerRelease = triggerRelease;
+window.triggerLpaDownload = triggerLpaDownload;
+window.deleteProfile = deleteProfile;
+
+// -------------------------------------------------------------
+// ACCESSIBLE MODAL CLOSE LOGIC
+// -------------------------------------------------------------
+const closeButtons = document.querySelectorAll('.close-dialog-btn');
+const dialogs = document.querySelectorAll('dialog');
 
 closeButtons.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -128,14 +547,6 @@ closeButtons.forEach(btn => {
 });
 
 dialogs.forEach(dialog => {
-    dialog.addEventListener('close', () => {
-        if (dialogTriggerElement) {
-            dialogTriggerElement.focus();
-            dialogTriggerElement = null;
-        }
-    });
-
-    // Light dismiss: Close modal if clicking outside its bounds
     dialog.addEventListener('click', (e) => {
         const rect = dialog.getBoundingClientRect();
         const isInDialog = (
@@ -151,132 +562,6 @@ dialogs.forEach(dialog => {
 });
 
 // -------------------------------------------------------------
-// DNS / DDNS REAL-TIME VERIFICATION
-// -------------------------------------------------------------
-const btnSyncDns = document.getElementById('btn-sync-dns');
-const logConsole = document.getElementById('log-console');
-const publicIpEl = document.getElementById('public-ip');
-const lastDdnsTimeEl = document.getElementById('last-ddns-time');
-const clearLogsBtn = document.getElementById('clear-logs');
-
-function addLogLine(text, type = 'info') {
-    const line = document.createElement('div');
-    line.className = `log-line ${type}`;
-    const now = new Date();
-    const timestamp = now.toLocaleTimeString([], { hour12: false });
-    line.textContent = `[${timestamp}] ${text}`;
-    logConsole.appendChild(line);
-    logConsole.scrollTop = logConsole.scrollHeight;
-}
-
-btnSyncDns.addEventListener('click', async () => {
-    // Disable button & indicate active sync
-    btnSyncDns.disabled = true;
-    btnSyncDns.innerHTML = `
-        <svg class="sun-icon spin" style="display:inline-block; width:16px; height:16px; margin:0;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-        Verifying...
-    `;
-    
-    addLogLine("Initiating active DNS verification...", "info");
-    
-    try {
-        // Step 1: Fetch client public IP
-        addLogLine("Querying client public WAN IP...", "info");
-        const ipRes = await fetch('https://api.ipify.org?format=json');
-        if (!ipRes.ok) throw new Error("Failed to query WAN IP");
-        const ipData = await ipRes.json();
-        const clientIp = ipData.ip;
-        addLogLine(`Detected client WAN IP: ${clientIp}`, "info");
-
-        // Step 2: Query actual A record from Google DNS-over-HTTPS (DoH) API
-        addLogLine("Resolving hutta.in A record via Google DoH API...", "info");
-        const dnsRes = await fetch('https://dns.google/resolve?name=hutta.in&type=A');
-        if (!dnsRes.ok) throw new Error("Failed to query Google DoH resolver");
-        const dnsData = await dnsRes.json();
-
-        let dnsIp = null;
-        if (dnsData.Answer && dnsData.Answer.length > 0) {
-            const aRecord = dnsData.Answer.find(ans => ans.type === 1); // Type 1 is 'A' record
-            if (aRecord) {
-                dnsIp = aRecord.data;
-            }
-        }
-
-        if (!dnsIp) {
-            throw new Error("No A record found for hutta.in");
-        }
-        
-        addLogLine(`Resolved DNS A record: ${dnsIp}`, "info");
-        publicIpEl.textContent = dnsIp;
-
-        // Step 3: Compare results
-        if (clientIp === dnsIp) {
-            addLogLine(`Success: DNS A record matches client public WAN IP: ${dnsIp}`, "success");
-        } else {
-            addLogLine(`Warning: DNS A record (${dnsIp}) does not match your current WAN IP (${clientIp}).`, "error");
-            addLogLine("Note: Dynamic DNS script cron job on Raspberry Pi will synchronize automatically.", "info");
-        }
-        
-        lastDdnsTimeEl.textContent = "Just now";
-
-    } catch (err) {
-        addLogLine(`Verification failed: ${err.message}`, "error");
-        console.error("Verification failed: ", err);
-    } finally {
-        resetSyncButton();
-    }
-});
-
-function resetSyncButton() {
-    const isViewer = sessionStorage.getItem('hutta_role') === 'viewer';
-    btnSyncDns.disabled = isViewer;
-    btnSyncDns.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-        Verify DNS
-    `;
-    if (isViewer) {
-        btnSyncDns.style.opacity = '0.6';
-        btnSyncDns.style.cursor = 'not-allowed';
-        btnSyncDns.title = "Actions restricted to Administrator";
-    } else {
-        btnSyncDns.style.opacity = '';
-        btnSyncDns.style.cursor = '';
-        btnSyncDns.title = "Verify DNS record status";
-    }
-}
-
-clearLogsBtn.addEventListener('click', () => {
-    logConsole.innerHTML = '<div class="log-line info">Console cleared. Log history empty.</div>';
-});
-
-// -------------------------------------------------------------
-// CONTROL ROW ALERTS
-// -------------------------------------------------------------
-const controls = ["ctrl-light", "ctrl-pihole", "ctrl-security", "ctrl-nginx"];
-controls.forEach(ctrlId => {
-    const el = document.getElementById(ctrlId);
-    if (el) {
-        el.addEventListener('change', () => {
-            const status = el.checked ? "Enabled" : "Disabled";
-            const name = el.closest('.control-row').querySelector('span').textContent;
-            addLogLine(`${name} switch toggled: ${status}`, "info");
-        });
-    }
-});
-
-// Add extra spinning keyframe to stylesheet programmatically for active sync status
-const style = document.createElement('style');
-style.textContent = `
-    .spin {
-        animation: spin-kf 1s linear infinite;
-    }
-    @keyframes spin-kf {
-        100% { transform: rotate(360deg); }
-    }
-`;
-document.head.appendChild(style);
-
-// -------------------------------------------------------------
 // AUTHORIZATION & LOGOUT HANDLER
 // -------------------------------------------------------------
 const roleBadge = document.getElementById('role-badge');
@@ -290,27 +575,25 @@ function getCookie(name) {
 }
 
 // Determine auth/role
-let userRole = 'viewer';
+window.userRole = 'viewer';
 let displayName = '';
 
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 if (isLocal) {
-    // Local development mode: default to Admin with full access
-    userRole = 'admin';
+    window.userRole = 'admin';
     displayName = 'Local Dev';
 } else {
-    // Production OIDC Authelia authentication (using cookies set by Apache)
     const username = getCookie('hutta_user');
     const groups = getCookie('hutta_groups') || '';
     const isAdmin = groups.split(',').includes('admins');
-    userRole = isAdmin ? 'admin' : 'viewer';
+    window.userRole = isAdmin ? 'admin' : 'viewer';
     displayName = username || 'Viewer';
 }
 
 function enforceRolePermissions() {
     if (roleBadge) {
         roleBadge.style.display = 'inline-block';
-        if (userRole === 'admin') {
+        if (window.userRole === 'admin') {
             roleBadge.textContent = `Admin: ${displayName}`;
             roleBadge.style.background = 'hsla(145, 80%, 50%, 0.15)';
             roleBadge.style.color = 'var(--success-glow)';
@@ -321,52 +604,47 @@ function enforceRolePermissions() {
             roleBadge.style.color = 'var(--warning-glow)';
             roleBadge.style.border = '1px solid hsla(14, 90%, 60%, 0.3)';
             
-            // Apply Viewer restrictions: Disable interactive inputs
-            document.querySelectorAll('.switch input').forEach(sw => {
-                sw.disabled = true;
+            // Disable all admin-only buttons & dropzones
+            document.querySelectorAll('.btn-delete, .btn-primary-action, .btn-secondary-action, .btn-success-action, #btn-import-profile').forEach(btn => {
+                btn.disabled = true;
+                btn.style.opacity = '0.4';
+                btn.style.cursor = 'not-allowed';
+                btn.title = 'Actions restricted to Administrator';
             });
-            
-            // Disable configuration forms inside dialogs
-            document.querySelectorAll('.dialog-form').forEach(form => {
-                form.querySelectorAll('select, button[type="submit"]').forEach(el => {
-                    el.disabled = true;
-                });
-            });
+
+            if (dropzone) {
+                dropzone.style.opacity = '0.4';
+                dropzone.style.cursor = 'not-allowed';
+                dropzone.title = 'Imports restricted to Administrator';
+                // Remove click listener
+                const clone = dropzone.cloneNode(true);
+                dropzone.parentNode.replaceChild(clone, dropzone);
+            }
         }
     }
 }
 
-// Enforce role right after DOM content is loaded
-document.addEventListener('DOMContentLoaded', enforceRolePermissions);
+document.addEventListener('DOMContentLoaded', () => {
+    enforceRolePermissions();
+    fetchProfiles();
+});
 
 if (logoutBtn) {
     logoutBtn.addEventListener('click', async () => {
         if (isLocal) {
             window.location.replace('index.html');
         } else {
-            // 1. Clear Apache mod_auth_openidc session cookie in the background
             try {
                 await fetch('/redirect_uri?logout=https%3A%2F%2Fhutta.in%2F');
             } catch (err) {
-                console.warn("Apache logout request failed:", err);
+                console.warn("Apache logout failed:", err);
             }
-            
-            // 2. Clear Authelia SSO session cookie in the background (POST method required)
             try {
                 await fetch('/authelia/api/logout', { method: 'POST' });
             } catch (err) {
-                console.warn("Authelia logout request failed:", err);
+                console.warn("Authelia logout failed:", err);
             }
-            
-            // 3. Redirect back to hutta.in home page
             window.location.replace('https://hutta.in/');
         }
     });
 }
-
-// Run initial DNS verification on load automatically to replace simulated default data
-if (btnSyncDns) {
-    btnSyncDns.click();
-}
-
-

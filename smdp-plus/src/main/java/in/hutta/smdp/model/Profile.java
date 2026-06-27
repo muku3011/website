@@ -1,5 +1,6 @@
 package in.hutta.smdp.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
@@ -15,5 +16,7 @@ public class Profile {
     private String iccid;
     private String eid;
     private String state; // AVAILABLE, ORDERED, RELEASED, DOWNLOADED
+    
+    @Column(columnDefinition = "TEXT")
     private String profilePayload; // Base64 mock BPP or profile bytes
 }

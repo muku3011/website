@@ -1,5 +1,2 @@
--- Seed mock eSIM profiles
-INSERT INTO profile (iccid, eid, state, profile_payload) VALUES 
-('89049032000008888881', NULL, 'AVAILABLE', 'Qk9VTkRfUFJPRklMRV9QQUNLQUdFXzE='),
-('89049032000008888882', NULL, 'AVAILABLE', 'Qk9VTkRfUFJPRklMRV9QQUNLQUdFXzI='),
-('89049032000008888883', NULL, 'AVAILABLE', 'Qk9VTkRfUFJPRklMRV9QQUNLQUdFXzM=');
+-- Seed mock eSIM profiles (Empty - Profiles are imported via the Admin API)
+SELECT 1;

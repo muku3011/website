@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# This script configures JDK 21, Maven, and registers the smdp-plus systemd service on the Pi.
+# This script egisters the smdp-plus systemd service on the Pi.
 set -e
 
 echo "[*] Creating application directory /home/rbpi/smdp-plus..."

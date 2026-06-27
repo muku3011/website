@@ -54,6 +54,9 @@ public class ProfileService {
 
     public boolean confirmOrder(String iccid, String eid) {
         log.info("Confirming order: ICCID={}, EID={}", iccid, eid);
+        if (iccid == null) {
+            return false;
+        }
         Optional<Profile> profileOpt = profileRepository.findById(iccid);
         if (profileOpt.isPresent()) {
             Profile profile = profileOpt.get();
@@ -67,6 +70,9 @@ public class ProfileService {
 
     public boolean cancelOrder(String iccid, String eid) {
         log.info("Canceling order: ICCID={}, EID={}", iccid, eid);
+        if (iccid == null) {
+            return false;
+        }
         Optional<Profile> profileOpt = profileRepository.findById(iccid);
         if (profileOpt.isPresent()) {
             Profile profile = profileOpt.get();
@@ -83,6 +89,9 @@ public class ProfileService {
 
     public boolean releaseProfile(String iccid) {
         log.info("Releasing profile: ICCID={}", iccid);
+        if (iccid == null) {
+            return false;
+        }
         Optional<Profile> profileOpt = profileRepository.findById(iccid);
         if (profileOpt.isPresent()) {
             Profile profile = profileOpt.get();
@@ -151,7 +160,12 @@ public class ProfileService {
             return Optional.empty();
         }
 
-        Optional<Profile> profileOpt = profileRepository.findById(session.getIccid());
+        String iccid = session.getIccid();
+        if (iccid == null) {
+            log.error("No ICCID associated with session for transaction: {}", transactionId);
+            return Optional.empty();
+        }
+        Optional<Profile> profileOpt = profileRepository.findById(iccid);
         if (profileOpt.isPresent()) {
             Profile profile = profileOpt.get();
             String bpp = cryptoService.generateBoundProfilePackage(profile.getProfilePayload(), session);
@@ -174,12 +188,15 @@ public class ProfileService {
         SessionContext session = cryptoService.getSession(transactionId);
         if (session != null) {
             // Revert profile state from ORDERED/RELEASED if cancel happens before download completes
-            Optional<Profile> profileOpt = profileRepository.findById(session.getIccid());
-            if (profileOpt.isPresent()) {
-                Profile profile = profileOpt.get();
-                if (!"DOWNLOADED".equals(profile.getState())) {
-                    profile.setState("RELEASED"); // return to released state so it can be attempted again
-                    profileRepository.save(profile);
+            String iccid = session.getIccid();
+            if (iccid != null) {
+                Optional<Profile> profileOpt = profileRepository.findById(iccid);
+                if (profileOpt.isPresent()) {
+                    Profile profile = profileOpt.get();
+                    if (!"DOWNLOADED".equals(profile.getState())) {
+                        profile.setState("RELEASED"); // return to released state so it can be attempted again
+                        profileRepository.save(profile);
+                    }
                 }
             }
             cryptoService.removeSession(transactionId);

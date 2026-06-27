@@ -1,0 +1,166 @@
+package in.hutta.smdp;
+
+import in.hutta.smdp.dto.Es2Dtos;
+import in.hutta.smdp.dto.Es9Dtos;
+import in.hutta.smdp.model.Profile;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.*;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import java.util.Objects;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class SmdpIntegrationTest {
+
+    @Autowired
+    private TestRestTemplate restTemplate;
+
+    @Test
+    public void testRspLifecycle() {
+        // 1. Admin Profile Import (Multipart File Upload)
+        MultiValueMap<String, Object> importBody = new LinkedMultiValueMap<>();
+        importBody.add("file", new ClassPathResource("profiles/TS48 V7.0 eSIM_GTP_SAIP2.3_BERTLV_SUCI.rename2der"));
+        importBody.add("iccid", "89000123456789012399");
+
+        HttpHeaders importHeaders = new HttpHeaders();
+        importHeaders.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        HttpEntity<MultiValueMap<String, Object>> importRequest = new HttpEntity<>(importBody, importHeaders);
+
+        ResponseEntity<String> importResponse = restTemplate.postForEntity(
+                "/gsma/rsp/v2/admin/importProfile",
+                importRequest,
+                String.class
+        );
+        assertThat(importResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(Objects.requireNonNull(importResponse.getBody())).contains("Profile imported successfully");
+
+        // 2. ES2+ Download Order
+        Es2Dtos.DownloadOrderRequest orderReq = new Es2Dtos.DownloadOrderRequest();
+        orderReq.setEid("89049032000008888888888888888801");
+        orderReq.setIccid("89000123456789012399");
+        orderReq.setProfileType("Standard");
+        
+        Es2Dtos.RequestHeader orderHeader = new Es2Dtos.RequestHeader();
+        orderHeader.setFunctionRequesterIdentifier("OperatorX");
+        orderHeader.setFunctionCallIdentifier("TX-100");
+        orderReq.setHeader(orderHeader);
+
+        ResponseEntity<Es2Dtos.DownloadOrderResponse> orderResponse = restTemplate.postForEntity(
+                "/gsma/rsp/v2/es2plus/downloadOrder",
+                orderReq,
+                Es2Dtos.DownloadOrderResponse.class
+        );
+        assertThat(orderResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Es2Dtos.DownloadOrderResponse orderResponseBody = Objects.requireNonNull(orderResponse.getBody());
+        assertThat(orderResponseBody.getIccid()).isEqualTo("89000123456789012399");
+
+        // 3. ES2+ Release Profile
+        Es2Dtos.ReleaseProfileRequest releaseReq = new Es2Dtos.ReleaseProfileRequest();
+        releaseReq.setIccid("89000123456789012399");
+
+        Es2Dtos.RequestHeader releaseHeader = new Es2Dtos.RequestHeader();
+        releaseHeader.setFunctionRequesterIdentifier("OperatorX");
+        releaseHeader.setFunctionCallIdentifier("TX-101");
+        releaseReq.setHeader(releaseHeader);
+
+        ResponseEntity<Es2Dtos.ReleaseProfileResponse> releaseResponse = restTemplate.postForEntity(
+                "/gsma/rsp/v2/es2plus/releaseProfile",
+                releaseReq,
+                Es2Dtos.ReleaseProfileResponse.class
+        );
+        assertThat(releaseResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Es2Dtos.ReleaseProfileResponse releaseResponseBody = Objects.requireNonNull(releaseResponse.getBody());
+        assertThat(releaseResponseBody.getHeader().getFunctionExecutionStatus().getStatus()).isEqualTo("Executed-Success");
+
+        // 4. ES9+ Initiate Authentication
+        Es9Dtos.InitiateAuthenticationRequest initReq = new Es9Dtos.InitiateAuthenticationRequest();
+        initReq.setEuiccChallenge("11223344556677889900AABBCCDDEEFF");
+        initReq.setSmdpAddress("localhost:8092");
+        initReq.setEuiccInfo1("MOCK_EUICC_INFO_1");
+
+        ResponseEntity<Es9Dtos.InitiateAuthenticationResponse> initResponse = restTemplate.postForEntity(
+                "/gsma/rsp/v2/es9plus/initiateAuthentication",
+                initReq,
+                Es9Dtos.InitiateAuthenticationResponse.class
+        );
+        assertThat(initResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Es9Dtos.InitiateAuthenticationResponse initResponseBody = Objects.requireNonNull(initResponse.getBody());
+        String transactionId = initResponseBody.getTransactionId();
+        assertThat(transactionId).isNotBlank();
+
+        // 5. ES9+ Authenticate Client
+        Es9Dtos.AuthenticateClientRequest authReq = new Es9Dtos.AuthenticateClientRequest();
+        authReq.setTransactionId(transactionId);
+        authReq.setAuthenticateServerResponse("MOCK_EUICC_AUTHENTICATE_RESPONSE_SIGNATURE");
+
+        ResponseEntity<Es9Dtos.AuthenticateClientResponse> authResponse = restTemplate.postForEntity(
+                "/gsma/rsp/v2/es9plus/authenticateClient",
+                authReq,
+                Es9Dtos.AuthenticateClientResponse.class
+        );
+        assertThat(authResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Es9Dtos.AuthenticateClientResponse authResponseBody = Objects.requireNonNull(authResponse.getBody());
+        assertThat(authResponseBody.getTransactionId()).isEqualTo(transactionId);
+
+        // 6. ES9+ Get Bound Profile Package (BPP)
+        Es9Dtos.GetBoundProfilePackageRequest bppReq = new Es9Dtos.GetBoundProfilePackageRequest();
+        bppReq.setTransactionId(transactionId);
+        bppReq.setPrepareDownloadResponse("MOCK_EUICC_PREPARE_DOWNLOAD_RESPONSE");
+
+        ResponseEntity<Es9Dtos.GetBoundProfilePackageResponse> bppResponse = restTemplate.postForEntity(
+                "/gsma/rsp/v2/es9plus/getBoundProfilePackage",
+                bppReq,
+                Es9Dtos.GetBoundProfilePackageResponse.class
+        );
+        assertThat(bppResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Es9Dtos.GetBoundProfilePackageResponse bppResponseBody = Objects.requireNonNull(bppResponse.getBody());
+        assertThat(bppResponseBody.getTransactionId()).isEqualTo(transactionId);
+        assertThat(bppResponseBody.getBoundProfilePackage()).isNotBlank();
+
+        // 7. Verify GET all profiles and GET profiles by state
+        ResponseEntity<Profile[]> allProfilesResp = restTemplate.getForEntity(
+                "/gsma/rsp/v2/admin/profiles",
+                Profile[].class
+        );
+        assertThat(allProfilesResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Profile[] allProfiles = Objects.requireNonNull(allProfilesResp.getBody());
+        assertThat(allProfiles).isNotEmpty();
+        assertThat(allProfiles[0].getIccid()).isEqualTo("89000123456789012399");
+
+        // Verify GET profiles by state (DOWNLOADED)
+        ResponseEntity<Profile[]> downloadedProfilesResp = restTemplate.getForEntity(
+                "/gsma/rsp/v2/admin/profiles?state=DOWNLOADED",
+                Profile[].class
+        );
+        assertThat(downloadedProfilesResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Profile[] downloadedProfiles = Objects.requireNonNull(downloadedProfilesResp.getBody());
+        assertThat(downloadedProfiles).isNotEmpty();
+
+        // Verify GET profiles by state (AVAILABLE)
+        ResponseEntity<Profile[]> availableProfilesResp = restTemplate.getForEntity(
+                "/gsma/rsp/v2/admin/profiles?state=AVAILABLE",
+                Profile[].class
+        );
+        assertThat(availableProfilesResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Profile[] availableProfiles = Objects.requireNonNull(availableProfilesResp.getBody());
+        assertThat(availableProfiles).isEmpty();
+
+        // 8. Verify DELETE profile
+        restTemplate.delete("/gsma/rsp/v2/admin/profiles/89000123456789012399");
+
+        // Verify GET all profiles is now empty
+        ResponseEntity<Profile[]> postDeleteProfilesResp = restTemplate.getForEntity(
+                "/gsma/rsp/v2/admin/profiles",
+                Profile[].class
+        );
+        assertThat(postDeleteProfilesResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(Objects.requireNonNull(postDeleteProfilesResp.getBody())).isEmpty();
+    }
+}
