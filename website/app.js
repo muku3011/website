@@ -178,14 +178,14 @@ function renderProfiles() {
         const deleteDisabled = (window.userRole === 'viewer') ? 'disabled' : '';
 
         return `
-            <tr>
+            <tr onclick="selectProfileForActivation('${profile.iccid}')" style="cursor: pointer;">
                 <td class="code-text-mono">${profile.iccid}</td>
                 <td class="code-text-mono">${profile.eid || '<span style="color: var(--text-muted);">--</span>'}</td>
                 <td><span class="status-pill ${stateClass}">${profile.state}</span></td>
                 <td>
                     <div class="btn-actions">
                         ${actionButton}
-                        <button class="btn btn-action-trigger btn-delete" onclick="deleteProfile('${profile.iccid}')" ${deleteDisabled}>
+                        <button class="btn btn-action-trigger btn-delete" onclick="deleteProfile('${profile.iccid}'); event.stopPropagation();" ${deleteDisabled}>
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: middle;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                             Delete
                         </button>
@@ -194,7 +194,67 @@ function renderProfiles() {
             </tr>
         `;
     }).join('');
+
+    // Update activation QR code / info
+    updateActivationDetails();
 }
+
+window.selectedIccid = null;
+
+window.selectProfileForActivation = function(iccid) {
+    window.selectedIccid = iccid;
+    updateActivationDetails();
+};
+
+window.updateActivationDetails = function() {
+    const scenario = document.getElementById('ac-scenario')?.value || 'standard';
+    const qrImg = document.getElementById('activation-qr');
+    const qrPlaceholder = document.getElementById('qr-placeholder');
+    const codeText = document.getElementById('activation-code-text');
+    
+    if (!window.selectedIccid) {
+        if (currentProfiles && currentProfiles.length > 0) {
+            window.selectedIccid = currentProfiles[0].iccid;
+        }
+    }
+    
+    if (!window.selectedIccid) {
+        if (qrImg) qrImg.style.display = 'none';
+        if (qrPlaceholder) qrPlaceholder.style.display = 'block';
+        if (codeText) codeText.value = '';
+        return;
+    }
+    
+    // Highlight the row in the table
+    document.querySelectorAll('.profiles-table tbody tr').forEach(row => {
+        row.classList.remove('selected-row');
+        const cell = row.querySelector('td');
+        if (cell && cell.textContent.trim() === window.selectedIccid) {
+            row.classList.add('selected-row');
+        }
+    });
+
+    const host = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+        ? 'localhost:8092' 
+        : 'hutta.in';
+        
+    let acString = '';
+    if (scenario === 'standard') {
+        acString = `LPA:1$${host}$${window.selectedIccid}`;
+    } else if (scenario === 'push') {
+        acString = `LPA:1$${host}$`;
+    } else if (scenario === 'confirm') {
+        acString = `LPA:1$${host}$${window.selectedIccid}$1`;
+    }
+    
+    if (codeText) codeText.value = acString;
+    
+    if (qrImg && qrPlaceholder) {
+        qrPlaceholder.style.display = 'none';
+        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=128x128&data=${encodeURIComponent(acString)}`;
+        qrImg.style.display = 'block';
+    }
+};
 
 // Attach event listeners for search and filters
 const searchInput = document.getElementById('search-input');
@@ -632,6 +692,22 @@ function enforceRolePermissions() {
 document.addEventListener('DOMContentLoaded', () => {
     enforceRolePermissions();
     fetchProfiles();
+
+    const acScenario = document.getElementById('ac-scenario');
+    if (acScenario) {
+        acScenario.addEventListener('change', window.updateActivationDetails);
+    }
+    
+    const btnCopyAc = document.getElementById('btn-copy-ac');
+    if (btnCopyAc) {
+        btnCopyAc.addEventListener('click', () => {
+            const codeText = document.getElementById('activation-code-text');
+            if (codeText && codeText.value) {
+                navigator.clipboard.writeText(codeText.value);
+                addLogLine(`Copied activation code to clipboard: ${codeText.value}`, "info");
+            }
+        });
+    }
 });
 
 if (logoutBtn) {

@@ -1286,3 +1286,9 @@ select:focus-visible {
     box-shadow: 0 0 10px hsla(var(--hue-success), 80%, 50%, 0.25);
 }
 
+.profiles-table tbody tr.selected-row {
+    background: hsla(var(--hue-primary), 100%, 60%, 0.08) !important;
+    border-left: 3px solid var(--primary-glow);
+}
+
+
