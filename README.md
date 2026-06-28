@@ -1,6 +1,6 @@
 # hutta.in Gateway & eSIM Remote SIM Provisioning (RSP) Platform
 
-This repository contains the Infrastructure as Code (IaC), secure web portal assets, authentication configurations, and eSIM Remote SIM Provisioning (RSP) services needed to run a secure server gateway, status dashboard, and a local SM-DP+ eSIM provisioning environment on a home-hosted Raspberry Pi.
+This repository contains the Infrastructure as Code (IaC), secure web portal assets, Authelia SSO authentication configurations, Certbot SSL/TLS certificate automation, and eSIM Remote SIM Provisioning (RSP) services needed to run a secure server gateway, status dashboard, and a local SM-DP+ eSIM provisioning environment on a home-hosted Raspberry Pi.
 
 ---
 
