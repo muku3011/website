@@ -50,3 +50,9 @@ Contains a reference implementation of a GSMA SGP.22 v3.1 compliant Subscription
 - Auto-deployment via self-hosted GitHub Actions workflows and systemd service.
 - **Go to [smdp-plus/README.md](smdp-plus/README.md) for build, testing, and deployment instructions.**
 
+### 5. [eSIM LPA Download Simulator (lpa-simulator/)](lpa-simulator/README.md)
+Contains a client-side simulation helper that triggers standard remote SIM provisioning (RSP) download handshakes:
+- REST API controller for starting profile download via activation code.
+- Automatic deployment configuration via systemd service on the Raspberry Pi.
+- **Go to [lpa-simulator/README.md](lpa-simulator/README.md) for build, testing, and deployment instructions.**
+
