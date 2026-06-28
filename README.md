@@ -2,30 +2,28 @@
 
 This repository contains the Infrastructure as Code (IaC) and web assets needed to delegate DNS management for `hutta.in` to Google Cloud Platform (GCP), set up Dynamic DNS (DDNS), and run a premium status dashboard on a home-hosted Raspberry Pi.
 
-## Architecture Overview
+---
+
+## 1. Dynamic DNS (DDNS) Architecture Overview
+
+This diagram represents the flow for user access and the automated A-record updates when the home public IP changes.
 
 ```mermaid
-flowchart TD
+flowchart LR
     subgraph Public Internet
-        Client["Web Browser"]
-        GCP_DNS["GCP Cloud DNS"]
-        Ipify["ipify.org (IP Service)"]
+        Browser["Web Browser"]
+        DNS["GCP Cloud DNS"]
+        Ipify["ipify.org"]
     end
 
     subgraph Home Network
         RPi["Raspberry Pi"]
     end
 
-    Client -->|1. DNS Lookup| GCP_DNS
-    GCP_DNS -->|2. Returns Public IP| Client
-    Client -->|3. HTTP/HTTPS Request| RPi
-    RPi -->|4. Periodic IP Check| Ipify
-    RPi -->|5. Update Record if IP changed| GCP_DNS
-
-    style Client fill:#3b82f6,stroke:#1d4ed8,stroke-width:2px,color:#fff
-    style GCP_DNS fill:#10b981,stroke:#047857,stroke-width:2px,color:#fff
-    style Ipify fill:#6b7280,stroke:#374151,stroke-width:2px,color:#fff
-    style RPi fill:#ef4444,stroke:#b91c1c,stroke-width:2px,color:#fff
+    Browser -->|1. DNS Lookup| DNS
+    Browser -->|2. Access Website| RPi
+    RPi -->|3. Check Public IP| Ipify
+    RPi -->|4. Update A Record if changed| DNS
 ```
 
 1. **GCP Cloud DNS**: Manages the `hutta.in` DNS zone.
@@ -34,7 +32,72 @@ flowchart TD
 
 ---
 
-## Projects & Repository Layout
+## 2. Web Portal & eSIM Services System Architecture
+
+This diagram shows how user devices, reverse proxy, authentication directories, and persistent database tiers interface on the Raspberry Pi.
+
+```mermaid
+flowchart TD
+    subgraph Client ["Client Devices"]
+        Browser["Web Browser"]
+        LPA_Client["Device LPA Client"]
+    end
+
+    subgraph RPi ["Raspberry Pi Gateway"]
+        direction TB
+        subgraph Proxy ["Apache Reverse Proxy (Port 443)"]
+            Static["Static Web Assets (profiles.html, admin.html)"]
+            OIDC["mod_auth_openidc"]
+        end
+
+        subgraph Auth ["Auth System"]
+            Authelia["Authelia SSO (Port 9091)"]
+            YAML_DB["users_database.yml"]
+        end
+
+        subgraph Backend ["eSIM Backend Services"]
+            SMDP["SM-DP+ eSIM Server (Port 8092)"]
+            LPA_Sim["LPA Simulator (Port 8093)"]
+        end
+
+        subgraph DB ["Database Tier"]
+            PostgreSQL[(PostgreSQL Server: Port 5432)]
+            smdpdb[(Database: smdpdb)]
+            lpadb[(Database: lpadb)]
+        end
+    end
+
+    %% Client Access
+    Browser -->|HTTPS /| Static
+    Browser -->|Authenticate| OIDC
+    LPA_Client -->|Download Handshake /es9plus| SMDP
+
+    %% Proxy Routing
+    OIDC -->|Authenticate| Authelia
+    Proxy -->|Proxy /authelia| Authelia
+    Proxy -->|Proxy /gsma/rsp/v2/| SMDP
+    Proxy -->|Proxy /lpa/| LPA_Sim
+
+    %% Authentication Directory
+    Authelia <-->|Read/Write Users| YAML_DB
+    SMDP -->|Authelia UserController| YAML_DB
+
+    %% eSIM provisioning & database
+    LPA_Sim -->|Trigger ES9+ Provisioning| SMDP
+    SMDP <-->|JPA / Flyway| smdpdb
+    LPA_Sim <-->|JPA / Flyway| lpadb
+    smdpdb -.->|Part of| PostgreSQL
+    lpadb -.->|Part of| PostgreSQL
+```
+
+* **Apache HTTP Server**: Serves the website frontend assets and acts as a secure reverse proxy with OIDC integration (`mod_auth_openidc`) for private routes.
+* **Authelia**: Authenticates users against a local directory (`users_database.yml`) and handles Single Sign-On (SSO).
+* **SM-DP+ eSIM Server**: Implements the standard GSMA SGP.22 endpoints (ES2+ and ES9+), backed by a persistent PostgreSQL database (`smdpdb`) and Flyway database migration controller.
+* **LPA Simulator**: Simulates eUICC operations and triggers remote SIM provisioning downloads, storing downloaded profiles in a persistent PostgreSQL database (`lpadb`).
+
+---
+
+## 3. Projects & Repository Layout
 
 This repository is split into five main areas:
 
@@ -68,6 +131,6 @@ Contains a reference implementation of a GSMA SGP.22 v3.1 compliant Subscription
 ### 5. [eSIM LPA Download Simulator (lpa-simulator/)](lpa-simulator/README.md)
 Contains a client-side simulation helper that triggers standard remote SIM provisioning (RSP) download handshakes:
 - REST API controller for starting profile download via activation code.
+- Persistent PostgreSQL database backend and Flyway schema versioning.
 - Automatic deployment configuration via systemd service on the Raspberry Pi.
 - **Go to [lpa-simulator/README.md](lpa-simulator/README.md) for build, testing, and deployment instructions.**
-
