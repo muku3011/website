@@ -947,8 +947,20 @@ function initLpaSimulator() {
         minimizeBtn.addEventListener('click', () => {
             expandedWindow.style.display = 'none';
             minimizedBtn.style.display = 'flex';
+            
+            // Reset position on minimize
+            const container = document.getElementById('lpa-sim-container');
+            if (container) {
+                container.style.left = 'auto';
+                container.style.top = 'auto';
+                container.style.bottom = '24px';
+                container.style.right = '24px';
+            }
         });
     }
+
+    // Initialize Draggable behavior
+    makeLpaDraggable();
 
     if (clearLogsBtn) {
         clearLogsBtn.addEventListener('click', () => {
@@ -1209,3 +1221,58 @@ window.toggleLpaProfileState = toggleLpaProfileState;
 window.updateLpaProfileNickname = updateLpaProfileNickname;
 window.deleteLpaProfile = deleteLpaProfile;
 window.fetchLpaProfiles = fetchLpaProfiles;
+
+function makeLpaDraggable() {
+    const lpaHeader = document.querySelector('.lpa-sim-header');
+    const lpaContainer = document.getElementById('lpa-sim-container');
+    
+    if (!lpaHeader || !lpaContainer) return;
+    
+    lpaHeader.style.cursor = 'move';
+    
+    let isDragging = false;
+    let startX, startY, initialLeft, initialTop;
+    
+    lpaHeader.addEventListener('mousedown', (e) => {
+        if (e.button !== 0 || e.target.closest('button')) return;
+        
+        isDragging = true;
+        const rect = lpaContainer.getBoundingClientRect();
+        
+        lpaContainer.style.bottom = 'auto';
+        lpaContainer.style.right = 'auto';
+        lpaContainer.style.left = `${rect.left}px`;
+        lpaContainer.style.top = `${rect.top}px`;
+        
+        startX = e.clientX;
+        startY = e.clientY;
+        initialLeft = rect.left;
+        initialTop = rect.top;
+        
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+        
+        e.preventDefault();
+    });
+    
+    function onMouseMove(e) {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        
+        const maxLeft = window.innerWidth - lpaContainer.offsetWidth;
+        const maxTop = window.innerHeight - lpaContainer.offsetHeight;
+        
+        const newLeft = Math.max(0, Math.min(maxLeft, initialLeft + dx));
+        const newTop = Math.max(0, Math.min(maxTop, initialTop + dy));
+        
+        lpaContainer.style.left = `${newLeft}px`;
+        lpaContainer.style.top = `${newTop}px`;
+    }
+    
+    function onMouseUp() {
+        isDragging = false;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+    }
+}

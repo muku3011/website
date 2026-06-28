@@ -1343,6 +1343,7 @@ select:focus-visible {
 /* Expanded Floating Window */
 .lpa-sim-window {
     width: 380px;
+    height: 500px;
     max-width: calc(100vw - 48px);
     background: var(--card-bg);
     border: 1px solid var(--card-border);
@@ -1354,9 +1355,15 @@ select:focus-visible {
     display: flex;
     flex-direction: column;
     animation: lpa-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    transition: var(--transition-smooth);
+    transition: opacity 0.3s, transform 0.3s;
+    
+    /* Resizable properties */
+    resize: both;
+    min-width: 320px;
+    min-height: 400px;
+    max-width: 90vw;
+    max-height: 90vh;
 }
-
 @keyframes lpa-slide-in {
     from { transform: translateY(20px) scale(0.95); opacity: 0; }
     to { transform: translateY(0) scale(1); opacity: 1; }
@@ -1451,6 +1458,8 @@ select:focus-visible {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    flex: 1 1 auto;
+    overflow-y: auto;
 }
 
 .lpa-sim-desc {
@@ -1525,6 +1534,7 @@ select:focus-visible {
     flex-direction: column;
     gap: 6px;
     margin-top: 4px;
+    flex: 1 1 auto;
 }
 
 .lpa-sim-console-header {
@@ -1553,7 +1563,8 @@ select:focus-visible {
     border: 1px solid var(--card-border);
     border-radius: var(--border-radius-sm);
     padding: 10px;
-    height: 140px;
+    flex: 1 1 auto;
+    min-height: 120px;
     overflow-y: auto;
     font-family: monospace;
     font-size: 0.75rem;
@@ -1624,6 +1635,7 @@ select:focus-visible {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    flex: 1 1 auto;
 }
 
 /* Local Profiles List */
@@ -1631,7 +1643,7 @@ select:focus-visible {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-height: 290px;
+    flex: 1 1 auto;
     overflow-y: auto;
     padding-right: 4px;
 }
