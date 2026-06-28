@@ -31,6 +31,7 @@ public class LpaDownloadTest {
 
     @BeforeEach
     public void setUp() throws Exception {
+        localProfileRepository.deleteAll();
         Field restTemplateField = LpaDownloadService.class.getDeclaredField("restTemplate");
         restTemplateField.setAccessible(true);
         RestTemplate restTemplate = (RestTemplate) restTemplateField.get(lpaDownloadService);

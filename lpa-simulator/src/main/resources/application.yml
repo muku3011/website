@@ -5,19 +5,17 @@ spring:
   application:
     name: lpa-simulator
   datasource:
-    url: jdbc:h2:mem:lpadb;DB_CLOSE_DELAY=-1
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: password
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lpadb}
+    username: ${SPRING_DATASOURCE_USERNAME:lpa}
+    password: ${SPRING_DATASOURCE_PASSWORD:lpa_password}
+    driver-class-name: org.postgresql.Driver
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
-    show-sql: true
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    enabled: true
 
 logging:
   level:
