@@ -203,4 +203,30 @@ public class ProfileService {
             log.info("Session cancelled and cleaned up: {}", transactionId);
         }
     }
+
+    public boolean handleNotification(in.hutta.smdp.dto.Es9Dtos.HandleNotificationRequest request) {
+        if (request == null || request.getPendingNotification() == null) {
+            return false;
+        }
+        
+        in.hutta.smdp.dto.Es9Dtos.PendingNotification notification = request.getPendingNotification();
+        log.info("RSP handleNotification received: operation={}, ICCID={}", 
+                notification.getProfileManagementOperation(), notification.getIccid());
+                
+        if ("delete".equalsIgnoreCase(notification.getProfileManagementOperation())) {
+            String iccid = notification.getIccid();
+            if (iccid != null) {
+                Optional<Profile> profileOpt = profileRepository.findById(iccid);
+                if (profileOpt.isPresent()) {
+                    Profile profile = profileOpt.get();
+                    profile.setState("AVAILABLE");
+                    profile.setEid(null);
+                    profileRepository.save(profile);
+                    log.info("Profile uninstalled notification processed. ICCID={} set back to AVAILABLE", iccid);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }

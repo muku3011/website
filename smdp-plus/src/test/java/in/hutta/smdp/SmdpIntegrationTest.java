@@ -124,6 +124,22 @@ public class SmdpIntegrationTest {
         assertThat(bppResponseBody.getTransactionId()).isEqualTo(transactionId);
         assertThat(bppResponseBody.getBoundProfilePackage()).isNotBlank();
 
+        // 6b. Send Deletion Notification
+        Es9Dtos.HandleNotificationRequest notifReq = new Es9Dtos.HandleNotificationRequest();
+        Es9Dtos.PendingNotification pendingNotif = new Es9Dtos.PendingNotification();
+        pendingNotif.setProfileManagementOperation("delete");
+        pendingNotif.setIccid("89000123456789012399");
+        pendingNotif.setNotificationAddress("localhost:8092");
+        notifReq.setPendingNotification(pendingNotif);
+
+        ResponseEntity<java.util.Map> notifResponse = restTemplate.postForEntity(
+                "/gsma/rsp/v2/es9plus/handleNotification",
+                notifReq,
+                java.util.Map.class
+        );
+        assertThat(notifResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(Objects.requireNonNull(notifResponse.getBody()).get("status")).isEqualTo("Executed-Success");
+
         // 7. Verify GET all profiles and GET profiles by state
         ResponseEntity<Profile[]> allProfilesResp = restTemplate.getForEntity(
                 "/gsma/rsp/v2/admin/profiles",
@@ -134,23 +150,23 @@ public class SmdpIntegrationTest {
         assertThat(allProfiles).isNotEmpty();
         assertThat(allProfiles[0].getIccid()).isEqualTo("89000123456789012399");
 
-        // Verify GET profiles by state (DOWNLOADED)
+        // Verify GET profiles by state (DOWNLOADED) is now empty
         ResponseEntity<Profile[]> downloadedProfilesResp = restTemplate.getForEntity(
                 "/gsma/rsp/v2/admin/profiles?state=DOWNLOADED",
                 Profile[].class
         );
         assertThat(downloadedProfilesResp.getStatusCode()).isEqualTo(HttpStatus.OK);
         Profile[] downloadedProfiles = Objects.requireNonNull(downloadedProfilesResp.getBody());
-        assertThat(downloadedProfiles).isNotEmpty();
+        assertThat(downloadedProfiles).isEmpty();
 
-        // Verify GET profiles by state (AVAILABLE)
+        // Verify GET profiles by state (AVAILABLE) is now populated
         ResponseEntity<Profile[]> availableProfilesResp = restTemplate.getForEntity(
                 "/gsma/rsp/v2/admin/profiles?state=AVAILABLE",
                 Profile[].class
         );
         assertThat(availableProfilesResp.getStatusCode()).isEqualTo(HttpStatus.OK);
         Profile[] availableProfiles = Objects.requireNonNull(availableProfilesResp.getBody());
-        assertThat(availableProfiles).isEmpty();
+        assertThat(availableProfiles).isNotEmpty();
 
         // 8. Verify DELETE profile
         restTemplate.delete("/gsma/rsp/v2/admin/profiles/89000123456789012399");

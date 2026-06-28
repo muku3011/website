@@ -108,4 +108,18 @@ public class Es9PlusController {
         response.setCode("1");
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/handleNotification")
+    public ResponseEntity<?> handleNotification(
+            @RequestHeader(value = "X-Admin-Protocol", required = false) String adminProtocol,
+            @RequestBody HandleNotificationRequest request) {
+        log.info("ES9+ handleNotification, protocol={}", adminProtocol);
+
+        boolean success = profileService.handleNotification(request);
+        if (success) {
+            return ResponseEntity.ok(java.util.Map.of("status", "Executed-Success"));
+        } else {
+            return ResponseEntity.badRequest().body(java.util.Map.of("status", "Failed", "message", "Error processing notification"));
+        }
+    }
 }

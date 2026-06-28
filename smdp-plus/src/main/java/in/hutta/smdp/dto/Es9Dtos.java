@@ -55,4 +55,16 @@ public class Es9Dtos {
         private String status; // Executed-Success, Failed
         private String code;
     }
+
+    @Data
+    public static class HandleNotificationRequest {
+        private PendingNotification pendingNotification;
+    }
+
+    @Data
+    public static class PendingNotification {
+        private String profileManagementOperation;
+        private String iccid;
+        private String notificationAddress;
+    }
 }
