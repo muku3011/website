@@ -89,6 +89,11 @@ cat << 'EOF' > /etc/apache2/sites-available/000-default-le-ssl.conf
 		Header set Set-Cookie "hutta_auth=true; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_preferred_username
 		Header set Set-Cookie "hutta_user=%{OIDC_CLAIM_preferred_username}e; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_preferred_username
 		Header set Set-Cookie "hutta_groups=%{OIDC_CLAIM_groups}e; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_groups
+
+		# Prevent browser caching of protected pages
+		Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+		Header set Pragma "no-cache"
+		Header set Expires "0"
 	</Location>
 
 	# Protect the admin page (admin.html)
@@ -100,6 +105,11 @@ cat << 'EOF' > /etc/apache2/sites-available/000-default-le-ssl.conf
 		Header set Set-Cookie "hutta_auth=true; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_preferred_username
 		Header set Set-Cookie "hutta_user=%{OIDC_CLAIM_preferred_username}e; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_preferred_username
 		Header set Set-Cookie "hutta_groups=%{OIDC_CLAIM_groups}e; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_groups
+
+		# Prevent browser caching of protected pages
+		Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+		Header set Pragma "no-cache"
+		Header set Expires "0"
 	</Location>
 
 	# ==============================================================================
