@@ -586,10 +586,106 @@ if (logoutBtn) {
         if (isLocal) {
             window.location.replace('index.html');
         } else {
-            document.cookie = "hutta_user=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; Secure; SameSite=Lax";
-            document.cookie = "hutta_groups=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; Secure; SameSite=Lax";
-            document.cookie = "hutta_auth=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; Secure; SameSite=Lax";
-            window.location.replace('/redirect_uri?logout=https%3A%2F%2Fhutta.in%2Fauthelia%2Flogout%3Frd%3Dhttps%253A%252F%252Fhutta.in%252F');
+            // Show themed full-screen logout overlay
+            const overlay = document.createElement('div');
+            overlay.id = 'logout-loading-overlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: rgba(10, 10, 12, 0.9);
+                backdrop-filter: blur(8px);
+                -webkit-backdrop-filter: blur(8px);
+                z-index: 99999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                font-family: var(--font-primary), system-ui, -apple-system, sans-serif;
+            `;
+            
+            overlay.innerHTML = `
+                <style>
+                    .logout-spinner-container {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 1.5rem;
+                        text-align: center;
+                    }
+                    .logout-spinner-orb {
+                        width: 60px;
+                        height: 60px;
+                        border-radius: 50%;
+                        background: linear-gradient(135deg, var(--primary-glow, #0070f3), var(--secondary-glow, #ff0070));
+                        box-shadow: 0 0 30px var(--primary-glow, #0070f3);
+                        animation: logout-pulse 2s infinite ease-in-out, logout-rotate 4s infinite linear;
+                    }
+                    .logout-spinner-text {
+                        color: var(--text-primary, #ffffff);
+                        font-size: 1.1rem;
+                        font-weight: 500;
+                        letter-spacing: 0.5px;
+                        margin: 0;
+                        font-family: var(--font-heading), system-ui;
+                    }
+                    @keyframes logout-pulse {
+                        0%, 100% { transform: scale(0.9); opacity: 0.8; box-shadow: 0 0 20px var(--primary-glow, #0070f3); }
+                        50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 45px var(--secondary-glow, #ff0070); }
+                    }
+                    @keyframes logout-rotate {
+                        100% { transform: rotate(360deg); }
+                    }
+                </style>
+                <div class="logout-spinner-container">
+                    <div class="logout-spinner-orb"></div>
+                    <p class="logout-spinner-text">Logging out securely...</p>
+                </div>
+            `;
+            
+            document.body.appendChild(overlay);
+            
+            // Trigger transition
+            setTimeout(() => { overlay.style.opacity = '1'; }, 50);
+            
+            // Clear custom application cookies
+            const clearCookies = () => {
+                const cookieNames = ['hutta_user', 'hutta_groups', 'hutta_auth'];
+                cookieNames.forEach(name => {
+                    document.cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; Secure; SameSite=Lax`;
+                    document.cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC;`;
+                });
+            };
+            clearCookies();
+
+            // Perform logout in background
+            const logoutUrl = '/redirect_uri?logout=https%3A%2F%2Fhutta.in%2Fauthelia%2Flogout%3Frd%3Dhttps%253A%252F%252Fhutta.in%252F';
+            
+            const performLogout = async () => {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout limit
+                
+                try {
+                    await fetch(logoutUrl, { 
+                        method: 'GET', 
+                        credentials: 'same-origin',
+                        signal: controller.signal
+                    });
+                } catch (e) {
+                    console.warn("Background logout fetch completed with fallback:", e);
+                } finally {
+                    clearTimeout(timeoutId);
+                    clearCookies(); // ensure cookies are cleared again
+                    setTimeout(() => {
+                        window.location.replace('index.html');
+                    }, 800); // Small delay to let the animation feel smooth
+                }
+            };
+            
+            performLogout();
         }
     });
 }
