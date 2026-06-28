@@ -34,7 +34,39 @@ flowchart LR
 
 ## 2. Secure HTTPS & SSL/TLS via Certbot
 
-To ensure all public-facing HTTP traffic is encrypted and secure, **Certbot (Let's Encrypt)** is integrated into the hosting environment:
+To ensure all public-facing HTTP traffic is encrypted and secure, **Certbot (Let's Encrypt)** is integrated into the hosting environment.
+
+```mermaid
+flowchart TD
+    subgraph LE ["Let's Encrypt CA"]
+        Challenge["Verify Domain Ownership"]
+        Issue["Issue SSL/TLS Certificates"]
+    end
+
+    subgraph RPi ["Raspberry Pi Gateway"]
+        direction TB
+        CertbotClient["Certbot Agent"]
+        Apache["Apache Web Server (Port 80/443)"]
+        FS["Local File System (/etc/letsencrypt/)"]
+        Timer["systemd certbot.timer"]
+    end
+
+    %% Initialization/Renewal Trigger
+    Timer -->|1. Scheduled Trigger| CertbotClient
+    
+    %% Challenge & Verification
+    CertbotClient -->|2. Request Cert & Challenge| LE
+    Challenge -.->|3. Validate Domain| Apache
+    
+    %% Issuance & Storage
+    LE -->|4. Issue Signed Certs| CertbotClient
+    CertbotClient -->|5. Save Private Key & Chain| FS
+    
+    %% Apache Reload
+    CertbotClient -->|6. Reload Service| Apache
+    Apache -->|7. Load Certificates| FS
+```
+
 * **Certificate Acquisition**: Certbot automatically provisions trusted, free SSL/TLS certificates from Let's Encrypt for `hutta.in` (and wildcard/subdomains).
 * **Apache HTTPS Integration**: The certificates (private key and full chain cert) are loaded into the Apache HTTP Server (`/etc/apache2/sites-available/000-default-le-ssl.conf`), forcing all connections to upgrade to **HTTPS (port 443)** using modern TLS protocols.
 * **Automated Renewals**: A systemd timer (`certbot.timer`) runs automatically twice a day to renew certificates nearing expiration and reloads Apache to apply the renewed certificates seamlessly without downtime.
