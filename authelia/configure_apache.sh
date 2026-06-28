@@ -76,8 +76,8 @@ cat << 'EOF' > /etc/apache2/sites-available/000-default-le-ssl.conf
 		Require valid-user
 	</Location>
 
-	# Protect the dashboard page (dashboard.html)
-	<Location /dashboard.html>
+	# Protect the profiles page (profiles.html)
+	<Location /profiles.html>
 		AuthType openid-connect
 		Require valid-user
 
