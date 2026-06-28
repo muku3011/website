@@ -28,19 +28,6 @@ function setTheme(theme) {
 }
 
 // -------------------------------------------------------------
-// CLOCK
-// -------------------------------------------------------------
-const clockElement = document.getElementById('clock');
-function updateClock() {
-    if (clockElement) {
-        const now = new Date();
-        clockElement.textContent = now.toLocaleTimeString();
-    }
-}
-setInterval(updateClock, 1000);
-updateClock();
-
-// -------------------------------------------------------------
 // BACKEND CONFIGURATION
 // -------------------------------------------------------------
 const BACKEND_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
@@ -163,11 +150,23 @@ function renderProfiles() {
         
         let actionButton = '';
         if (profile.state === 'AVAILABLE') {
-            actionButton = `<button class="btn btn-action-trigger btn-primary-action" onclick="openOrderModal('${profile.iccid}')">Order</button>`;
+            actionButton = `
+                <button class="btn btn-action-trigger btn-primary-action" onclick="openOrderModal('${profile.iccid}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: middle;"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                    Order
+                </button>`;
         } else if (profile.state === 'ORDERED') {
-            actionButton = `<button class="btn btn-action-trigger btn-secondary-action" onclick="triggerRelease('${profile.iccid}')">Release</button>`;
+            actionButton = `
+                <button class="btn btn-action-trigger btn-secondary-action" onclick="triggerRelease('${profile.iccid}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: middle;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    Release
+                </button>`;
         } else if (profile.state === 'RELEASED') {
-            actionButton = `<button class="btn btn-action-trigger btn-success-action" onclick="triggerLpaDownload('${profile.iccid}')">Download (LPA)</button>`;
+            actionButton = `
+                <button class="btn btn-action-trigger btn-success-action" onclick="triggerLpaDownload('${profile.iccid}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: middle;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Download (LPA)
+                </button>`;
         } else if (profile.state === 'DOWNLOADED') {
             actionButton = `
                 <span style="font-size: 0.85rem; color: var(--success-glow); font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem;">
@@ -186,7 +185,10 @@ function renderProfiles() {
                 <td>
                     <div class="btn-actions">
                         ${actionButton}
-                        <button class="btn btn-action-trigger btn-delete" onclick="deleteProfile('${profile.iccid}')" ${deleteDisabled}>Delete</button>
+                        <button class="btn btn-action-trigger btn-delete" onclick="deleteProfile('${profile.iccid}')" ${deleteDisabled}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: middle;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                            Delete
+                        </button>
                     </div>
                 </td>
             </tr>
@@ -630,21 +632,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 if (logoutBtn) {
-    logoutBtn.addEventListener('click', async () => {
+    logoutBtn.addEventListener('click', () => {
         if (isLocal) {
             window.location.replace('index.html');
         } else {
-            try {
-                await fetch('/redirect_uri?logout=https%3A%2F%2Fhutta.in%2F');
-            } catch (err) {
-                console.warn("Apache logout failed:", err);
-            }
-            try {
-                await fetch('/authelia/api/logout', { method: 'POST' });
-            } catch (err) {
-                console.warn("Authelia logout failed:", err);
-            }
-            window.location.replace('https://hutta.in/');
+            window.location.replace('/redirect_uri?logout=https%3A%2F%2Fhutta.in%2F');
         }
     });
 }
