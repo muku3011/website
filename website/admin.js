@@ -661,44 +661,51 @@ if (logoutBtn) {
             };
             clearCookies();
 
-            // Perform logout in hidden iframe to allow React execution of Authelia SPA
-            const logoutUrl = '/redirect_uri?logout=https%3A%2F%2Fhutta.in%2Fauthelia%2Flogout%3Frd%3Dhttps%253A%252F%252Fhutta.in%252F';
-            
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            
-            let completed = false;
-            const finishLogout = () => {
-                if (completed) return;
-                completed = true;
-                clearCookies();
-                if (iframe.parentNode) {
-                    iframe.parentNode.removeChild(iframe);
+            // Perform logout sequentially via APIs in the background
+            const performLogout = async () => {
+                // 1. POST to Authelia API logout endpoint
+                try {
+                    await fetch('/authelia/api/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({})
+                    });
+                } catch (e) {
+                    console.warn("Authelia API logout (POST) failed:", e);
                 }
+
+                // 2. GET to Authelia HTML logout endpoint
+                try {
+                    await fetch('/authelia/logout', {
+                        method: 'GET',
+                        credentials: 'same-origin'
+                    });
+                } catch (e) {
+                    console.warn("Authelia page logout (GET) failed:", e);
+                }
+
+                // 3. GET to Apache OIDC logout endpoint
+                try {
+                    await fetch('/redirect_uri?logout=https%3A%2F%2Fhutta.in%2F', {
+                        method: 'GET',
+                        credentials: 'same-origin'
+                    });
+                } catch (e) {
+                    console.warn("Apache OIDC logout failed:", e);
+                }
+
+                // Double check cookies are cleared
+                clearCookies();
+
+                // Redirect to homepage
                 setTimeout(() => {
                     window.location.replace('index.html');
-                }, 800); // Small delay to let the animation feel smooth
+                }, 1000);
             };
             
-            // Set 5-second hard timeout
-            const timeoutId = setTimeout(finishLogout, 5000);
-            
-            iframe.addEventListener('load', () => {
-                try {
-                    const currentPath = iframe.contentWindow.location.pathname;
-                    // If we navigated away from authelia/logout and back to hutta.in root page
-                    if (currentPath === '/' || currentPath === '/index.html') {
-                        clearTimeout(timeoutId);
-                        finishLogout();
-                    }
-                } catch (e) {
-                    // Cross-origin fallback just in case
-                    console.log("Iframe load event cross-origin check:", e);
-                }
-            });
-            
-            iframe.src = logoutUrl;
-            document.body.appendChild(iframe);
+            performLogout();
         }
     });
 }
