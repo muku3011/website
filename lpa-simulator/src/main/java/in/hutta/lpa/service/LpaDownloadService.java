@@ -47,6 +47,7 @@ public class LpaDownloadService {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("User-Agent", "gsma-rsp-lpa/3.0.0");
 
             // Step 1: initiateAuthentication
             InitiateAuthenticationRequest req1 = new InitiateAuthenticationRequest();
@@ -107,23 +108,87 @@ public class LpaDownloadService {
             log.info("ES9+ Handshake Step 3 success: Bound Profile Package downloaded (size: {} chars)", bppSize);
 
             // Extract ICCID or details if available, otherwise mock it for response
+            String iccid = matchingId;
+            String payloadBase64 = null;
+            
+            try {
+                String decodedBpp = new String(java.util.Base64.getDecoder().decode(bpp), java.nio.charset.StandardCharsets.UTF_8);
+                
+                // Parse ICCID from BPP if present
+                if (decodedBpp.contains("iccid=")) {
+                    int start = decodedBpp.indexOf("iccid=") + 6;
+                    int end = decodedBpp.indexOf(",", start);
+                    if (end == -1) {
+                        end = decodedBpp.indexOf("]", start);
+                    }
+                    if (end != -1) {
+                        iccid = decodedBpp.substring(start, end);
+                    }
+                }
+                
+                // Parse Payload from BPP if present
+                if (decodedBpp.contains("payload=")) {
+                    int start = decodedBpp.indexOf("payload=") + 8;
+                    int end = decodedBpp.indexOf("]", start);
+                    if (end != -1) {
+                        payloadBase64 = decodedBpp.substring(start, end);
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("LPA Simulator: BPP is not standard mock string, skipping payload parse: {}", e.getMessage());
+            }
+
+            if (iccid == null || iccid.isEmpty()) {
+                iccid = "EID_PUSH_FLOW";
+            }
+            
+            // Decoded profile details
+            String spName = null;
+            String profileNickname = null;
+            
+            if (payloadBase64 != null) {
+                try {
+                    byte[] profileBytes = java.util.Base64.getDecoder().decode(payloadBase64);
+                    // Extract fields from PE-Header using GSMA SGP.22 ASN.1 context tags
+                    spName = extractStringField(profileBytes, 0x84); // Tag 84 is serviceProviderName
+                    profileNickname = extractStringField(profileBytes, 0x85); // Tag 85 is profileName
+                    
+                    // Fallback to parse ICCID from profile bytes if matchingId was empty and BPP parsing failed
+                    if ("EID_PUSH_FLOW".equals(iccid)) {
+                        String parsedIccid = extractIccid(profileBytes);
+                        if (parsedIccid != null && !parsedIccid.isEmpty()) {
+                            iccid = parsedIccid;
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("LPA Simulator: Could not parse custom fields from profile payload: {}", e.getMessage());
+                }
+            }
+            
+            if (spName == null || spName.trim().isEmpty()) {
+                spName = "SM-DP+ (" + smdpAddress + ")";
+            }
+            if (profileNickname == null || profileNickname.trim().isEmpty()) {
+                profileNickname = "eSIM " + (iccid.length() > 4 ? iccid.substring(iccid.length() - 4) : iccid);
+            }
+            
             response.setSuccess(true);
             response.setMessage("Profile downloaded successfully");
             response.setTransactionId(transactionId);
             response.setBoundProfilePackageSize(bppSize);
             response.setBoundProfilePackage(bpp);
-            response.setIccid(matchingId.isEmpty() ? "EID_PUSH_FLOW" : matchingId);
+            response.setIccid(iccid);
 
             // Save to local profile registry database
             LocalProfile localProfile = new LocalProfile();
-            localProfile.setIccid(response.getIccid());
+            localProfile.setIccid(iccid);
             localProfile.setSmdpAddress(smdpAddress);
-            localProfile.setProfileNickname("eSIM " + (response.getIccid().length() > 4 ? response.getIccid().substring(response.getIccid().length() - 4) : response.getIccid()));
-            localProfile.setServiceProviderName("SM-DP+ (" + smdpAddress + ")");
+            localProfile.setProfileNickname(profileNickname);
+            localProfile.setServiceProviderName(spName);
             localProfile.setProfileState("DISABLED"); // Initially disabled on device
             localProfile.setBoundProfilePackage(bpp);
             localProfileRepository.save(localProfile);
-            log.info("eSIM profile successfully saved to device database: ICCID={}", response.getIccid());
+            log.info("eSIM profile successfully saved to device database: ICCID={}", iccid);
 
         } catch (Exception e) {
             log.error("eSIM profile download failed via LPA: {}", e.getMessage(), e);
@@ -132,5 +197,55 @@ public class LpaDownloadService {
         }
 
         return response;
+    }
+
+    private String extractStringField(byte[] bytes, int tagValue) {
+        int limit = Math.min(bytes.length - 4, 1000);
+        for (int i = 0; i < limit; i++) {
+            if ((bytes[i] & 0xFF) == tagValue) {
+                int lenByte = bytes[i + 1] & 0xFF;
+                int length = 0;
+                int valueOffset = 2;
+                
+                if (lenByte < 128) {
+                    length = lenByte;
+                } else {
+                    int numLenBytes = lenByte & 0x7F;
+                    if (numLenBytes > 0 && numLenBytes <= 4 && i + 1 + numLenBytes < bytes.length) {
+                        for (int j = 0; j < numLenBytes; j++) {
+                            length = (length << 8) | (bytes[i + 2 + j] & 0xFF);
+                        }
+                        valueOffset = 2 + numLenBytes;
+                    }
+                }
+                
+                if (length > 0 && i + valueOffset + length <= bytes.length) {
+                    byte[] strBytes = new byte[length];
+                    System.arraycopy(bytes, i + valueOffset, strBytes, 0, length);
+                    return new String(strBytes, java.nio.charset.StandardCharsets.UTF_8);
+                }
+            }
+        }
+        return null;
+    }
+
+    private String extractIccid(byte[] bytes) {
+        int limit = Math.min(bytes.length - 11, 1000);
+        for (int i = 0; i < limit; i++) {
+            if ((bytes[i] & 0xFF) == 0x83 && (bytes[i + 1] & 0xFF) == 0x0A) {
+                byte[] iccidBytes = new byte[10];
+                System.arraycopy(bytes, i + 2, iccidBytes, 0, 10);
+                return bytesToHex(iccidBytes);
+            }
+        }
+        return null;
+    }
+
+    private static String bytesToHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
     }
 }

@@ -47,7 +47,7 @@ public class Es9PlusController {
 
             return ResponseEntity.ok(response);
         } else {
-            return ResponseEntity.status(500).body("Error: No profiles available for provisioning");
+            return ResponseEntity.status(500).body(java.util.Map.of("error", "No profiles available", "message", "Error: No profiles available for provisioning"));
         }
     }
 
@@ -72,7 +72,7 @@ public class Es9PlusController {
 
             return ResponseEntity.ok(response);
         } else {
-            return ResponseEntity.status(401).body("Error: Client Authentication Failed");
+            return ResponseEntity.status(401).body(java.util.Map.of("error", "Client authentication failed", "message", "Error: Client Authentication Failed"));
         }
     }
 
@@ -91,7 +91,7 @@ public class Es9PlusController {
             response.setBoundProfilePackage(bppOpt.get());
             return ResponseEntity.ok(response);
         } else {
-            return ResponseEntity.status(400).body("Error: Failed to generate Bound Profile Package");
+            return ResponseEntity.status(400).body(java.util.Map.of("error", "Bound profile package generation failed", "message", "Error: Failed to generate Bound Profile Package"));
         }
     }
 
