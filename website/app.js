@@ -636,7 +636,13 @@ if (logoutBtn) {
         if (isLocal) {
             window.location.replace('index.html');
         } else {
-            window.location.replace('/redirect_uri?logout=https%3A%2F%2Fhutta.in%2F');
+            // Clear custom application cookies first
+            document.cookie = "hutta_user=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; Secure; SameSite=Lax";
+            document.cookie = "hutta_groups=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; Secure; SameSite=Lax";
+            document.cookie = "hutta_auth=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; Secure; SameSite=Lax";
+            
+            // Redirect to Apache OIDC logout, which will chain to Authelia OIDC logout, and redirect back to the home page
+            window.location.replace('/redirect_uri?logout=https%3A%2F%2Fhutta.in%2Fauthelia%2Flogout%3Frd%3Dhttps%253A%252F%252Fhutta.in%252F');
         }
     });
 }
