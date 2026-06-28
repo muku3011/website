@@ -206,20 +206,16 @@ window.selectProfileForActivation = function(iccid) {
     updateActivationDetails();
 };
 
-function updateLpaSimulatorVisibility(acString, show) {
-    const container = document.getElementById('lpa-sim-container');
+function updateLpaSimulatorVisibility(acString, isDownloadable) {
     const acTextarea = document.getElementById('lpa-sim-ac-text');
-    if (!container) return;
+    const downloadBtn = document.getElementById('lpa-sim-btn-download');
     
-    if (show && acString) {
-        if (acTextarea) acTextarea.value = acString;
-        container.style.display = 'block';
-    } else {
-        container.style.display = 'none';
-        const expanded = document.getElementById('lpa-sim-expanded');
-        const minimized = document.getElementById('lpa-sim-minimized');
-        if (expanded) expanded.style.display = 'none';
-        if (minimized) minimized.style.display = 'flex';
+    if (acTextarea) {
+        acTextarea.value = acString || '';
+    }
+    
+    if (downloadBtn) {
+        downloadBtn.disabled = !isDownloadable;
     }
 }
 
