@@ -231,20 +231,62 @@ if (isLocal) {
     displayName = username || 'Viewer';
 }
 
-const roleBadge = document.getElementById('role-badge');
+// Dropdown Toggle Logic
+const profileMenu = document.getElementById('user-profile-menu');
+const profileTrigger = document.getElementById('user-profile-trigger');
+
+if (profileTrigger && profileMenu) {
+    profileTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        profileMenu.classList.toggle('active');
+    });
+    
+    document.addEventListener('click', (e) => {
+        if (!profileMenu.contains(e.target)) {
+            profileMenu.classList.remove('active');
+        }
+    });
+}
+
 function enforceRolePermissions() {
-    if (roleBadge) {
-        roleBadge.style.display = 'inline-block';
+    const userTriggerLabel = document.getElementById('user-display-name-label');
+    const userInitials = document.getElementById('user-avatar-initials');
+    const dropdownName = document.getElementById('dropdown-user-name');
+    const dropdownRole = document.getElementById('dropdown-role-badge');
+    const dropdownGroups = document.getElementById('dropdown-user-groups');
+
+    const rawGroups = isLocal ? 'admins, users' : (getCookie('hutta_groups') || 'users');
+
+    // Update Avatar Initials
+    if (userInitials) {
+        userInitials.textContent = displayName.charAt(0).toUpperCase();
+    }
+
+    // Update Trigger Display Name
+    if (userTriggerLabel) {
+        userTriggerLabel.textContent = displayName;
+    }
+
+    // Update Dropdown details
+    if (dropdownName) {
+        dropdownName.textContent = displayName;
+    }
+
+    if (dropdownGroups) {
+        dropdownGroups.textContent = rawGroups;
+    }
+
+    if (dropdownRole) {
         if (window.userRole === 'admin') {
-            roleBadge.textContent = `Admin: ${displayName}`;
-            roleBadge.style.background = 'hsla(145, 80%, 50%, 0.15)';
-            roleBadge.style.color = 'var(--success-glow)';
-            roleBadge.style.border = '1px solid hsla(145, 80%, 50%, 0.3)';
+            dropdownRole.textContent = 'Administrator';
+            dropdownRole.style.background = 'hsla(145, 80%, 50%, 0.15)';
+            dropdownRole.style.color = 'var(--success-glow)';
+            dropdownRole.style.border = '1px solid hsla(145, 80%, 50%, 0.3)';
         } else {
-            roleBadge.textContent = `Viewer: ${displayName}`;
-            roleBadge.style.background = 'hsla(14, 90%, 60%, 0.15)';
-            roleBadge.style.color = 'var(--warning-glow)';
-            roleBadge.style.border = '1px solid hsla(14, 90%, 60%, 0.3)';
+            dropdownRole.textContent = 'Viewer';
+            dropdownRole.style.background = 'hsla(14, 90%, 60%, 0.15)';
+            dropdownRole.style.color = 'var(--warning-glow)';
+            dropdownRole.style.border = '1px solid hsla(14, 90%, 60%, 0.3)';
             
             // Restrict admin features
             document.querySelectorAll('#btn-create-user, .btn-delete, .btn-primary-action').forEach(btn => {
