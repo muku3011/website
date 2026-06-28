@@ -74,3 +74,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// -------------------------------------------------------------
+// CONDITIONAL NAV MENU ACCESS FOR ADMINS
+// -------------------------------------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return decodeURIComponent(parts.pop().split(';').shift());
+        return null;
+    }
+    const groups = getCookie('hutta_groups') || '';
+    const isAdmin = groups.split(',').includes('admins');
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    if (isAdmin || isLocal) {
+        const navAdmin = document.getElementById('nav-admin');
+        if (navAdmin) navAdmin.style.display = 'inline-block';
+    }
+});

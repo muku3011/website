@@ -600,6 +600,9 @@ function enforceRolePermissions() {
             roleBadge.style.background = 'hsla(145, 80%, 50%, 0.15)';
             roleBadge.style.color = 'var(--success-glow)';
             roleBadge.style.border = '1px solid hsla(145, 80%, 50%, 0.3)';
+            
+            const navAdmin = document.getElementById('nav-admin');
+            if (navAdmin) navAdmin.style.display = 'inline-block';
         } else {
             roleBadge.textContent = `Viewer: ${displayName}`;
             roleBadge.style.background = 'hsla(14, 90%, 60%, 0.15)';

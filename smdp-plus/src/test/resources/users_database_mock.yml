@@ -1,0 +1,14 @@
+users:
+  adminuser:
+    displayname: "Admin User"
+    password: "$argon2id$v=19$m=65536,t=3,p=4$MPYgn4pk8YvaZZTDm9sW6A$Nvjyl8eqDkMbaL+P241LobF7FFPr4qVqYI5wR4NaHcE"
+    email: "admin@hutta.in"
+    groups:
+      - admins
+      - users
+  vieweruser:
+    displayname: "Viewer User"
+    password: "$argon2id$v=19$m=65536,t=3,p=4$MPYgn4pk8YvaZZTDm9sW6A$Nvjyl8eqDkMbaL+P241LobF7FFPr4qVqYI5wR4NaHcE"
+    email: "viewer@hutta.in"
+    groups:
+      - users

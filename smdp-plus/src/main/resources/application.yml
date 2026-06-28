@@ -27,3 +27,6 @@ logging:
   level:
     root: INFO
     in.hutta.smdp: DEBUG
+
+authelia:
+  users-file: /etc/authelia/users_database.yml

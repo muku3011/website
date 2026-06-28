@@ -1,0 +1,2 @@
+authelia:
+  users-file: src/test/resources/users_database_mock.yml
