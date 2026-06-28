@@ -32,7 +32,7 @@ Contains all GCP infrastructure provisioning and backend Dynamic DNS setup:
 
 ### 2. [Website Frontend (website/)](website/README.md)
 Contains the server dashboard and portfolio site assets deployed on the Raspberry Pi:
-- Frontend code (`index.html`, `index.css`, `app.js`, `dashboard.html`) for serving system statistics, container statuses, and smart controls.
+- Frontend code (`index.html`, `index.css`, `app.js`, `profiles.html`, `admin.html`) for serving the portfolio site, eSIM profiles registry, LPA download simulator, and Authelia user management panel.
 - Deployment configuration for Apache HTTP Server and HTTPS (SSL/TLS) via Let's Encrypt.
 - GitHub Actions CI/CD setup via self-hosted runners.
 - **Go to [website/README.md](website/README.md) for frontend deployment and automation setup instructions.**

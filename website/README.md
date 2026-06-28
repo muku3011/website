@@ -1,12 +1,13 @@
 # Website Frontend & Raspberry Pi Deployment
 
-This directory contains the frontend website assets (HTML/CSS/JS) for the `hutta.in` server dashboard and portfolio pages, along with setup instructions for hosting the website locally on a Raspberry Pi using Apache.
+This directory contains the frontend website assets (HTML/CSS/JS) for the `hutta.in` server, featuring the eSIM Profiles Management dashboard and the Authelia User Administration panel.
 
 ## Repository Contents
 - **`index.html`**: The main landing page.
-- **`dashboard.html`**: The server status dashboard showing CPU, memory, temp, disk usage, and docker containers.
+- **`profiles.html`**: The eSIM profiles management registry and LPA download simulator.
+- **`admin.html`**: The Authelia SSO user directory management interface.
 - **`index.css` / `portfolio.css`**: Styling sheets.
-- **`app.js` / `portfolio.js`**: Frontend interactivity logic.
+- **`app.js` / `admin.js` / `portfolio.js`**: Frontend interactivity and API communication logic.
 
 ---
 
@@ -57,8 +58,8 @@ Move the files to Apache's default serving directory, clear any placeholders, an
 # Remove default index.html
 sudo rm -f /var/www/html/index.html
 
-# Copy your dashboard assets to the web root
-sudo cp /home/rbpi/website/index.html /home/rbpi/website/index.css /home/rbpi/website/app.js /var/www/html/
+# Copy your website assets to the web root
+sudo cp /home/rbpi/website/index.html /home/rbpi/website/index.css /home/rbpi/website/portfolio.js /home/rbpi/website/app.js /home/rbpi/website/profiles.html /home/rbpi/website/admin.html /home/rbpi/website/admin.js /home/rbpi/website/custom-authelia.css /home/rbpi/website/custom-authelia.js /var/www/html/
 
 # Assign proper ownership and permissions
 sudo chown -R www-data:www-data /var/www/html/

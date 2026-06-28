@@ -5,7 +5,7 @@ This directory contains scripts and configurations to install, update, and confi
 ## Contents
 
 - **[install_authelia.sh](file:///Users/muku/Projects/website/authelia/install_authelia.sh)**: A comprehensive script to download the latest Authelia release, create a system user/group, set up configuration files (`/etc/authelia`), generate cryptographic secrets, hash administrator passwords, and register/start Authelia as a systemd service.
-- **[configure_apache.sh](file:///Users/muku/Projects/website/authelia/configure_apache.sh)**: A script that installs the OpenID Connect module for Apache (`libapache2-mod-auth-openidc`), enables proxy modules, and configures Apache to reverse-proxy the `/authelia` subpath and secure specific paths (like `dashboard.html`) using OIDC authentication.
+- **[configure_apache.sh](file:///Users/muku/Projects/website/authelia/configure_apache.sh)**: A script that installs the OpenID Connect module for Apache (`libapache2-mod-auth-openidc`), enables proxy modules, and configures Apache to reverse-proxy the `/authelia` subpath and secure specific paths (like `profiles.html` and `admin.html`) using OIDC authentication.
 
 ---
 
@@ -43,7 +43,7 @@ This script will:
 1. Install `libapache2-mod-auth-openidc` if not already installed.
 2. Enable Apache modules: `proxy`, `proxy_http`, `auth_openidc`, `ssl`, and `headers`.
 3. Backup your existing Apache configuration file (`/etc/apache2/sites-available/000-default-le-ssl.conf`).
-4. Overwrite it to route `/authelia` to the local Authelia server and protect `/dashboard.html` with OIDC.
+4. Overwrite it to route `/authelia` to the local Authelia server and protect `/profiles.html` and `/admin.html` with OIDC.
 5. Restart Apache.
 
 ---
@@ -99,10 +99,11 @@ To add a new user or change a password:
 3. **Insert the user block**:
    Paste the username, display name, email, groups, and the hash you generated under the `users:` key.
 4. **Secure the file permissions**:
-   Ensure only the `authelia` system user can read the database:
+   Ensure the `authelia` system user and group have access. To enable web-based administration from the `smdp-plus` backend (running as `rbpi`), add the `rbpi` user to the `authelia` group and set group write permissions:
    ```bash
    sudo chown authelia:authelia /etc/authelia/users_database.yml
-   sudo chmod 600 /etc/authelia/users_database.yml
+   sudo chmod 660 /etc/authelia/users_database.yml
+   sudo usermod -aG authelia rbpi
    ```
 5. **Reload the database**:
    Restart Authelia to apply the changes:
@@ -117,22 +118,30 @@ To add a new user or change a password:
 Authelia protects web assets and APIs using OpenID Connect (OIDC) or forward headers.
 
 ### 1. UI Authentication (OIDC in Apache)
-To protect a UI portal or web page (e.g., `/dashboard.html`):
+To protect UI portals or web pages (e.g., `/profiles.html` and `/admin.html`):
 1. **Configure mod_auth_openidc in Apache**:
-   The `configure_apache.sh` script registers the `apache-portal` client with Apache's OIDC handler.
+   The `configure_apache.sh` script registers the `apache-portal` client and requests OIDC scopes:
+   `OIDCScope "openid profile email groups"`
 2. **Protect Specific Location Blocks**:
    Add the following inside your Apache VirtualHost configuration (`/etc/apache2/sites-available/000-default-le-ssl.conf`):
    ```apache
-   <Location /dashboard.html>
+   # Protect the profiles registry (accessible to any valid user)
+   <Location /profiles.html>
        AuthType openid-connect
        Require valid-user
    </Location>
+
+   # Protect the user directory admin page (accessible only to admins)
+   <Location /admin.html>
+       AuthType openid-connect
+       Require claim groups:admins
+   </Location>
    ```
 3. **How the Flow Works**:
-   - The browser requests `/dashboard.html`.
-   - Apache intercepts the request and redirects the user to the Authelia portal (`https://hutta.in/authelia/`) if no active OIDC session exists.
-   - The user authenticates (and enters 2FA if configured).
-   - Authelia redirects back to `/redirect_uri` with a code. Apache exchanges this for user identity claims, establishes a session cookie, and serves the dashboard.
+   - The browser requests `/profiles.html` or `/admin.html`.
+   - Apache intercepts the request and redirects the user to the Authelia portal if no active OIDC session exists.
+   - The user authenticates. For `/admin.html`, Apache checks that the groups list claim includes `admins` before granting access.
+   - OIDC claims are passed to the client via secure cookies (`hutta_user`, `hutta_groups`) so the frontend JavaScript knows the user context.
 
 ### 2. API Authentication
 APIs can be secured using two methods depending on the type of client:
@@ -172,22 +181,14 @@ For non-browser clients (such as Python scripts, curl, or mobile apps) that cann
     </Location>
     ```
 
-### 3. Logout & Session Invalidation
-Since Authelia does not natively advertise or support the OpenID Connect RP-Initiated Logout specification (meaning `mod_auth_openidc` cannot automatically discover a logout endpoint), you must invalidate both the local Apache proxy session and the global Authelia SSO session programmatically:
-
-1. **Local Apache Session**: Invalidate by calling the `mod_auth_openidc` redirect URI with the `logout` parameter:
-   `https://hutta.in/redirect_uri?logout=TARGET_URL`
-2. **Authelia SSO Session**: Invalidate by sending a `POST` request to Authelia's logout API endpoint:
-   `https://hutta.in/authelia/api/logout`
-
-#### Implementation Example (JavaScript):
-```javascript
-// 1. Invalidate Apache session cookie in the background
-await fetch('/redirect_uri?logout=https%3A%2F%2Fhutta.in%2F');
-
-// 2. Invalidate Authelia session cookie in the background (POST method is required)
-await fetch('/authelia/api/logout', { method: 'POST' });
-
-// 3. Redirect back to landing page
-window.location.replace('https://hutta.in/');
-```
+1. **Apache OIDC & Authelia SSO Combined Logout**:
+   Direct the user's top-level browser window to the Apache OIDC logout URL, and pass Authelia's single-sign-out logout endpoint (with target redirect back to home page) in the `logout` query parameter:
+   ```javascript
+   // Clear local application cookies first
+   document.cookie = "hutta_user=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; Secure; SameSite=Lax";
+   document.cookie = "hutta_groups=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; Secure; SameSite=Lax";
+   document.cookie = "hutta_auth=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; Secure; SameSite=Lax";
+   
+   // Redirect to clear both Apache session and Authelia session, then redirect to home
+   window.location.replace('/redirect_uri?logout=https%3A%2F%2Fhutta.in%2Fauthelia%2Flogout%3Frd%3Dhttps%253A%252F%252Fhutta.in%252F');
+   ```

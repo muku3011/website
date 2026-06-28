@@ -4,10 +4,10 @@ This directory contains a lightweight, modular reference implementation of a GSM
 
 ## Contents
 
-- **[pom.xml](file:///Users/muku/Projects/website/smdp-plus/pom.xml)**: The Maven dependency configuration (Spring Web, JPA, H2 Database, Lombok, and BouncyCastle).
+- **[pom.xml](file:///Users/muku/Projects/website/smdp-plus/pom.xml)**: The Maven dependency configuration (Spring Web, JPA, H2 Database, Lombok, BouncyCastle, and Jackson YAML).
 - **[setup_pi_service.sh](file:///Users/muku/Projects/website/smdp-plus/setup_pi_service.sh)**: A one-time setup script to create the deployment directory `/home/rbpi/smdp-plus` and register the `smdp-plus.service` systemd service.
-- **[test_smdp.sh](file:///Users/muku/Projects/website/smdp-plus/test_smdp.sh)**: An integration test script that compiles, launches the server, and runs curls simulating the complete Operator (ES2+) and LPA (ES9+) Remote SIM Provisioning (RSP) lifecycle.
 - **[Source Code](file:///Users/muku/Projects/website/smdp-plus/src/main/java/in/hutta/smdp/)**: The core Java implementation, including REST controllers, business services, DTO mappings, and the pluggable cryptographic session manager.
+- **[Tests](file:///Users/muku/Projects/website/smdp-plus/src/test/java/in/hutta/smdp/)**: Integration test suite verifying the eSIM profile provisioning lifecycle (`SmdpIntegrationTest.java`) and Authelia user directory CRUD actions (`AutheliaUserTest.java`).
 
 ---
 
@@ -129,9 +129,37 @@ Used by the Local Profile Assistant (LPA) on the user's device to authenticate a
   POST /gsma/rsp/v2/es9plus/cancelSession
   ```
 
+### 3. Authelia User Directory Integration API
+Used to manage user accounts inside Authelia's local file-based users database (`/etc/authelia/users_database.yml`).
+- **List Users**:
+  ```text
+  GET /gsma/rsp/v2/authelia/users
+  ```
+- **Create User**:
+  ```text
+  POST /gsma/rsp/v2/authelia/users?username=<username>
+  ```
+- **Update User**:
+  ```text
+  PUT /gsma/rsp/v2/authelia/users/{username}
+  ```
+- **Delete User**:
+  ```text
+  DELETE /gsma/rsp/v2/authelia/users/{username}
+  ```
+
 ---
 
-## 5. Automated CI/CD (GitHub Actions)
+## 5. Running Tests
+
+To run the complete automated integration test suite (incorporating RSP profile provisioning flows and Authelia user CRUD/password hashing operations):
+```bash
+mvn clean test
+```
+
+---
+
+## 6. Automated CI/CD (GitHub Actions)
 
 We use the self-hosted GitHub Actions runner on the Raspberry Pi to automate deployment.
 
