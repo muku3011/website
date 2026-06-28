@@ -20,7 +20,7 @@ flowchart TD
     GCP_DNS -->|2. Returns Public IP| Client
     Client -->|3. HTTP/HTTPS Request| RPi
     RPi -->|4. Periodic IP Check| Ipify
-    RPi -->|5. Update Record (if IP changed)| GCP_DNS
+    RPi -->|5. Update Record if IP changed| GCP_DNS
 
     style Client fill:#3b82f6,stroke:#1d4ed8,stroke-width:2px,color:#fff
     style GCP_DNS fill:#10b981,stroke:#047857,stroke-width:2px,color:#fff
