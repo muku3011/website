@@ -3,6 +3,8 @@ package in.hutta.smdp;
 import in.hutta.smdp.dto.Es2Dtos;
 import in.hutta.smdp.dto.Es9Dtos;
 import in.hutta.smdp.model.Profile;
+import in.hutta.smdp.repository.ProfileRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,6 +23,14 @@ public class SmdpIntegrationTest {
 
     @Autowired
     private TestRestTemplate restTemplate;
+
+    @Autowired
+    private ProfileRepository profileRepository;
+
+    @BeforeEach
+    public void setUp() {
+        profileRepository.deleteAll();
+    }
 
     @Test
     public void testRspLifecycle() {
