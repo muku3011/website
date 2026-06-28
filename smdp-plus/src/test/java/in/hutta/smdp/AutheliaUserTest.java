@@ -51,10 +51,10 @@ public class AutheliaUserTest {
     @Test
     public void testUserCrudOperations() {
         // 1. GET all users and verify initial mock users
-        ResponseEntity<AutheliaUserController.UserResponse[]> getResponse = restTemplate.getForEntity(
+        ResponseEntity<AutheliaUserController.UserResponse[]> getResponse = java.util.Objects.requireNonNull(restTemplate.getForEntity(
                 "/gsma/rsp/v2/authelia/users",
                 AutheliaUserController.UserResponse[].class
-        );
+        ));
         assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         AutheliaUserController.UserResponse[] users = java.util.Objects.requireNonNull(getResponse.getBody());
         assertThat(users.length).isEqualTo(2);
@@ -74,18 +74,18 @@ public class AutheliaUserTest {
         createReq.setPassword("secret123");
         createReq.setGroups(List.of("users"));
 
-        ResponseEntity<Map> createResponse = restTemplate.postForEntity(
+        ResponseEntity<Map> createResponse = java.util.Objects.requireNonNull(restTemplate.postForEntity(
                 "/gsma/rsp/v2/authelia/users?username=newuser",
                 createReq,
                 Map.class
-        );
+        ));
         assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
         // Verify creation in user list
-        ResponseEntity<AutheliaUserController.UserResponse[]> postCreateGet = restTemplate.getForEntity(
+        ResponseEntity<AutheliaUserController.UserResponse[]> postCreateGet = java.util.Objects.requireNonNull(restTemplate.getForEntity(
                 "/gsma/rsp/v2/authelia/users",
                 AutheliaUserController.UserResponse[].class
-        );
+        ));
         AutheliaUserController.UserResponse[] postCreateBody = java.util.Objects.requireNonNull(postCreateGet.getBody());
         assertThat(postCreateBody.length).isEqualTo(3);
 
@@ -100,10 +100,10 @@ public class AutheliaUserTest {
         );
 
         // Verify updates
-        ResponseEntity<AutheliaUserController.UserResponse[]> postUpdateGet = restTemplate.getForEntity(
+        ResponseEntity<AutheliaUserController.UserResponse[]> postUpdateGet = java.util.Objects.requireNonNull(restTemplate.getForEntity(
                 "/gsma/rsp/v2/authelia/users",
                 AutheliaUserController.UserResponse[].class
-        );
+        ));
         AutheliaUserController.UserResponse[] postUpdateBody = java.util.Objects.requireNonNull(postUpdateGet.getBody());
         AutheliaUserController.UserResponse updated = List.of(postUpdateBody).stream()
                 .filter(u -> u.getUsername().equals("newuser"))
@@ -115,20 +115,20 @@ public class AutheliaUserTest {
         restTemplate.delete("/gsma/rsp/v2/authelia/users/newuser");
 
         // Verify deleted
-        ResponseEntity<AutheliaUserController.UserResponse[]> postDeleteGet = restTemplate.getForEntity(
+        ResponseEntity<AutheliaUserController.UserResponse[]> postDeleteGet = java.util.Objects.requireNonNull(restTemplate.getForEntity(
                 "/gsma/rsp/v2/authelia/users",
                 AutheliaUserController.UserResponse[].class
-        );
+        ));
         AutheliaUserController.UserResponse[] postDeleteBody = java.util.Objects.requireNonNull(postDeleteGet.getBody());
         assertThat(postDeleteBody.length).isEqualTo(2);
 
         // 5. Verify cannot delete the last administrator user
-        ResponseEntity<Map> deleteAdminResponse = restTemplate.exchange(
+        ResponseEntity<Map> deleteAdminResponse = java.util.Objects.requireNonNull(restTemplate.exchange(
                 "/gsma/rsp/v2/authelia/users/adminuser",
                 HttpMethod.DELETE,
                 null,
                 Map.class
-        );
+        ));
         assertThat(deleteAdminResponse.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 }
