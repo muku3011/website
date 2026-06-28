@@ -56,8 +56,7 @@ public class AutheliaUserTest {
                 AutheliaUserController.UserResponse[].class
         );
         assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        AutheliaUserController.UserResponse[] users = getResponse.getBody();
-        assertThat(users).isNotNull();
+        AutheliaUserController.UserResponse[] users = java.util.Objects.requireNonNull(getResponse.getBody());
         assertThat(users.length).isEqualTo(2);
 
         // Verify content
@@ -87,7 +86,8 @@ public class AutheliaUserTest {
                 "/gsma/rsp/v2/authelia/users",
                 AutheliaUserController.UserResponse[].class
         );
-        assertThat(postCreateGet.getBody().length).isEqualTo(3);
+        AutheliaUserController.UserResponse[] postCreateBody = java.util.Objects.requireNonNull(postCreateGet.getBody());
+        assertThat(postCreateBody.length).isEqualTo(3);
 
         // 3. PUT update user details
         AutheliaUserController.UserRequest updateReq = new AutheliaUserController.UserRequest();
@@ -104,7 +104,8 @@ public class AutheliaUserTest {
                 "/gsma/rsp/v2/authelia/users",
                 AutheliaUserController.UserResponse[].class
         );
-        AutheliaUserController.UserResponse updated = List.of(postUpdateGet.getBody()).stream()
+        AutheliaUserController.UserResponse[] postUpdateBody = java.util.Objects.requireNonNull(postUpdateGet.getBody());
+        AutheliaUserController.UserResponse updated = List.of(postUpdateBody).stream()
                 .filter(u -> u.getUsername().equals("newuser"))
                 .findFirst().orElseThrow();
         assertThat(updated.getDisplayname()).isEqualTo("Updated Display Name");
@@ -118,7 +119,8 @@ public class AutheliaUserTest {
                 "/gsma/rsp/v2/authelia/users",
                 AutheliaUserController.UserResponse[].class
         );
-        assertThat(postDeleteGet.getBody().length).isEqualTo(2);
+        AutheliaUserController.UserResponse[] postDeleteBody = java.util.Objects.requireNonNull(postDeleteGet.getBody());
+        assertThat(postDeleteBody.length).isEqualTo(2);
 
         // 5. Verify cannot delete the last administrator user
         ResponseEntity<Map> deleteAdminResponse = restTemplate.exchange(

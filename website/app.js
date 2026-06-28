@@ -206,6 +206,23 @@ window.selectProfileForActivation = function(iccid) {
     updateActivationDetails();
 };
 
+function updateLpaSimulatorVisibility(acString, show) {
+    const container = document.getElementById('lpa-sim-container');
+    const acTextarea = document.getElementById('lpa-sim-ac-text');
+    if (!container) return;
+    
+    if (show && acString) {
+        if (acTextarea) acTextarea.value = acString;
+        container.style.display = 'block';
+    } else {
+        container.style.display = 'none';
+        const expanded = document.getElementById('lpa-sim-expanded');
+        const minimized = document.getElementById('lpa-sim-minimized');
+        if (expanded) expanded.style.display = 'none';
+        if (minimized) minimized.style.display = 'flex';
+    }
+}
+
 window.updateActivationDetails = function() {
     const scenario = document.getElementById('ac-scenario')?.value || 'standard';
     const qrImg = document.getElementById('activation-qr');
@@ -228,6 +245,7 @@ window.updateActivationDetails = function() {
         }
         if (codeText) codeText.value = '';
         document.querySelectorAll('.activation-body .form-group').forEach(el => el.style.display = 'none');
+        updateLpaSimulatorVisibility('', false);
         return;
     }
     
@@ -262,6 +280,7 @@ window.updateActivationDetails = function() {
         }
         if (codeText) codeText.value = '';
         document.querySelectorAll('.activation-body .form-group').forEach(el => el.style.display = 'none');
+        updateLpaSimulatorVisibility('', false);
         return;
     }
     
@@ -295,6 +314,7 @@ window.updateActivationDetails = function() {
         qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=128x128&data=${encodeURIComponent(acString)}`;
         qrImg.style.display = 'block';
     }
+    updateLpaSimulatorVisibility(acString, true);
 };
 
 // Attach event listeners for search and filters
@@ -542,88 +562,24 @@ async function triggerRelease(iccid) {
 
 // 4. LPA Download Flow (ES9+)
 async function triggerLpaDownload(iccid) {
-    addLogLine(`Starting client LPA profile provisioning sequence for ICCID ${iccid}...`, "secondary");
-
-    try {
-        // Step A: Initiate Authentication
-        addLogLine("ES9+ initiateAuthentication: Requesting challenge signature from SM-DP+...", "info");
-        const initPayload = {
-            euiccChallenge: "11223344556677889900AABBCCDDEEFF",
-            smdpAddress: "localhost:8092",
-            euiccInfo1: "MOCK_EUICC_INFO_1"
-        };
-
-        const initRes = await fetch(`${BACKEND_BASE}/gsma/rsp/v2/es9plus/initiateAuthentication`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Admin-Protocol': 'gsma/rsp/v3.1.0'
-            },
-            body: JSON.stringify(initPayload)
-        });
-
-        if (!initRes.ok) {
-            throw new Error(`initiateAuthentication failed (HTTP ${initRes.status})`);
-        }
-
-        const initData = await initRes.json();
-        const txId = initData.transactionId;
-        addLogLine(`SM-DP+ Response: Received transactionId: ${txId}`, "success");
-        addLogLine(`smdpSignature2 generated: ${initData.smdpSignature2.substring(0, 32)}...`, "code");
-
-        // Step B: Authenticate Client
-        addLogLine("ES9+ authenticateClient: Verifying client eUICC security signature...", "info");
-        const authPayload = {
-            transactionId: txId,
-            authenticateServerResponse: "MOCK_EUICC_AUTHENTICATE_RESPONSE_SIGNATURE"
-        };
-
-        const authRes = await fetch(`${BACKEND_BASE}/gsma/rsp/v2/es9plus/authenticateClient`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Admin-Protocol': 'gsma/rsp/v3.1.0'
-            },
-            body: JSON.stringify(authPayload)
-        });
-
-        if (!authRes.ok) {
-            throw new Error(`authenticateClient failed (HTTP ${authRes.status})`);
-        }
-
-        const authData = await authRes.json();
-        addLogLine(`SM-DP+ Response: Client eUICC authenticated successfully!`, "success");
-        addLogLine(`smdpSignature3 generated: ${authData.smdpSignature3.substring(0, 32)}...`, "code");
-
-        // Step C: Get Bound Profile Package (BPP)
-        addLogLine("ES9+ getBoundProfilePackage: Retrieving encrypted eSIM BPP payload...", "info");
-        const bppPayload = {
-            transactionId: txId,
-            prepareDownloadResponse: "MOCK_EUICC_PREPARE_DOWNLOAD_RESPONSE"
-        };
-
-        const bppRes = await fetch(`${BACKEND_BASE}/gsma/rsp/v2/es9plus/getBoundProfilePackage`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Admin-Protocol': 'gsma/rsp/v3.1.0'
-            },
-            body: JSON.stringify(bppPayload)
-        });
-
-        if (!bppRes.ok) {
-            throw new Error(`getBoundProfilePackage failed (HTTP ${bppRes.status})`);
-        }
-
-        const bppData = await bppRes.json();
-        addLogLine(`SM-DP+ Response: Bound Profile Package generated!`, "success");
-        addLogLine(`Bound Profile Package (Base64): ${bppData.boundProfilePackage.substring(0, 50)}...`, "code");
+    if (typeof selectProfileForActivation === 'function') {
+        selectProfileForActivation(iccid);
+    } else if (typeof window.selectProfileForActivation === 'function') {
+        window.selectProfileForActivation(iccid);
+    }
+    
+    // Expand the LPA Simulator window
+    const minimizedBtn = document.getElementById('lpa-sim-minimized');
+    const expandedWindow = document.getElementById('lpa-sim-expanded');
+    if (minimizedBtn && expandedWindow) {
+        minimizedBtn.style.display = 'none';
+        expandedWindow.style.display = 'flex';
         
-        addLogLine(`LPA Provisioning Complete! Profile state updated to DOWNLOADED.`, "success");
-        fetchProfiles();
-    } catch (err) {
-        console.error("LPA flow failed", err);
-        addLogLine(`LPA download failed: ${err.message}`, "error");
+        // Clear and add log
+        const logsArea = document.getElementById('lpa-sim-logs');
+        if (logsArea) logsArea.innerHTML = '';
+        addLpaLog(`Selected profile ICCID ${iccid} for download simulation.`, 'info');
+        addLpaLog('Click "Download Profile" to start the download protocol.', 'process');
     }
 }
 
@@ -749,7 +705,151 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Initialize LPA Simulator floating window controls
+    initLpaSimulator();
 });
+
+// -------------------------------------------------------------
+// LPA SIMULATOR FLOATING WINDOW LOGIC
+// -------------------------------------------------------------
+const LPA_SIMULATOR_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://localhost:8093' 
+    : '';
+
+function addLpaLog(text, type = 'info') {
+    const logsArea = document.getElementById('lpa-sim-logs');
+    if (!logsArea) return;
+    const entry = document.createElement('div');
+    entry.className = `log-entry ${type}`;
+    entry.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+    logsArea.appendChild(entry);
+    logsArea.scrollTop = logsArea.scrollHeight;
+}
+
+function updateLpaStatusBadge(status, className) {
+    const badge = document.getElementById('lpa-status-badge');
+    if (!badge) return;
+    badge.textContent = status;
+    badge.className = `lpa-status-badge ${className}`;
+}
+
+function initLpaSimulator() {
+    const minimizedBtn = document.getElementById('lpa-sim-minimized');
+    const expandedWindow = document.getElementById('lpa-sim-expanded');
+    const minimizeBtn = document.getElementById('lpa-sim-btn-minimize');
+    const clearLogsBtn = document.getElementById('lpa-sim-clear-logs');
+    const downloadBtn = document.getElementById('lpa-sim-btn-download');
+
+    if (minimizedBtn && expandedWindow) {
+        minimizedBtn.addEventListener('click', () => {
+            minimizedBtn.style.display = 'none';
+            expandedWindow.style.display = 'flex';
+        });
+    }
+
+    if (minimizeBtn && minimizedBtn && expandedWindow) {
+        minimizeBtn.addEventListener('click', () => {
+            expandedWindow.style.display = 'none';
+            minimizedBtn.style.display = 'flex';
+        });
+    }
+
+    if (clearLogsBtn) {
+        clearLogsBtn.addEventListener('click', () => {
+            const logsArea = document.getElementById('lpa-sim-logs');
+            if (logsArea) logsArea.innerHTML = '';
+        });
+    }
+
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', async () => {
+            const acString = document.getElementById('lpa-sim-ac-text')?.value;
+            if (!acString) {
+                addLpaLog('Error: No activation code available.', 'error');
+                return;
+            }
+
+            // Start simulation UI sequence
+            downloadBtn.disabled = true;
+            updateLpaStatusBadge('Downloading', 'downloading');
+            
+            const logsArea = document.getElementById('lpa-sim-logs');
+            if (logsArea) logsArea.innerHTML = ''; // Auto clear logs on start
+            
+            addLpaLog('LPA Simulator initiated eSIM profile download sequence.', 'info');
+            
+            // Helper to delay log printing for realistic micro-animations
+            const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+            
+            await delay(400);
+            addLpaLog(`Parsing activation code: ${acString}`, 'info');
+            
+            await delay(300);
+            const host = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                ? 'localhost:8092' 
+                : 'hutta.in';
+            addLpaLog(`Resolved SM-DP+ Server Address: ${host}`, 'info');
+            
+            await delay(400);
+            addLpaLog('Connecting to SM-DP+ ES9+ endpoint...', 'process');
+            
+            try {
+                // Perform real fetch to LPA Simulator backend
+                const response = await fetch(`${LPA_SIMULATOR_BASE}/lpa/download`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ activationCode: acString })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    await delay(400);
+                    addLpaLog('ES9+ Step 1: initiateAuthentication success.', 'process');
+                    addLpaLog(`Transaction ID: ${data.transactionId}`, 'info');
+                    
+                    await delay(500);
+                    addLpaLog('ES9+ Step 2: authenticateClient success (Server signature verified).', 'process');
+                    
+                    await delay(500);
+                    addLpaLog('ES9+ Step 3: getBoundProfilePackage success (BPP downloaded).', 'process');
+                    addLpaLog(`Bound Profile Package size: ${data.boundProfilePackageSize} bytes`, 'info');
+                    
+                    await delay(600);
+                    addLpaLog('ES9+ Step 4: Installing profile payload on eUICC client...', 'process');
+                    
+                    await delay(600);
+                    addLpaLog(`[SUCCESS] Profile installed successfully! ICCID: ${data.iccid}`, 'success');
+                    updateLpaStatusBadge('Success', 'success');
+                    
+                    // Add success log to main operations console as well
+                    addLogLine(`LPA downloaded & installed profile. ICCID: ${data.iccid}`, "success");
+                    
+                    // Refresh the main profiles list registry to show updated state
+                    if (typeof fetchProfiles === 'function') {
+                        fetchProfiles();
+                    }
+                } else {
+                    await delay(400);
+                    addLpaLog(`[ERROR] Download failed: ${data.message || 'Unknown error'}`, 'error');
+                    updateLpaStatusBadge('Failed', 'failed');
+                    addLogLine(`LPA download failed: ${data.message || 'Unknown error'}`, "error");
+                }
+            } catch (err) {
+                await delay(400);
+                addLpaLog(`[ERROR] Network error connecting to LPA Simulator: ${err.message}`, 'error');
+                addLpaLog('Make sure the LPA Simulator service is running on port 8093.', 'info');
+                updateLpaStatusBadge('Failed', 'failed');
+                addLogLine(`LPA Simulator connection error: ${err.message}`, "error");
+            } finally {
+                downloadBtn.disabled = false;
+            }
+        });
+    }
+}
 
 if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {

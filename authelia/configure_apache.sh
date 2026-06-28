@@ -48,6 +48,10 @@ cat << 'EOF' > /etc/apache2/sites-available/000-default-le-ssl.conf
 	ProxyPass /gsma/rsp/v2/ http://127.0.0.1:8092/gsma/rsp/v2/
 	ProxyPassReverse /gsma/rsp/v2/ http://127.0.0.1:8092/gsma/rsp/v2/
 
+	# Reverse Proxy for LPA Simulator
+	ProxyPass /lpa http://127.0.0.1:8093/lpa
+	ProxyPassReverse /lpa http://127.0.0.1:8093/lpa
+
 	# Allow public access to Authelia subpath
 	<Location /authelia>
 		Require all granted

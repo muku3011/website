@@ -209,6 +209,53 @@
             </form>
         </div>
     </dialog>
+    
+    <!-- LPA Simulator Floating Window -->
+    <div id="lpa-sim-container" style="display: none;">
+        <!-- Minimized Pill Button -->
+        <button id="lpa-sim-minimized" class="lpa-sim-pill-btn" aria-label="Open LPA Simulator">
+            <span class="lpa-sim-icon-pulse">⚡</span>
+            <span>LPA Simulator</span>
+        </button>
+
+        <!-- Expanded Floating Window -->
+        <div id="lpa-sim-expanded" class="lpa-sim-window" style="display: none;">
+            <div class="lpa-sim-header">
+                <div class="lpa-sim-title">
+                    <span class="lpa-sim-header-icon">⚡</span>
+                    <h4>LPA Simulator</h4>
+                    <span class="lpa-status-badge idle" id="lpa-status-badge">Idle</span>
+                </div>
+                <button id="lpa-sim-btn-minimize" class="btn-icon-sm" title="Minimize">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
+            </div>
+            
+            <div class="lpa-sim-body">
+                <p class="lpa-sim-desc">Simulate a local eSIM client (LPA) downloading a profile from the SM-DP+ server.</p>
+                
+                <div class="form-group-sm">
+                    <label>Activation Code String</label>
+                    <textarea id="lpa-sim-ac-text" class="lpa-sim-textarea" readonly></textarea>
+                </div>
+
+                <button id="lpa-sim-btn-download" class="btn btn-primary btn-sim-download">
+                    <svg class="download-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                    <span>Download Profile</span>
+                </button>
+
+                <div class="lpa-sim-console-container">
+                    <div class="lpa-sim-console-header">
+                        <span>LPA Client Console</span>
+                        <button id="lpa-sim-clear-logs" class="btn-text-sm">Clear</button>
+                    </div>
+                    <div id="lpa-sim-logs" class="lpa-sim-logs-area">
+                        <div class="log-entry info">LPA Client initialized. Ready to simulate download.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <footer class="app-footer">
         <p>&copy; 2026 hutta.in. Created by Mukesh Joshi. Built with HTML5, CSS Grid, and vanilla JS. Powered by Raspberry Pi & GCP.</p>
