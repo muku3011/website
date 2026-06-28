@@ -187,7 +187,11 @@ public class SmdpIntegrationTest {
                 "profiles/TS48 V7.0 eSIM_GTP_SAIP2.3_BERTLV_SUCI.rename2der",
                 "profiles/TS48 V7.0 eSIM_GTP_SAIP2.3_NoBERTLV.rename2der",
                 "profiles/TS48 V7.0 eSIM_GTP_SAIP2.3_NoBERTLV_NoRAMRFM.rename2der",
-                "profiles/TS48 V7.0 eSIM_GTP_SAIP2.3_BERTLV_SUCI_NoRAMRFM.rename2der"
+                "profiles/TS48 V7.0 eSIM_GTP_SAIP2.3_BERTLV_SUCI_NoRAMRFM.rename2der",
+                "profiles/TS48 V2 eSIM_GTP_SAIP2.1_BERTLV_v2.rename2der",
+                "profiles/TS48 V2 eSIM_GTP_SAIP2.1_NoBERTLV.rename2der",
+                "profiles/TS48 V2 eSIM_GTP_SAIP2.3_BERTLV.rename2der",
+                "profiles/TS48 V2 eSIM_GTP_SAIP2.3_NoBERTLV.rename2der"
         };
 
         for (String fileResourcePath : profileFiles) {
