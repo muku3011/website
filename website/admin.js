@@ -661,31 +661,44 @@ if (logoutBtn) {
             };
             clearCookies();
 
-            // Perform logout in background
+            // Perform logout in hidden iframe to allow React execution of Authelia SPA
             const logoutUrl = '/redirect_uri?logout=https%3A%2F%2Fhutta.in%2Fauthelia%2Flogout%3Frd%3Dhttps%253A%252F%252Fhutta.in%252F';
             
-            const performLogout = async () => {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout limit
-                
-                try {
-                    await fetch(logoutUrl, { 
-                        method: 'GET', 
-                        credentials: 'same-origin',
-                        signal: controller.signal
-                    });
-                } catch (e) {
-                    console.warn("Background logout fetch completed with fallback:", e);
-                } finally {
-                    clearTimeout(timeoutId);
-                    clearCookies(); // ensure cookies are cleared again
-                    setTimeout(() => {
-                        window.location.replace('index.html');
-                    }, 800); // Small delay to let the animation feel smooth
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            
+            let completed = false;
+            const finishLogout = () => {
+                if (completed) return;
+                completed = true;
+                clearCookies();
+                if (iframe.parentNode) {
+                    iframe.parentNode.removeChild(iframe);
                 }
+                setTimeout(() => {
+                    window.location.replace('index.html');
+                }, 800); // Small delay to let the animation feel smooth
             };
             
-            performLogout();
+            // Set 5-second hard timeout
+            const timeoutId = setTimeout(finishLogout, 5000);
+            
+            iframe.addEventListener('load', () => {
+                try {
+                    const currentPath = iframe.contentWindow.location.pathname;
+                    // If we navigated away from authelia/logout and back to hutta.in root page
+                    if (currentPath === '/' || currentPath === '/index.html') {
+                        clearTimeout(timeoutId);
+                        finishLogout();
+                    }
+                } catch (e) {
+                    // Cross-origin fallback just in case
+                    console.log("Iframe load event cross-origin check:", e);
+                }
+            });
+            
+            iframe.src = logoutUrl;
+            document.body.appendChild(iframe);
         }
     });
 }
