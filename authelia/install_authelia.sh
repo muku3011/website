@@ -267,6 +267,11 @@ ${OIDC_PRIVATE_KEY_INDENTED}
         consent_mode: implicit
         redirect_uris:
           - https://hutta.in/redirect_uri
+        scopes:
+          - openid
+          - profile
+          - email
+          - groups
 
 storage:
   local:
