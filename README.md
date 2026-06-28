@@ -36,7 +36,7 @@ flowchart TD
 
 ## Projects & Repository Layout
 
-This repository is split into three main areas:
+This repository is split into five main areas:
 
 ### 1. [Infrastructure as Code & DDNS Automation (website-iac/)](website-iac/README.md)
 Contains all GCP infrastructure provisioning and backend Dynamic DNS setup:
@@ -61,7 +61,7 @@ Contains bare-metal installation scripts, password hash generators, and Apache s
 ### 4. [SM-DP+ eSIM Server (smdp-plus/)](smdp-plus/README.md)
 Contains a reference implementation of a GSMA SGP.22 v3.1 compliant Subscription Manager Data Preparation+ (SM-DP+) server:
 - REST API controllers for ES2+ (Operator) and ES9+ (LPA client) interfaces.
-- Lightweight embedded database and in-memory session manager for Raspberry Pi resource efficiency.
+- Persistent PostgreSQL database backend and Flyway schema versioning.
 - Auto-deployment via self-hosted GitHub Actions workflows and systemd service.
 - **Go to [smdp-plus/README.md](smdp-plus/README.md) for build, testing, and deployment instructions.**
 
