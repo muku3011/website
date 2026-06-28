@@ -1,0 +1,11 @@
+server:
+  port: 8093
+
+spring:
+  application:
+    name: lpa-simulator
+
+logging:
+  level:
+    root: INFO
+    in.hutta.lpa: DEBUG
