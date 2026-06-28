@@ -74,6 +74,7 @@ public class AutheliaUserTest {
         createReq.setPassword("secret123");
         createReq.setGroups(List.of("users"));
 
+        @SuppressWarnings("rawtypes")
         ResponseEntity<Map> createResponse = java.util.Objects.requireNonNull(restTemplate.postForEntity(
                 "/gsma/rsp/v2/authelia/users?username=newuser",
                 createReq,
@@ -123,6 +124,7 @@ public class AutheliaUserTest {
         assertThat(postDeleteBody.length).isEqualTo(2);
 
         // 5. Verify cannot delete the last administrator user
+        @SuppressWarnings("rawtypes")
         ResponseEntity<Map> deleteAdminResponse = java.util.Objects.requireNonNull(restTemplate.exchange(
                 "/gsma/rsp/v2/authelia/users/adminuser",
                 HttpMethod.DELETE,

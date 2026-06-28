@@ -132,6 +132,7 @@ public class SmdpIntegrationTest {
         pendingNotif.setNotificationAddress("localhost:8092");
         notifReq.setPendingNotification(pendingNotif);
 
+        @SuppressWarnings("rawtypes")
         ResponseEntity<java.util.Map> notifResponse = restTemplate.postForEntity(
                 "/gsma/rsp/v2/es9plus/handleNotification",
                 notifReq,
