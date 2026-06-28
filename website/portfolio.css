@@ -59,6 +59,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    width: 100%;
 }
 
 .tech-orb-avatar {
@@ -175,12 +176,19 @@
 .hero-actions-row {
     display: flex;
     gap: 1rem;
+    margin-bottom: 1.5rem;
 }
 
 @media (max-width: 900px) {
     .hero-actions-row {
         justify-content: center;
     }
+}
+
+.social-icons-row {
+    display: flex;
+    gap: 1.25rem;
+    align-items: center;
 }
 
 .social-icons-row a {
@@ -718,6 +726,96 @@
         grid-template-columns: 1fr;
         gap: 1.5rem;
     }
+}
+
+/* Hutta Sandbox Card */
+.whoami-card.hutta-card {
+    background: linear-gradient(135deg, var(--card-bg), hsla(var(--hue-secondary), 90%, 65%, 0.04));
+    border-color: hsla(var(--hue-secondary), 90%, 65%, 0.2);
+    max-width: 440px;
+    width: 100%;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+    text-align: left;
+    margin: 0;
+}
+
+.hutta-card-inner {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.hutta-card-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: hsla(var(--hue-secondary), 90%, 65%, 0.1);
+    color: var(--secondary-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.hutta-card-content {
+    flex: 1;
+    min-width: 200px;
+}
+
+.hutta-card-title {
+    font-family: var(--font-heading);
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.hutta-card-text {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* Education List */
+.edu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.edu-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.edu-title {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.edu-icon {
+    color: var(--primary-glow);
+    flex-shrink: 0;
+}
+
+.edu-meta {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+    padding-left: 1.5rem; /* Indent to line up with title text after icon */
+}
+
+/* Languages List spacing */
+.skills-list.lang-list {
+    margin-top: 0.5rem;
 }
 
 
