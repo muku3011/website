@@ -829,27 +829,35 @@ function getCookie(name) {
 // Determine auth/role
 window.userRole = 'viewer';
 let displayName = '';
+let userNameVal = '';
+let userEmailVal = '';
+let userGroupsVal = '';
 
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 if (isLocal) {
     window.userRole = 'admin';
     displayName = 'Local Dev';
+    userNameVal = 'localadmin';
+    userEmailVal = 'admin@hutta.local';
+    userGroupsVal = 'admins, users';
 } else {
-    const username = getCookie('hutta_user');
-    const groups = getCookie('hutta_groups') || '';
-    const isAdmin = groups.split(',').includes('admins');
+    userNameVal = getCookie('hutta_user') || 'viewer';
+    displayName = getCookie('hutta_name') || userNameVal;
+    userEmailVal = getCookie('hutta_email') || 'no-email@hutta.in';
+    userGroupsVal = getCookie('hutta_groups') || 'users';
+    
+    const isAdmin = userGroupsVal.split(',').includes('admins');
     window.userRole = isAdmin ? 'admin' : 'viewer';
-    displayName = username || 'Viewer';
 }
 
 function enforceRolePermissions() {
     const userTriggerLabel = document.getElementById('user-display-name-label');
     const userInitials = document.getElementById('user-avatar-initials');
-    const dropdownName = document.getElementById('dropdown-user-name');
+    const dropdownDisplayName = document.getElementById('dropdown-display-name');
+    const dropdownUsername = document.getElementById('dropdown-username');
+    const dropdownEmail = document.getElementById('dropdown-email');
     const dropdownRole = document.getElementById('dropdown-role-badge');
     const dropdownGroups = document.getElementById('dropdown-user-groups');
-
-    const rawGroups = isLocal ? 'admins, users' : (getCookie('hutta_groups') || 'users');
 
     // Update Avatar Initials
     if (userInitials) {
@@ -862,12 +870,20 @@ function enforceRolePermissions() {
     }
 
     // Update Dropdown details
-    if (dropdownName) {
-        dropdownName.textContent = displayName;
+    if (dropdownDisplayName) {
+        dropdownDisplayName.textContent = displayName;
+    }
+
+    if (dropdownUsername) {
+        dropdownUsername.textContent = userNameVal;
+    }
+
+    if (dropdownEmail) {
+        dropdownEmail.textContent = userEmailVal;
     }
 
     if (dropdownGroups) {
-        dropdownGroups.textContent = rawGroups;
+        dropdownGroups.textContent = userGroupsVal.split(',').join(', ');
     }
 
     if (dropdownRole) {
@@ -1172,7 +1188,7 @@ if (logoutBtn) {
             
             // Clear custom application cookies
             const clearCookies = () => {
-                const cookieNames = ['hutta_user', 'hutta_groups', 'hutta_auth'];
+                const cookieNames = ['hutta_user', 'hutta_groups', 'hutta_auth', 'hutta_name', 'hutta_email'];
                 cookieNames.forEach(name => {
                     document.cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; Secure; SameSite=Lax`;
                     document.cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC;`;

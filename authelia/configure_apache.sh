@@ -88,6 +88,8 @@ cat << 'EOF' > /etc/apache2/sites-available/000-default-le-ssl.conf
 		# Pass claims to client cookies so frontend JavaScript can read them
 		Header set Set-Cookie "hutta_auth=true; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_preferred_username
 		Header set Set-Cookie "hutta_user=%{OIDC_CLAIM_preferred_username}e; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_preferred_username
+		Header set Set-Cookie "hutta_name=%{OIDC_CLAIM_name}e; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_name
+		Header set Set-Cookie "hutta_email=%{OIDC_CLAIM_email}e; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_email
 		Header set Set-Cookie "hutta_groups=%{OIDC_CLAIM_groups}e; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_groups
 
 		# Prevent browser caching of protected pages
@@ -104,6 +106,8 @@ cat << 'EOF' > /etc/apache2/sites-available/000-default-le-ssl.conf
 		# Pass claims to client cookies so frontend JavaScript can read them
 		Header set Set-Cookie "hutta_auth=true; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_preferred_username
 		Header set Set-Cookie "hutta_user=%{OIDC_CLAIM_preferred_username}e; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_preferred_username
+		Header set Set-Cookie "hutta_name=%{OIDC_CLAIM_name}e; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_name
+		Header set Set-Cookie "hutta_email=%{OIDC_CLAIM_email}e; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_email
 		Header set Set-Cookie "hutta_groups=%{OIDC_CLAIM_groups}e; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_groups
 
 		# Prevent browser caching of protected pages
