@@ -2,6 +2,36 @@
 
 This directory contains a lightweight, modular reference implementation of a GSMA SGP.22 v3.1 compliant **Subscription Manager Data Preparation+ (SM-DP+)** server in Java 21 using Spring Boot 3.3.0, optimized to run bare-metal on a Raspberry Pi.
 
+## System Architecture
+
+```mermaid
+flowchart LR
+    subgraph Operator Systems
+        MNO["Mobile Network Operator (MNO)"]
+    end
+
+    subgraph SM-DP+ Server (Port 8092)
+        ES2["ES2+ Interface (Admin/Orders)"]
+        ES9["ES9+ Interface (LPA Client)"]
+        Auth["Authelia Admin API"]
+        DB[("Embedded Database (H2)")]
+    end
+
+    subgraph Device
+        LPA["Local Profile Assistant (LPA)"]
+    end
+
+    subgraph Auth System
+        Authelia["Authelia SSO (Argon2 / YAML DB)"]
+    end
+
+    MNO -->|1. Create/Order Profile| ES2
+    LPA -->|2. Authenticate & Download| ES9
+    ES2 --> DB
+    ES9 --> DB
+    Auth -->|Manage users_database.yml| Authelia
+```
+
 ## Contents
 
 - **[pom.xml](file:///Users/muku/Projects/website/smdp-plus/pom.xml)**: The Maven dependency configuration (Spring Web, JPA, H2 Database, Lombok, BouncyCastle, and Jackson YAML).

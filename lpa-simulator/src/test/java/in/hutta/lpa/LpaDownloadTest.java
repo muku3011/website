@@ -18,6 +18,7 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
 
 @SpringBootTest
+@SuppressWarnings("null")
 public class LpaDownloadTest {
 
     @Autowired

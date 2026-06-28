@@ -2,6 +2,31 @@
 
 This directory contains scripts and configurations to install, update, and configure **Authelia** (an open-source authentication and authorization server) on a bare-metal Raspberry Pi 5 running Apache as a reverse proxy.
 
+## Authentication Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User Browser
+    participant Apache as Apache (mod_auth_openidc)
+    participant Authelia as Authelia SSO (Port 9091)
+    
+    User->>Apache: Request protected page (/admin.html)
+    Note over Apache: Check for OIDC session cookie
+    alt No session exists
+        Apache-->>User: Redirect to Authelia Login (/authelia)
+        User->>Authelia: Login credentials (Argon2 verify)
+        Authelia-->>User: Issue OIDC Session Cookie & Redirect back
+    end
+    User->>Apache: Request protected page with OIDC session
+    Note over Apache: Verify claims (groups:admins)
+    alt Unauthorized group
+        Apache-->>User: HTTP 403 Forbidden
+    else Authorized
+        Apache->>User: Serve page content + cookies (hutta_user, hutta_groups)
+    end
+```
+
 ## Contents
 
 - **[install_authelia.sh](file:///Users/muku/Projects/website/authelia/install_authelia.sh)**: A comprehensive script to download the latest Authelia release, create a system user/group, set up configuration files (`/etc/authelia`), generate cryptographic secrets, hash administrator passwords, and register/start Authelia as a systemd service.

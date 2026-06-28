@@ -16,6 +16,7 @@ import java.util.Optional;
 @RequestMapping("/lpa/profiles")
 @CrossOrigin
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class LpaProfileController {
 
     private final LocalProfileRepository localProfileRepository;

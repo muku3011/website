@@ -2,6 +2,33 @@
 
 This directory contains the Infrastructure as Code (IaC) and the Dynamic DNS (DDNS) script for the `hutta.in` server.
 
+## Automation & IaC Architecture
+
+```mermaid
+flowchart TD
+    subgraph Local Machine
+        TF["Terraform IaC"]
+    end
+
+    subgraph Google Cloud Platform
+        SA["GCP Service Account"]
+        DNS["GCP Cloud DNS (hutta.in Zone)"]
+    end
+
+    subgraph Raspberry Pi (Home Network)
+        DDNS["ddns.py (Python Script)"]
+        Cron["Systemd Timer / Cron (Every 10m)"]
+        Ipify["ipify.org (Public IP Check)"]
+    end
+
+    TF -->|1. Provision Zone & SA| DNS
+    TF -->|2. Generate Key| SA
+    SA -->|3. Installed on RPi| DDNS
+    Cron -->|4. Triggers| DDNS
+    DDNS -->|5. Check current IP| Ipify
+    DDNS -->|6. If IP changed, update record| DNS
+```
+
 ## Repository Contents
 - **`dns.tf`**: Terraform file defining the GCP DNS Zone and record sets.
 - **`iam.tf`**: Terraform file creating the Service Account with DNS update permissions.

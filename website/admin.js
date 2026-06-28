@@ -1,4 +1,176 @@
 // -------------------------------------------------------------
+// PREMIUM DIALOG & NOTIFICATION UTILITIES
+// -------------------------------------------------------------
+function showToast(message, type = 'info', duration = 4000) {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    let iconSvg = '';
+    if (type === 'success') {
+        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    } else if (type === 'error') {
+        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+    } else if (type === 'warning') {
+        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+    } else {
+        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+    }
+
+    toast.innerHTML = `
+        <div class="toast-icon">${iconSvg}</div>
+        <div class="toast-message">${escapeHtml(message)}</div>
+        <button class="toast-close" aria-label="Close notification">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    `;
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>'"]/g, 
+            tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+        );
+    }
+
+    container.appendChild(toast);
+
+    const removeTimer = setTimeout(() => {
+        dismissToast(toast);
+    }, duration);
+
+    toast.querySelector('.toast-close').addEventListener('click', (e) => {
+        e.stopPropagation();
+        clearTimeout(removeTimer);
+        dismissToast(toast);
+    });
+
+    toast.addEventListener('click', () => {
+        clearTimeout(removeTimer);
+        dismissToast(toast);
+    });
+}
+
+function dismissToast(toast) {
+    toast.classList.add('toast-hide');
+    toast.addEventListener('transitionend', () => {
+        toast.remove();
+    });
+}
+
+function showConfirm(title, message, onConfirm) {
+    let dialog = document.getElementById('dialog-confirm-action');
+    if (!dialog) {
+        dialog = document.createElement('dialog');
+        dialog.id = 'dialog-confirm-action';
+        dialog.className = 'modal-dialog';
+        document.body.appendChild(dialog);
+        
+        dialog.addEventListener('click', (e) => {
+            const rect = dialog.getBoundingClientRect();
+            const isInDialog = (rect.top <= e.clientY && e.clientY <= rect.top + rect.height
+                && rect.left <= e.clientX && e.clientX <= rect.left + rect.width);
+            if (!isInDialog) {
+                dialog.close();
+            }
+        });
+    }
+    
+    dialog.innerHTML = `
+        <div class="dialog-header">
+            <h3>${escapeHtml(title)}</h3>
+            <button class="btn-icon close-dialog-btn" aria-label="Close dialog" onclick="this.closest('dialog').close()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="dialog-body">
+            <p>${escapeHtml(message)}</p>
+            <div class="dialog-footer" style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+                <button type="button" class="btn btn-secondary close-dialog-btn" onclick="this.closest('dialog').close()">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirm-action-btn">Confirm</button>
+            </div>
+        </div>
+    `;
+    
+    function escapeHtml(str) {
+        return str.replace(/[&<>'"]/g, 
+            tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+        );
+    }
+    
+    const confirmBtn = dialog.querySelector('#confirm-action-btn');
+    confirmBtn.addEventListener('click', () => {
+        dialog.close();
+        onConfirm();
+    });
+    
+    dialog.showModal();
+}
+
+function showPrompt(title, message, defaultValue, onSubmit) {
+    let dialog = document.getElementById('dialog-prompt-action');
+    if (!dialog) {
+        dialog = document.createElement('dialog');
+        dialog.id = 'dialog-prompt-action';
+        dialog.className = 'modal-dialog';
+        document.body.appendChild(dialog);
+        
+        dialog.addEventListener('click', (e) => {
+            const rect = dialog.getBoundingClientRect();
+            const isInDialog = (rect.top <= e.clientY && e.clientY <= rect.top + rect.height
+                && rect.left <= e.clientX && e.clientX <= rect.left + rect.width);
+            if (!isInDialog) {
+                dialog.close();
+            }
+        });
+    }
+    
+    dialog.innerHTML = `
+        <div class="dialog-header">
+            <h3>${escapeHtml(title)}</h3>
+            <button class="btn-icon close-dialog-btn" aria-label="Close dialog" onclick="this.closest('dialog').close()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="dialog-body">
+            <form id="prompt-action-form" class="dialog-form" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <p style="margin-bottom: 0.5rem;">${escapeHtml(message)}</p>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <input type="text" id="prompt-action-input" value="${escapeHtml(defaultValue)}" required class="form-input" style="width: 100%;">
+                </div>
+                <div class="dialog-footer" style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                    <button type="button" class="btn btn-secondary close-dialog-btn" onclick="this.closest('dialog').close()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    function escapeHtml(str) {
+        return str.replace(/[&<>'"]/g, 
+            tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+        );
+    }
+    
+    const form = dialog.querySelector('#prompt-action-form');
+    const input = dialog.querySelector('#prompt-action-input');
+    
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        dialog.close();
+        onSubmit(input.value);
+    });
+    
+    dialog.showModal();
+    input.focus();
+    input.select();
+}
+
+// -------------------------------------------------------------
 // LOCAL / SYSTEM CONFIGURATION & COOKIES
 // -------------------------------------------------------------
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -224,7 +396,7 @@ if (createUserForm) {
         e.preventDefault();
         
         if (window.userRole !== 'admin') {
-            alert('Administrative permissions required');
+            showToast('Administrative permissions required', 'error');
             return;
         }
 
@@ -263,7 +435,7 @@ if (createUserForm) {
             await fetchUsers();
         } catch (err) {
             addLogLine(`Creation failed for "${username}": ${err.message}`, "error");
-            alert(`Failed to create user: ${err.message}`);
+            showToast(`Failed to create user: ${err.message}`, 'error');
         }
     });
 }
@@ -293,7 +465,7 @@ if (editUserForm) {
         e.preventDefault();
         
         if (window.userRole !== 'admin') {
-            alert('Administrative permissions required');
+            showToast('Administrative permissions required', 'error');
             return;
         }
 
@@ -333,37 +505,40 @@ if (editUserForm) {
             await fetchUsers();
         } catch (err) {
             addLogLine(`Update failed for "${username}": ${err.message}`, "error");
-            alert(`Failed to update user: ${err.message}`);
+            showToast(`Failed to update user: ${err.message}`, 'error');
         }
     });
 }
 
 window.deleteUser = async function(username) {
     if (window.userRole !== 'admin') {
-        alert('Administrative permissions required');
+        showToast('Administrative permissions required', 'error');
         return;
     }
 
-    if (!confirm(`Are you sure you want to permanently delete the user account "${username}"?`)) {
-        return;
-    }
+    showConfirm(
+        "Delete User Account",
+        `Are you sure you want to permanently delete the user account "${username}"?`,
+        async () => {
+            addLogLine(`Requesting deletion of user "${username}"...`, "warning");
 
-    addLogLine(`Requesting deletion of user "${username}"...`, "warning");
+            try {
+                const response = await fetch(`${BACKEND_BASE}/gsma/rsp/v2/authelia/users/${encodeURIComponent(username)}`, {
+                    method: 'DELETE'
+                });
 
-    try {
-        const response = await fetch(`${BACKEND_BASE}/gsma/rsp/v2/authelia/users/${encodeURIComponent(username)}`, {
-            method: 'DELETE'
-        });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
 
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
-
-        addLogLine(`Successfully deleted user "${username}"`, "success");
-        await fetchUsers();
-    } catch (err) {
-        addLogLine(`Deletion failed for "${username}": ${err.message}`, "error");
-        alert(`Failed to delete user: ${err.message}`);
-    }
+                addLogLine(`Successfully deleted user "${username}"`, "success");
+                showToast(`User account "${username}" deleted successfully.`, "success");
+                await fetchUsers();
+            } catch (err) {
+                addLogLine(`Deletion failed for "${username}": ${err.message}`, "error");
+                showToast(`Failed to delete user: ${err.message}`, "error");
+            }
+        }
+    );
 };
 
 // -------------------------------------------------------------

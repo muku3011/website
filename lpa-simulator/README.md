@@ -2,6 +2,29 @@
 
 This directory contains a lightweight, modular reference implementation of a GSMA SGP.22 v3.1 compliant **Local Profile Assistant (LPA)** simulator in Java 21 using Spring Boot 3.3.0, optimized to run bare-metal on a Raspberry Pi. It simulates the client-side Remote SIM Provisioning (RSP) flow, acting as the device that downloads, validates, and installs eSIM profiles from the SM-DP+ server.
 
+## Simulation Architecture
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User Browser
+    participant LPA as LPA Simulator (Port 8093)
+    participant SMDP as SM-DP+ Server (Port 8092)
+    participant DB as Local Database (H2)
+
+    User->>LPA: POST /lpa/download {activationCode}
+    Note over LPA: Parse Code: SM-DP+ Address & ICCID
+    LPA->>SMDP: POST /initiateAuthentication
+    SMDP-->>LPA: transactionId & SM-DP+ Challenge
+    LPA->>SMDP: POST /authenticateClient
+    SMDP-->>LPA: Server Signature & Info
+    LPA->>SMDP: POST /getBoundProfilePackage
+    SMDP-->>LPA: Bound Profile Package (BPP)
+    Note over LPA: Decode BPP & Extract Metadata
+    LPA->>DB: Save LocalProfile (State: DISABLED)
+    LPA-->>User: DownloadResponse (Success)
+```
+
 ## Contents
 
 - **[pom.xml](file:///Users/muku/Projects/website/lpa-simulator/pom.xml)**: The Maven dependency configuration (Spring Web, Lombok, and Spring Boot Starter Client).

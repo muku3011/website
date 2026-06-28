@@ -1,4 +1,176 @@
 // -------------------------------------------------------------
+// PREMIUM DIALOG & NOTIFICATION UTILITIES
+// -------------------------------------------------------------
+function showToast(message, type = 'info', duration = 4000) {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    let iconSvg = '';
+    if (type === 'success') {
+        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    } else if (type === 'error') {
+        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+    } else if (type === 'warning') {
+        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+    } else {
+        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+    }
+
+    toast.innerHTML = `
+        <div class="toast-icon">${iconSvg}</div>
+        <div class="toast-message">${escapeHtml(message)}</div>
+        <button class="toast-close" aria-label="Close notification">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    `;
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>'"]/g, 
+            tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+        );
+    }
+
+    container.appendChild(toast);
+
+    const removeTimer = setTimeout(() => {
+        dismissToast(toast);
+    }, duration);
+
+    toast.querySelector('.toast-close').addEventListener('click', (e) => {
+        e.stopPropagation();
+        clearTimeout(removeTimer);
+        dismissToast(toast);
+    });
+
+    toast.addEventListener('click', () => {
+        clearTimeout(removeTimer);
+        dismissToast(toast);
+    });
+}
+
+function dismissToast(toast) {
+    toast.classList.add('toast-hide');
+    toast.addEventListener('transitionend', () => {
+        toast.remove();
+    });
+}
+
+function showConfirm(title, message, onConfirm) {
+    let dialog = document.getElementById('dialog-confirm-action');
+    if (!dialog) {
+        dialog = document.createElement('dialog');
+        dialog.id = 'dialog-confirm-action';
+        dialog.className = 'modal-dialog';
+        document.body.appendChild(dialog);
+        
+        dialog.addEventListener('click', (e) => {
+            const rect = dialog.getBoundingClientRect();
+            const isInDialog = (rect.top <= e.clientY && e.clientY <= rect.top + rect.height
+                && rect.left <= e.clientX && e.clientX <= rect.left + rect.width);
+            if (!isInDialog) {
+                dialog.close();
+            }
+        });
+    }
+    
+    dialog.innerHTML = `
+        <div class="dialog-header">
+            <h3>${escapeHtml(title)}</h3>
+            <button class="btn-icon close-dialog-btn" aria-label="Close dialog" onclick="this.closest('dialog').close()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="dialog-body">
+            <p>${escapeHtml(message)}</p>
+            <div class="dialog-footer" style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+                <button type="button" class="btn btn-secondary close-dialog-btn" onclick="this.closest('dialog').close()">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirm-action-btn">Confirm</button>
+            </div>
+        </div>
+    `;
+    
+    function escapeHtml(str) {
+        return str.replace(/[&<>'"]/g, 
+            tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+        );
+    }
+    
+    const confirmBtn = dialog.querySelector('#confirm-action-btn');
+    confirmBtn.addEventListener('click', () => {
+        dialog.close();
+        onConfirm();
+    });
+    
+    dialog.showModal();
+}
+
+function showPrompt(title, message, defaultValue, onSubmit) {
+    let dialog = document.getElementById('dialog-prompt-action');
+    if (!dialog) {
+        dialog = document.createElement('dialog');
+        dialog.id = 'dialog-prompt-action';
+        dialog.className = 'modal-dialog';
+        document.body.appendChild(dialog);
+        
+        dialog.addEventListener('click', (e) => {
+            const rect = dialog.getBoundingClientRect();
+            const isInDialog = (rect.top <= e.clientY && e.clientY <= rect.top + rect.height
+                && rect.left <= e.clientX && e.clientX <= rect.left + rect.width);
+            if (!isInDialog) {
+                dialog.close();
+            }
+        });
+    }
+    
+    dialog.innerHTML = `
+        <div class="dialog-header">
+            <h3>${escapeHtml(title)}</h3>
+            <button class="btn-icon close-dialog-btn" aria-label="Close dialog" onclick="this.closest('dialog').close()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="dialog-body">
+            <form id="prompt-action-form" class="dialog-form" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <p style="margin-bottom: 0.5rem;">${escapeHtml(message)}</p>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <input type="text" id="prompt-action-input" value="${escapeHtml(defaultValue)}" required class="form-input" style="width: 100%;">
+                </div>
+                <div class="dialog-footer" style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                    <button type="button" class="btn btn-secondary close-dialog-btn" onclick="this.closest('dialog').close()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    function escapeHtml(str) {
+        return str.replace(/[&<>'"]/g, 
+            tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+        );
+    }
+    
+    const form = dialog.querySelector('#prompt-action-form');
+    const input = dialog.querySelector('#prompt-action-input');
+    
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        dialog.close();
+        onSubmit(input.value);
+    });
+    
+    dialog.showModal();
+    input.focus();
+    input.select();
+}
+
+// -------------------------------------------------------------
 // THEME MANAGER
 // -------------------------------------------------------------
 const themeToggle = document.getElementById('theme-toggle');
@@ -431,27 +603,31 @@ if (btnImport) {
 
 // 1. Delete Profile
 async function deleteProfile(iccid) {
-    if (!confirm(`Are you sure you want to delete profile with ICCID ${iccid}?`)) {
-        return;
-    }
+    showConfirm(
+        "Delete Profile",
+        `Are you sure you want to permanently delete profile with ICCID ${iccid}?`,
+        async () => {
+            addLogLine(`Sending delete request for profile ${iccid}...`, "info");
+            
+            try {
+                const response = await fetch(`${BACKEND_BASE}/gsma/rsp/v2/admin/profiles/${iccid}`, {
+                    method: 'DELETE'
+                });
 
-    addLogLine(`Sending delete request for profile ${iccid}...`, "info");
-    
-    try {
-        const response = await fetch(`${BACKEND_BASE}/gsma/rsp/v2/admin/profiles/${iccid}`, {
-            method: 'DELETE'
-        });
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
 
-        if (!response.ok) {
-            throw new Error(`HTTP error ${response.status}`);
+                addLogLine(`Profile ${iccid} deleted successfully.`, "success");
+                showToast("Profile deleted successfully.", "success");
+                fetchProfiles();
+            } catch (err) {
+                console.error("Delete failed", err);
+                addLogLine(`Delete failed: ${err.message}`, "error");
+                showToast(`Delete failed: ${err.message}`, "error");
+            }
         }
-
-        addLogLine(`Profile ${iccid} deleted successfully.`, "success");
-        fetchProfiles();
-    } catch (err) {
-        console.error("Delete failed", err);
-        addLogLine(`Delete failed: ${err.message}`, "error");
-    }
+    );
 }
 
 // 2. Order Profile Modal
@@ -951,6 +1127,7 @@ async function toggleLpaProfileState(iccid, shouldEnable) {
             throw new Error(`HTTP ${response.status}`);
         }
         addLogLine(`LPA profile ${iccid} was ${shouldEnable ? 'enabled' : 'disabled'}.`, "success");
+        showToast(`LPA profile ${shouldEnable ? 'enabled' : 'disabled'} successfully.`, "success");
         
         // Refresh both lists
         fetchLpaProfiles();
@@ -959,63 +1136,72 @@ async function toggleLpaProfileState(iccid, shouldEnable) {
         }
     } catch (err) {
         console.error(`Failed to ${action} profile`, err);
-        alert(`Failed to ${action} profile: ${err.message}`);
+        showToast(`Failed to ${action} profile: ${err.message}`, "error");
         fetchLpaProfiles(); // reset checkbox state on failure
     }
 }
 
 async function updateLpaProfileNickname(iccid, currentNickname) {
-    const newNickname = prompt("Enter new nickname for this eSIM profile:", currentNickname);
-    if (newNickname === null) return; // user cancelled
-    if (newNickname.trim() === '') {
-        alert("Nickname cannot be empty.");
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${LPA_SIMULATOR_BASE}/lpa/profiles/${iccid}/nickname`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ nickname: newNickname.trim() })
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+    showPrompt(
+        "Rename eSIM Profile",
+        "Enter new nickname for this eSIM profile:",
+        currentNickname,
+        async (newNickname) => {
+            if (newNickname.trim() === '') {
+                showToast("Nickname cannot be empty.", "warning");
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${LPA_SIMULATOR_BASE}/lpa/profiles/${iccid}/nickname`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ nickname: newNickname.trim() })
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                addLogLine(`LPA profile ${iccid} renamed to "${newNickname.trim()}".`, "info");
+                showToast("Profile renamed successfully.", "success");
+                fetchLpaProfiles();
+            } catch (err) {
+                console.error("Failed to update nickname", err);
+                showToast(`Failed to update nickname: ${err.message}`, "error");
+            }
         }
-        
-        addLogLine(`LPA profile ${iccid} renamed to "${newNickname.trim()}".`, "info");
-        fetchLpaProfiles();
-    } catch (err) {
-        console.error("Failed to update nickname", err);
-        alert(`Failed to update nickname: ${err.message}`);
-    }
+    );
 }
 
 async function deleteLpaProfile(iccid) {
-    if (!confirm("Are you sure you want to uninstall and delete this eSIM profile from the simulator? This action is irreversible.")) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${LPA_SIMULATOR_BASE}/lpa/profiles/${iccid}`, {
-            method: 'DELETE'
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+    showConfirm(
+        "Uninstall Profile",
+        "Are you sure you want to uninstall and delete this eSIM profile from the simulator? This action is irreversible.",
+        async () => {
+            try {
+                const response = await fetch(`${LPA_SIMULATOR_BASE}/lpa/profiles/${iccid}`, {
+                    method: 'DELETE'
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                addLogLine(`LPA profile ${iccid} uninstalled.`, "info");
+                showToast("Profile uninstalled successfully.", "success");
+                
+                // Refresh both lists
+                fetchLpaProfiles();
+                if (typeof fetchProfiles === 'function') {
+                    fetchProfiles();
+                }
+            } catch (err) {
+                console.error("Failed to delete profile", err);
+                showToast(`Failed to delete profile: ${err.message}`, "error");
+            }
         }
-        
-        addLogLine(`LPA profile ${iccid} uninstalled.`, "info");
-        
-        // Refresh both lists
-        fetchLpaProfiles();
-        if (typeof fetchProfiles === 'function') {
-            fetchProfiles();
-        }
-    } catch (err) {
-        console.error("Failed to delete profile", err);
-        alert(`Failed to delete profile: ${err.message}`);
-    }
+    );
 }
 
 // Expose CRUD actions globally

@@ -2,6 +2,39 @@
 
 This directory contains the frontend website assets (HTML/CSS/JS) for the `hutta.in` server, featuring the eSIM Profiles Management dashboard and the Authelia User Administration panel.
 
+## Deployment & Architecture
+
+```mermaid
+flowchart TD
+    subgraph Web Clients
+        Browser["User Browser"]
+    end
+
+    subgraph Raspberry Pi (Home Server)
+        subgraph Reverse Proxy & Web Server (Apache)
+            Apache["Apache HTTP Server"]
+            OIDC["mod_auth_openidc"]
+        end
+
+        subgraph Authentication Service
+            Authelia["Authelia Service (Port 9091)"]
+        end
+
+        subgraph Web Apps
+            Dashboard["Static Dashboard Files (Port 80/443)"]
+            LPA["LPA Simulator (Port 8093)"]
+            SMDP["SM-DP+ Server (Port 8092)"]
+        end
+    end
+
+    Browser -->|HTTPS request| Apache
+    Apache --> OIDC
+    OIDC -->|Authenticate if needed| Authelia
+    OIDC -->|Authorized | Dashboard
+    OIDC -->|Forward API request| LPA
+    OIDC -->|Forward API request| SMDP
+```
+
 ## Repository Contents
 - **`index.html`**: The main landing page.
 - **`profiles.html`**: The eSIM profiles management registry and LPA download simulator.

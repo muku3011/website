@@ -5,12 +5,27 @@ This repository contains the Infrastructure as Code (IaC) and web assets needed 
 ## Architecture Overview
 
 ```mermaid
-graph TD
-    Client[Web Browser] -->|dns lookup| GCP_DNS[GCP Cloud DNS]
-    GCP_DNS -->|returns IP| Client
-    Client -->|http/https request| RPi[Raspberry Pi (Home Network)]
-    RPi -->|periodic IP check| Ipify[ipify.org / public IP check]
-    RPi -->|updates DNS if IP changed| GCP_DNS
+flowchart TD
+    subgraph Public Internet
+        Client["Web Browser"]
+        GCP_DNS["GCP Cloud DNS"]
+        Ipify["ipify.org (IP Service)"]
+    end
+
+    subgraph Home Network
+        RPi["Raspberry Pi"]
+    end
+
+    Client -->|1. DNS Lookup| GCP_DNS
+    GCP_DNS -->|2. Returns Public IP| Client
+    Client -->|3. HTTP/HTTPS Request| RPi
+    RPi -->|4. Periodic IP Check| Ipify
+    RPi -->|5. Update Record (if IP changed)| GCP_DNS
+
+    style Client fill:#3b82f6,stroke:#1d4ed8,stroke-width:2px,color:#fff
+    style GCP_DNS fill:#10b981,stroke:#047857,stroke-width:2px,color:#fff
+    style Ipify fill:#6b7280,stroke:#374151,stroke-width:2px,color:#fff
+    style RPi fill:#ef4444,stroke:#b91c1c,stroke-width:2px,color:#fff
 ```
 
 1. **GCP Cloud DNS**: Manages the `hutta.in` DNS zone.
