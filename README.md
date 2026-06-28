@@ -32,7 +32,16 @@ flowchart LR
 
 ---
 
-## 2. Web Portal & eSIM Services System Architecture
+## 2. Secure HTTPS & SSL/TLS via Certbot
+
+To ensure all public-facing HTTP traffic is encrypted and secure, **Certbot (Let's Encrypt)** is integrated into the hosting environment:
+* **Certificate Acquisition**: Certbot automatically provisions trusted, free SSL/TLS certificates from Let's Encrypt for `hutta.in` (and wildcard/subdomains).
+* **Apache HTTPS Integration**: The certificates (private key and full chain cert) are loaded into the Apache HTTP Server (`/etc/apache2/sites-available/000-default-le-ssl.conf`), forcing all connections to upgrade to **HTTPS (port 443)** using modern TLS protocols.
+* **Automated Renewals**: A systemd timer (`certbot.timer`) runs automatically twice a day to renew certificates nearing expiration and reloads Apache to apply the renewed certificates seamlessly without downtime.
+
+---
+
+## 3. Web Portal & eSIM Services System Architecture
 
 This diagram shows how user devices, reverse proxy, authentication directories, and persistent database tiers interface on the Raspberry Pi.
 
@@ -97,7 +106,7 @@ flowchart TD
 
 ---
 
-## 3. Projects & Repository Layout
+## 4. Projects & Repository Layout
 
 This repository is split into five main areas:
 
