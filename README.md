@@ -38,33 +38,25 @@ To ensure all public-facing HTTP traffic is encrypted and secure, **Certbot (Let
 
 ```mermaid
 flowchart TD
-    subgraph LE ["Let's Encrypt CA"]
-        Challenge["Verify Domain Ownership"]
-        Issue["Issue SSL/TLS Certificates"]
-    end
+    Timer["systemd certbot.timer"]
+    Certbot["Certbot Agent"]
+    LE["Let's Encrypt CA"]
+    FS["Local Filesystem\n(/etc/letsencrypt)"]
+    Apache["Apache Web Server"]
 
-    subgraph RPi ["Raspberry Pi Gateway"]
-        direction TB
-        CertbotClient["Certbot Agent"]
-        Apache["Apache Web Server (Port 80/443)"]
-        FS["Local File System (/etc/letsencrypt/)"]
-        Timer["systemd certbot.timer"]
-    end
+    Timer -->|1. Periodic Trigger| Certbot
+    Certbot -->|2. Request Cert & Challenge| LE
+    LE -.->|3. Validate Domain| Apache
+    LE -->|4. Issue Signed Certs| Certbot
+    Certbot -->|5. Save Private Key & Chain| FS
+    Certbot -->|6. Reload Server Service| Apache
+    Apache -->|7. Load Active Certs| FS
 
-    %% Initialization/Renewal Trigger
-    Timer -->|1. Scheduled Trigger| CertbotClient
-    
-    %% Challenge & Verification
-    CertbotClient -->|2. Request Cert & Challenge| LE
-    Challenge -.->|3. Validate Domain| Apache
-    
-    %% Issuance & Storage
-    LE -->|4. Issue Signed Certs| CertbotClient
-    CertbotClient -->|5. Save Private Key & Chain| FS
-    
-    %% Apache Reload
-    CertbotClient -->|6. Reload Service| Apache
-    Apache -->|7. Load Certificates| FS
+    style Timer fill:#fca5a5,stroke:#ef4444,stroke-width:2px,color:#000
+    style Certbot fill:#93c5fd,stroke:#3b82f6,stroke-width:2px,color:#000
+    style LE fill:#c084fc,stroke:#a855f7,stroke-width:2px,color:#000
+    style FS fill:#cbd5e1,stroke:#64748b,stroke-width:2px,color:#000
+    style Apache fill:#86efac,stroke:#22c55e,stroke-width:2px,color:#000
 ```
 
 * **Certificate Acquisition**: Certbot automatically provisions trusted, free SSL/TLS certificates from Let's Encrypt for `hutta.in` (and wildcard/subdomains).
