@@ -218,10 +218,16 @@ window.updateActivationDetails = function() {
         }
     }
     
-    if (!window.selectedIccid) {
+    const selectedProfile = currentProfiles.find(p => p.iccid === window.selectedIccid);
+    
+    if (!selectedProfile) {
         if (qrImg) qrImg.style.display = 'none';
-        if (qrPlaceholder) qrPlaceholder.style.display = 'block';
+        if (qrPlaceholder) {
+            qrPlaceholder.style.display = 'block';
+            qrPlaceholder.innerHTML = 'Select a profile to generate QR Code';
+        }
         if (codeText) codeText.value = '';
+        document.querySelectorAll('.activation-body .form-group').forEach(el => el.style.display = 'none');
         return;
     }
     
@@ -233,6 +239,41 @@ window.updateActivationDetails = function() {
             row.classList.add('selected-row');
         }
     });
+
+    if (selectedProfile.state !== 'RELEASED') {
+        // Hide QR code and form inputs, show placeholder explaining current status
+        if (qrImg) qrImg.style.display = 'none';
+        if (qrPlaceholder) {
+            qrPlaceholder.style.display = 'block';
+            qrPlaceholder.innerHTML = `
+                <div style="text-align: center; padding: 1.5rem 1rem; color: var(--warning-glow);">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 0.5rem; opacity: 0.8;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <p style="font-weight: 500; font-size: 0.85rem; margin-bottom: 0.25rem;">Activation Unavailable</p>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.3;">Profile is currently <strong>${selectedProfile.state}</strong>.<br>Please place an order and release the profile to enable LPA download.</p>
+                </div>
+            `;
+            const qrContainer = document.getElementById('qr-container');
+            if (qrContainer) {
+                qrContainer.style.width = '100%';
+                qrContainer.style.height = 'auto';
+                qrContainer.style.background = 'transparent';
+                qrContainer.style.border = 'none';
+            }
+        }
+        if (codeText) codeText.value = '';
+        document.querySelectorAll('.activation-body .form-group').forEach(el => el.style.display = 'none');
+        return;
+    }
+    
+    // Profile is RELEASED: show QR code and form inputs
+    const qrContainer = document.getElementById('qr-container');
+    if (qrContainer) {
+        qrContainer.style.width = '140px';
+        qrContainer.style.height = '140px';
+        qrContainer.style.background = 'white';
+        qrContainer.style.border = '1px solid var(--card-border)';
+    }
+    document.querySelectorAll('.activation-body .form-group').forEach(el => el.style.display = 'block');
 
     const host = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
         ? 'localhost:8092' 
