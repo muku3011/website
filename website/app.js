@@ -575,6 +575,12 @@ async function triggerLpaDownload(iccid) {
         minimizedBtn.style.display = 'none';
         expandedWindow.style.display = 'flex';
         
+        // Select the Download tab by default
+        const downloadTabBtn = document.querySelector('.lpa-tab-btn[data-tab="lpa-tab-download"]');
+        if (downloadTabBtn) {
+            downloadTabBtn.click();
+        }
+        
         // Clear and add log
         const logsArea = document.getElementById('lpa-sim-logs');
         if (logsArea) logsArea.innerHTML = '';
@@ -748,6 +754,23 @@ function initLpaSimulator() {
         });
     }
 
+    // Tab Switching Logic
+    const tabBtns = document.querySelectorAll('.lpa-tab-btn');
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            tabBtns.forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.lpa-tab-pane').forEach(p => p.classList.remove('active'));
+            
+            btn.classList.add('active');
+            const targetTab = btn.getAttribute('data-tab');
+            document.getElementById(targetTab)?.classList.add('active');
+            
+            if (targetTab === 'lpa-tab-device') {
+                fetchLpaProfiles();
+            }
+        });
+    });
+
     if (minimizeBtn && minimizedBtn && expandedWindow) {
         minimizeBtn.addEventListener('click', () => {
             expandedWindow.style.display = 'none';
@@ -832,6 +855,7 @@ function initLpaSimulator() {
                     if (typeof fetchProfiles === 'function') {
                         fetchProfiles();
                     }
+                    fetchLpaProfiles();
                 } else {
                     await delay(400);
                     addLpaLog(`[ERROR] Download failed: ${data.message || 'Unknown error'}`, 'error');
@@ -866,3 +890,140 @@ if (logoutBtn) {
         }
     });
 }
+
+// -------------------------------------------------------------
+// LOCAL DEVICE eSIM CRUD MANAGEMENT
+// -------------------------------------------------------------
+async function fetchLpaProfiles() {
+    const listContainer = document.getElementById('lpa-device-profiles-list');
+    if (!listContainer) return;
+    
+    try {
+        const response = await fetch(`${LPA_SIMULATOR_BASE}/lpa/profiles`);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        const profiles = await response.json();
+        
+        if (profiles.length === 0) {
+            listContainer.innerHTML = '<div class="lpa-empty-state">No eSIM profiles installed yet.</div>';
+            return;
+        }
+        
+        listContainer.innerHTML = profiles.map(profile => {
+            const isEnabled = profile.profileState === 'ENABLED';
+            const shortIccid = profile.iccid.length > 8 
+                ? profile.iccid.substring(0, 4) + '...' + profile.iccid.substring(profile.iccid.length - 4) 
+                : profile.iccid;
+                
+            return `
+                <div class="lpa-profile-item ${isEnabled ? 'enabled' : ''}">
+                    <div class="lpa-profile-info">
+                        <span class="lpa-profile-nickname" title="${profile.profileNickname}">${profile.profileNickname}</span>
+                        <span class="lpa-profile-iccid-smdp" title="ICCID: ${profile.iccid}\nSM-DP+: ${profile.smdpAddress}">
+                            ICCID: ${shortIccid}
+                        </span>
+                    </div>
+                    <div class="lpa-profile-status-actions">
+                        <label class="lpa-switch" title="${isEnabled ? 'Disable profile' : 'Enable profile'}">
+                            <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="toggleLpaProfileState('${profile.iccid}', ${!isEnabled})">
+                            <span class="lpa-slider"></span>
+                        </label>
+                        <button class="btn-profile-action edit" onclick="updateLpaProfileNickname('${profile.iccid}', '${profile.profileNickname.replace(/'/g, "\\'")}')" title="Edit nickname">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                        </button>
+                        <button class="btn-profile-action delete" onclick="deleteLpaProfile('${profile.iccid}')" title="Uninstall profile">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (err) {
+        console.error("Failed to fetch device profiles", err);
+        listContainer.innerHTML = `<div class="lpa-empty-state" style="color: var(--warning-glow);">Failed to load profiles: ${err.message}</div>`;
+    }
+}
+
+async function toggleLpaProfileState(iccid, shouldEnable) {
+    const action = shouldEnable ? 'enable' : 'disable';
+    try {
+        const response = await fetch(`${LPA_SIMULATOR_BASE}/lpa/profiles/${iccid}/${action}`, {
+            method: 'PUT'
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        addLogLine(`LPA profile ${iccid} was ${shouldEnable ? 'enabled' : 'disabled'}.`, "success");
+        
+        // Refresh both lists
+        fetchLpaProfiles();
+        if (typeof fetchProfiles === 'function') {
+            fetchProfiles();
+        }
+    } catch (err) {
+        console.error(`Failed to ${action} profile`, err);
+        alert(`Failed to ${action} profile: ${err.message}`);
+        fetchLpaProfiles(); // reset checkbox state on failure
+    }
+}
+
+async function updateLpaProfileNickname(iccid, currentNickname) {
+    const newNickname = prompt("Enter new nickname for this eSIM profile:", currentNickname);
+    if (newNickname === null) return; // user cancelled
+    if (newNickname.trim() === '') {
+        alert("Nickname cannot be empty.");
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${LPA_SIMULATOR_BASE}/lpa/profiles/${iccid}/nickname`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ nickname: newNickname.trim() })
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        addLogLine(`LPA profile ${iccid} renamed to "${newNickname.trim()}".`, "info");
+        fetchLpaProfiles();
+    } catch (err) {
+        console.error("Failed to update nickname", err);
+        alert(`Failed to update nickname: ${err.message}`);
+    }
+}
+
+async function deleteLpaProfile(iccid) {
+    if (!confirm("Are you sure you want to uninstall and delete this eSIM profile from the simulator? This action is irreversible.")) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${LPA_SIMULATOR_BASE}/lpa/profiles/${iccid}`, {
+            method: 'DELETE'
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        addLogLine(`LPA profile ${iccid} uninstalled.`, "info");
+        
+        // Refresh both lists
+        fetchLpaProfiles();
+        if (typeof fetchProfiles === 'function') {
+            fetchProfiles();
+        }
+    } catch (err) {
+        console.error("Failed to delete profile", err);
+        alert(`Failed to delete profile: ${err.message}`);
+    }
+}
+
+// Expose CRUD actions globally
+window.toggleLpaProfileState = toggleLpaProfileState;
+window.updateLpaProfileNickname = updateLpaProfileNickname;
+window.deleteLpaProfile = deleteLpaProfile;
+window.fetchLpaProfiles = fetchLpaProfiles;

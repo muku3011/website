@@ -230,27 +230,44 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 </button>
             </div>
+
+            <!-- Tab Navigation -->
+            <div class="lpa-sim-tabs">
+                <button class="lpa-tab-btn active" data-tab="lpa-tab-download">Download</button>
+                <button class="lpa-tab-btn" data-tab="lpa-tab-device">My Device eSIMs</button>
+            </div>
             
             <div class="lpa-sim-body">
-                <p class="lpa-sim-desc">Simulate a local eSIM client (LPA) downloading a profile from the SM-DP+ server.</p>
-                
-                <div class="form-group-sm">
-                    <label>Activation Code String</label>
-                    <textarea id="lpa-sim-ac-text" class="lpa-sim-textarea" readonly></textarea>
+                <!-- Tab Panel 1: Download -->
+                <div id="lpa-tab-download" class="lpa-tab-pane active">
+                    <p class="lpa-sim-desc">Simulate a local eSIM client (LPA) downloading a profile from the SM-DP+ server.</p>
+                    
+                    <div class="form-group-sm">
+                        <label>Activation Code String</label>
+                        <textarea id="lpa-sim-ac-text" class="lpa-sim-textarea" readonly></textarea>
+                    </div>
+
+                    <button id="lpa-sim-btn-download" class="btn btn-primary btn-sim-download">
+                        <svg class="download-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                        <span>Download Profile</span>
+                    </button>
+
+                    <div class="lpa-sim-console-container">
+                        <div class="lpa-sim-console-header">
+                            <span>LPA Client Console</span>
+                            <button id="lpa-sim-clear-logs" class="btn-text-sm">Clear</button>
+                        </div>
+                        <div id="lpa-sim-logs" class="lpa-sim-logs-area">
+                            <div class="log-entry info">LPA Client initialized. Ready to simulate download.</div>
+                        </div>
+                    </div>
                 </div>
 
-                <button id="lpa-sim-btn-download" class="btn btn-primary btn-sim-download">
-                    <svg class="download-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                    <span>Download Profile</span>
-                </button>
-
-                <div class="lpa-sim-console-container">
-                    <div class="lpa-sim-console-header">
-                        <span>LPA Client Console</span>
-                        <button id="lpa-sim-clear-logs" class="btn-text-sm">Clear</button>
-                    </div>
-                    <div id="lpa-sim-logs" class="lpa-sim-logs-area">
-                        <div class="log-entry info">LPA Client initialized. Ready to simulate download.</div>
+                <!-- Tab Panel 2: Device profiles management -->
+                <div id="lpa-tab-device" class="lpa-tab-pane">
+                    <p class="lpa-sim-desc">Manage eSIM profiles installed on this simulated device. Only one profile can be enabled (active) at a time.</p>
+                    <div id="lpa-device-profiles-list" class="lpa-device-profiles-list">
+                        <div class="lpa-empty-state">No eSIM profiles installed yet.</div>
                     </div>
                 </div>
             </div>

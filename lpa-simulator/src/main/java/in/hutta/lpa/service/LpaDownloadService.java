@@ -2,6 +2,9 @@ package in.hutta.lpa.service;
 
 import in.hutta.lpa.dto.Es9Dtos.*;
 import in.hutta.lpa.dto.LpaDtos.*;
+import in.hutta.lpa.model.LocalProfile;
+import in.hutta.lpa.repository.LocalProfileRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -11,13 +14,11 @@ import org.springframework.web.client.RestTemplate;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class LpaDownloadService {
 
-    private final RestTemplate restTemplate;
-
-    public LpaDownloadService() {
-        this.restTemplate = new RestTemplate();
-    }
+    private final LocalProfileRepository localProfileRepository;
+    private final RestTemplate restTemplate = new RestTemplate();
 
     public DownloadResponse downloadProfile(String activationCode) {
         log.info("LPA Simulator initiating profile download: {}", activationCode);
@@ -112,6 +113,17 @@ public class LpaDownloadService {
             response.setBoundProfilePackageSize(bppSize);
             response.setBoundProfilePackage(bpp);
             response.setIccid(matchingId.isEmpty() ? "EID_PUSH_FLOW" : matchingId);
+
+            // Save to local profile registry database
+            LocalProfile localProfile = new LocalProfile();
+            localProfile.setIccid(response.getIccid());
+            localProfile.setSmdpAddress(smdpAddress);
+            localProfile.setProfileNickname("eSIM " + (response.getIccid().length() > 4 ? response.getIccid().substring(response.getIccid().length() - 4) : response.getIccid()));
+            localProfile.setServiceProviderName("SM-DP+ (" + smdpAddress + ")");
+            localProfile.setProfileState("DISABLED"); // Initially disabled on device
+            localProfile.setBoundProfilePackage(bpp);
+            localProfileRepository.save(localProfile);
+            log.info("eSIM profile successfully saved to device database: ICCID={}", response.getIccid());
 
         } catch (Exception e) {
             log.error("eSIM profile download failed via LPA: {}", e.getMessage(), e);
