@@ -1,6 +1,6 @@
-# GCP Cloud DNS with Dynamic DNS (DDNS) & Server Dashboard for hutta.in
+# hutta.in Gateway & eSIM Remote SIM Provisioning (RSP) Platform
 
-This repository contains the Infrastructure as Code (IaC) and web assets needed to delegate DNS management for `hutta.in` to Google Cloud Platform (GCP), set up Dynamic DNS (DDNS), and run a premium status dashboard on a home-hosted Raspberry Pi.
+This repository contains the Infrastructure as Code (IaC), secure web portal assets, authentication configurations, and eSIM Remote SIM Provisioning (RSP) services needed to run a secure server gateway, status dashboard, and a local SM-DP+ eSIM provisioning environment on a home-hosted Raspberry Pi.
 
 ---
 
