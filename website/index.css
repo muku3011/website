@@ -179,8 +179,66 @@ body {
 }
 
 @media (max-width: 768px) {
-    .nav-menu {
+    .header-container {
+        display: grid;
+        grid-template-areas: 
+            "brand actions"
+            "nav nav";
+        grid-template-columns: 1fr auto;
+        row-gap: 0.75rem;
+        column-gap: 0.5rem;
+        padding: 0.75rem 1rem;
+    }
+    
+    .brand {
+        grid-area: brand;
+    }
+    
+    .header-actions {
+        grid-area: actions;
         gap: 0.75rem;
+    }
+    
+    .nav-menu {
+        grid-area: nav;
+        justify-content: center;
+        width: 100%;
+        border-top: 1px solid var(--card-border);
+        padding-top: 0.75rem;
+        gap: 1.5rem;
+    }
+
+    .brand-link h1 {
+        font-size: 1.15rem;
+    }
+    
+    .brand-link h1 .badge {
+        font-size: 0.7rem;
+        padding: 0.15rem 0.4rem;
+        margin-left: 0.4rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-container {
+        padding: 0.6rem 0.75rem;
+        row-gap: 0.6rem;
+    }
+    .nav-menu {
+        gap: 1rem;
+    }
+    .nav-link {
+        font-size: 0.85rem;
+        padding: 0.2rem 0.4rem;
+    }
+    #logout-btn {
+        padding: 0.35rem 0.6rem;
+        font-size: 0.75rem;
+        gap: 0.25rem;
+    }
+    #logout-btn svg {
+        width: 12px;
+        height: 12px;
     }
 }
 
