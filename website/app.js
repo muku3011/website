@@ -284,7 +284,7 @@ async function fetchProfiles() {
         addLogLine(`Failed to fetch profiles: ${err.message}`, "error");
         document.getElementById('profiles-list-body').innerHTML = `
             <tr>
-                <td colspan="4" class="table-empty" style="color: var(--warning-glow);">Error connecting to SM-DP+ backend. Ensure server is running on 8092.</td>
+                <td colspan="5" class="table-empty" style="color: var(--warning-glow);">Error connecting to SM-DP+ backend. Ensure server is running on 8092.</td>
             </tr>
         `;
     }
@@ -311,7 +311,7 @@ function renderProfiles() {
     if (filtered.length === 0) {
         listBody.innerHTML = `
             <tr>
-                <td colspan="4" class="table-empty">No profiles found.</td>
+                <td colspan="5" class="table-empty">No profiles found.</td>
             </tr>
         `;
         return;
@@ -319,6 +319,9 @@ function renderProfiles() {
 
     listBody.innerHTML = filtered.map(profile => {
         const stateClass = profile.state ? profile.state.toLowerCase() : 'available';
+        const networkBadge = profile.networkType === '5G'
+            ? `<span class="badge-5g">5G</span>`
+            : `<span class="badge-4g">4G</span>`;
         
         let actionButton = '';
         if (profile.state === 'AVAILABLE') {
@@ -352,6 +355,7 @@ function renderProfiles() {
         return `
             <tr onclick="selectProfileForActivation('${profile.iccid}')" style="cursor: pointer;">
                 <td class="code-text-mono">${profile.iccid}</td>
+                <td>${networkBadge}</td>
                 <td class="code-text-mono">${profile.eid || '<span style="color: var(--text-muted);">--</span>'}</td>
                 <td><span class="status-pill ${stateClass}">${profile.state}</span></td>
                 <td>

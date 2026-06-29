@@ -1,0 +1,1 @@
+ALTER TABLE profile ADD COLUMN network_type VARCHAR(255) DEFAULT '4G';

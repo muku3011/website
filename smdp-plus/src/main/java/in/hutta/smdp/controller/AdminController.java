@@ -54,7 +54,7 @@ public class AdminController {
         // Ignore, keep using raw contentBytes
       }
 
-      return importProfileBytes(profileBytes, iccid);
+      return importProfileBytes(profileBytes, iccid, file.getOriginalFilename());
     } catch (IOException e) {
       log.error("Failed to read uploaded file", e);
       return ResponseEntity.internalServerError()
@@ -62,7 +62,8 @@ public class AdminController {
     }
   }
 
-  private ResponseEntity<?> importProfileBytes(byte[] profileBytes, String overrideIccid) {
+  private ResponseEntity<?> importProfileBytes(
+      byte[] profileBytes, String overrideIccid, String filename) {
     String iccid = overrideIccid;
     if (iccid == null || iccid.trim().isEmpty()) {
       iccid = extractIccid(profileBytes);
@@ -75,14 +76,16 @@ public class AdminController {
     }
 
     String payload = Base64.getEncoder().encodeToString(profileBytes);
+    String networkType = detectNetworkType(profileBytes, filename);
 
     Profile profile = new Profile();
     profile.setIccid(iccid);
     profile.setState("AVAILABLE");
     profile.setProfilePayload(payload);
+    profile.setNetworkType(networkType);
 
     profileRepository.save(profile);
-    log.info("Profile imported successfully: ICCID={}", iccid);
+    log.info("Profile imported successfully: ICCID={}, networkType={}", iccid, networkType);
 
     return ResponseEntity.ok("Profile imported successfully");
   }
@@ -129,5 +132,34 @@ public class AdminController {
       sb.append(String.format("%02x", b));
     }
     return sb.toString();
+  }
+
+  private String detectNetworkType(byte[] profileBytes, String filename) {
+    if (filename != null) {
+      String upper = filename.toUpperCase();
+      if (upper.contains("5G") || upper.contains("NR") || upper.contains("SA")) {
+        return "5G";
+      }
+    }
+
+    // Binary Scan: Search for EF_UST (File ID 6F38) in profile elements
+    try {
+      int limit = Math.min(profileBytes.length - 18, 5000);
+      for (int i = 0; i < limit; i++) {
+        if ((profileBytes[i] & 0xFF) == 0x6F && (profileBytes[i + 1] & 0xFF) == 0x38) {
+          int ustLength = profileBytes[i + 2] & 0xFF;
+          if (ustLength >= 16) {
+            int svcByte = profileBytes[i + 2 + 16] & 0xFF;
+            if ((svcByte & 0x18) != 0) {
+              return "5G";
+            }
+          }
+        }
+      }
+    } catch (Exception e) {
+      // Ignore and fallback
+    }
+
+    return "4G";
   }
 }

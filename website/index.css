@@ -1651,6 +1651,34 @@ select:focus-visible {
     opacity: 0.9;
     border-color: transparent transparent var(--primary-glow) transparent;
 }
+
+/* Network Type Badges */
+.badge-4g {
+    background: rgba(0, 168, 204, 0.12);
+    color: #00cdfc;
+    border: 1px solid rgba(0, 168, 204, 0.25);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: inline-block;
+    letter-spacing: 0.5px;
+    font-family: var(--font-primary);
+}
+
+.badge-5g {
+    background: rgba(184, 109, 255, 0.12);
+    color: #c58dff;
+    border: 1px solid rgba(184, 109, 255, 0.25);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: inline-block;
+    letter-spacing: 0.5px;
+    font-family: var(--font-primary);
+    box-shadow: 0 0 8px rgba(184, 109, 255, 0.1);
+}
 @keyframes lpa-slide-in {
     from { transform: translateY(20px) scale(0.95); opacity: 0; }
     to { transform: translateY(0) scale(1); opacity: 1; }

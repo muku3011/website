@@ -15,6 +15,7 @@ public class Profile {
   @Id private String iccid;
   private String eid;
   private String state; // AVAILABLE, ORDERED, RELEASED, DOWNLOADED
+  private String networkType; // "4G" or "5G"
 
   @Column(columnDefinition = "TEXT")
   private String profilePayload; // Base64 mock BPP or profile bytes
