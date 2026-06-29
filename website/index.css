@@ -2313,111 +2313,55 @@ select:focus-visible {
     opacity: 1;
 }
 
-/* User Info Card */
-.user-info-card {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--card-border);
-}
-
-.user-card-avatar {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, hsla(var(--hue-primary), 100%, 65%, 0.2), hsla(var(--hue-secondary), 90%, 70%, 0.2));
-    border: 1px solid hsla(var(--hue-primary), 100%, 65%, 0.3);
-    color: var(--primary-glow);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.95rem;
-    font-weight: 700;
-    font-family: var(--font-heading);
-}
-
-.user-card-meta {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-.user-card-meta h4 {
-    font-family: var(--font-heading), system-ui;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    margin: 0;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
-}
-
-.user-card-username {
-    font-family: monospace;
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    margin-top: 2px;
-}
-
-/* User Info Details list */
-.user-info-details {
-    display: flex;
-    flex-direction: column;
-    gap: 0.8rem;
-}
-
-.user-info-details .info-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    font-size: 0.8rem;
-}
-
-.user-info-details .info-icon {
-    font-size: 1rem;
-    line-height: 1.2;
-    opacity: 0.8;
-}
-
-.user-info-details .info-content {
+.user-dropdown-header {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    overflow: hidden;
 }
 
-.user-info-details .info-label {
+.user-display-name-header {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: var(--font-heading);
+}
+
+.user-email-header {
+    font-size: 0.75rem;
     color: var(--text-muted);
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-weight: 600;
 }
 
-.user-info-details .info-value {
+.user-dropdown-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.user-dropdown-details .detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+}
+
+.user-dropdown-details .detail-label {
+    color: var(--text-muted);
+}
+
+.user-dropdown-details .detail-value {
     color: var(--text-primary);
     font-weight: 600;
-    word-break: break-all;
+    font-family: monospace;
 }
 
-.dropdown-divider {
-    height: 1px;
-    background: var(--card-border);
-    margin: 0.8rem 0;
-}
-
-/* Footer Action Bar */
-.dropdown-footer-actions {
+.user-dropdown-footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
 }
 
-.dropdown-footer-actions .badge {
+.user-dropdown-footer .badge {
     font-size: 0.65rem;
     padding: 0.25rem 0.5rem;
     border-radius: var(--border-radius-sm, 4px);
@@ -2429,33 +2373,30 @@ select:focus-visible {
     color: var(--text-secondary);
 }
 
-.btn-logout {
+.btn-logout-simple {
     display: flex;
     align-items: center;
     gap: 4px;
-    background: rgba(239, 83, 80, 0.1);
+    background: none;
+    border: none;
     color: #ef5350;
-    border: 1px solid rgba(239, 83, 80, 0.2);
-    padding: 6px 12px;
-    border-radius: var(--border-radius-sm, 6px);
     font-size: 0.75rem;
     font-weight: 600;
     cursor: pointer;
-    transition: var(--transition-smooth);
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.2s, color 0.2s;
 }
 
-.btn-logout:hover {
-    background: #ef5350;
-    color: white;
-    border-color: #ef5350;
-    box-shadow: 0 0 10px rgba(239, 83, 80, 0.3);
+.btn-logout-simple:hover {
+    background: rgba(239, 83, 80, 0.1);
 }
 
-.btn-logout svg {
+.btn-logout-simple svg {
     transition: transform 0.2s;
 }
 
-.btn-logout:hover svg {
+.btn-logout-simple:hover svg {
     transform: translateX(2px);
 }
 
