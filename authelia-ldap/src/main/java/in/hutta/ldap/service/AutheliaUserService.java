@@ -5,8 +5,6 @@ import in.hutta.ldap.model.AutheliaUser;
 import in.hutta.ldap.repository.AutheliaUserRepository;
 import in.hutta.ldap.util.Argon2idVerifier;
 import jakarta.transaction.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -15,7 +13,6 @@ import java.util.*;
 @SuppressWarnings("null")
 public class AutheliaUserService {
 
-    private static final Logger log = LoggerFactory.getLogger(AutheliaUserService.class);
 
     private final AutheliaUserRepository userRepository;
     private final LdapServerManager ldapServerManager;
