@@ -8,6 +8,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,6 +27,7 @@ public class AutheliaUserTest {
         createReq.setGroups(List.of("users"));
         createReq.setPassword("password123");
 
+        @SuppressWarnings("rawtypes")
         ResponseEntity<Map> createResponse = restTemplate.postForEntity(
                 "/gsma/rsp/v2/authelia/users?username=testuser",
                 createReq,
@@ -38,7 +40,7 @@ public class AutheliaUserTest {
                 "/gsma/rsp/v2/authelia/users",
                 AutheliaUserController.UserResponse[].class
         );
-        AutheliaUserController.UserResponse[] users = afterCreateResponse.getBody();
+        AutheliaUserController.UserResponse[] users = Objects.requireNonNull(afterCreateResponse.getBody());
         assertThat(users).isNotNull();
         boolean found = false;
         for (AutheliaUserController.UserResponse u : users) {
@@ -64,7 +66,7 @@ public class AutheliaUserTest {
                 "/gsma/rsp/v2/authelia/users",
                 AutheliaUserController.UserResponse[].class
         );
-        AutheliaUserController.UserResponse[] updatedUsers = afterUpdateResponse.getBody();
+        AutheliaUserController.UserResponse[] updatedUsers = Objects.requireNonNull(afterUpdateResponse.getBody());
         assertThat(updatedUsers).isNotNull();
         found = false;
         for (AutheliaUserController.UserResponse u : updatedUsers) {
@@ -83,7 +85,7 @@ public class AutheliaUserTest {
                 "/gsma/rsp/v2/authelia/users",
                 AutheliaUserController.UserResponse[].class
         );
-        AutheliaUserController.UserResponse[] finalUsers = afterDeleteResponse.getBody();
+        AutheliaUserController.UserResponse[] finalUsers = Objects.requireNonNull(afterDeleteResponse.getBody());
         assertThat(finalUsers).isNotNull();
         for (AutheliaUserController.UserResponse u : finalUsers) {
             assertThat(u.getUsername()).isNotEqualTo("testuser");

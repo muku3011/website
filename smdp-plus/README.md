@@ -13,23 +13,17 @@ flowchart LR
     subgraph SM-DP+ Server (Port 8092)
         ES2["ES2+ Interface (Admin/Orders)"]
         ES9["ES9+ Interface (LPA Client)"]
-        Auth["Authelia Admin API"]
-        DB[("Embedded Database (H2)")]
+        DB[("Database (PostgreSQL / smdpdb)")]
     end
 
     subgraph Device
         LPA["Local Profile Assistant (LPA)"]
     end
 
-    subgraph Auth System
-        Authelia["Authelia SSO (Argon2 / YAML DB)"]
-    end
-
     MNO -->|1. Create/Order Profile| ES2
     LPA -->|2. Authenticate & Download| ES9
     ES2 --> DB
     ES9 --> DB
-    Auth -->|Manage users_database.yml| Authelia
 ```
 
 ## Contents
@@ -37,7 +31,7 @@ flowchart LR
 - **[pom.xml](file:///Users/muku/Projects/website/smdp-plus/pom.xml)**: The Maven dependency configuration (Spring Web, JPA, H2 Database, Lombok, BouncyCastle, and Jackson YAML).
 - **[setup_pi_service.sh](file:///Users/muku/Projects/website/smdp-plus/setup_pi_service.sh)**: A one-time setup script to create the deployment directory `/home/rbpi/smdp-plus` and register the `smdp-plus.service` systemd service.
 - **[Source Code](file:///Users/muku/Projects/website/smdp-plus/src/main/java/in/hutta/smdp/)**: The core Java implementation, including REST controllers, business services, DTO mappings, and the pluggable cryptographic session manager.
-- **[Tests](file:///Users/muku/Projects/website/smdp-plus/src/test/java/in/hutta/smdp/)**: Integration test suite verifying the eSIM profile provisioning lifecycle (`SmdpIntegrationTest.java`) and Authelia user directory CRUD actions (`AutheliaUserTest.java`).
+- **[Tests](file:///Users/muku/Projects/website/smdp-plus/src/test/java/in/hutta/smdp/)**: Integration test suite verifying the eSIM profile provisioning lifecycle (`SmdpIntegrationTest.java`).
 
 ---
 

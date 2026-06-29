@@ -85,6 +85,7 @@ flowchart TD
 
         subgraph Auth ["Auth System"]
             Authelia["Authelia SSO (Port 9091)"]
+            AutheliaLDAP["Authelia LDAP / IdP Service (Port 8094 / 10389)"]
             YAML_DB["users_database.yml"]
         end
 
@@ -97,6 +98,7 @@ flowchart TD
             PostgreSQL[(PostgreSQL Server: Port 5432)]
             smdpdb[(Database: smdpdb)]
             lpadb[(Database: lpadb)]
+            autheliadb[(Database: autheliadb)]
         end
     end
 
@@ -108,12 +110,14 @@ flowchart TD
     %% Proxy Routing
     OIDC -->|Authenticate| Authelia
     Proxy -->|Proxy /authelia| Authelia
-    Proxy -->|Proxy /gsma/rsp/v2/| SMDP
+    Proxy -->|Proxy /gsma/rsp/v2/authelia/| AutheliaLDAP
     Proxy -->|Proxy /lpa/| LPA_Sim
+    Proxy -->|Proxy /gsma/rsp/v2/| SMDP
 
     %% Authentication Directory
-    Authelia <-->|Read/Write Users| YAML_DB
-    SMDP -->|Authelia UserController| YAML_DB
+    AutheliaLDAP <-->|Bootstrap Users| YAML_DB
+    Authelia <-->|LDAP Auth / Port 10389| AutheliaLDAP
+    AutheliaLDAP <-->|JPA / Flyway| autheliadb
 
     %% eSIM provisioning & database
     LPA_Sim -->|Trigger ES9+ Provisioning| SMDP
@@ -121,10 +125,12 @@ flowchart TD
     LPA_Sim <-->|JPA / Flyway| lpadb
     smdpdb -.->|Part of| PostgreSQL
     lpadb -.->|Part of| PostgreSQL
+    autheliadb -.->|Part of| PostgreSQL
 ```
 
 * **Apache HTTP Server**: Serves the website frontend assets and acts as a secure reverse proxy with OIDC integration (`mod_auth_openidc`) for private routes.
-* **Authelia**: Authenticates users against a local directory (`users_database.yml`) and handles Single Sign-On (SSO).
+* **Authelia**: Authenticates users via Single Sign-On (SSO) by querying the local LDAP directory.
+* **Authelia LDAP & User Management (authelia-ldap)**: A custom Spring Boot service that runs an embedded LDAP server (Port 10389) and exposes a user management API (Port 8094). It bootstraps from `/etc/authelia/users_database.yml` and persists data in PostgreSQL (`autheliadb`).
 * **SM-DP+ eSIM Server**: Implements the standard GSMA SGP.22 endpoints (ES2+ and ES9+), backed by a persistent PostgreSQL database (`smdpdb`) and Flyway database migration controller.
 * **LPA Simulator**: Simulates eUICC operations and triggers remote SIM provisioning downloads, storing downloaded profiles in a persistent PostgreSQL database (`lpadb`).
 
@@ -148,11 +154,12 @@ Contains the server dashboard and portfolio site assets deployed on the Raspberr
 - GitHub Actions CI/CD setup via self-hosted runners.
 - **Go to [website/README.md](website/README.md) for frontend deployment and automation setup instructions.**
 
-### 3. [Authelia Authentication Setup (authelia/)](authelia/README.md)
-Contains bare-metal installation scripts, password hash generators, and Apache server integration configuration for Authelia:
-- Automated installation script (`install_authelia.sh`) for Raspberry Pi 5 / Debian systems.
-- Apache web server OIDC configuration script (`configure_apache.sh`).
-- **Go to [authelia/README.md](authelia/README.md) for detailed deployment and setup instructions.**
+### 3. [Authelia Identity & LDAP Service (authelia-ldap/)](authelia-ldap/README.md)
+Contains bare-metal installation scripts, Apache integration configurations, and the custom User/LDAP directory service:
+- Custom Spring Boot application (`authelia-ldap`) running an embedded LDAP server on port 10389 and REST management APIs on port 8094.
+- Automated installation script (`install_authelia.sh`) for Raspberry Pi 5 / Debian systems to set up the Authelia SSO binary.
+- Apache web server OIDC configuration script (`configure_apache.sh`) to protect routes and reverse-proxy the auth endpoints.
+- **Go to [authelia-ldap/README.md](authelia-ldap/README.md) for detailed deployment and setup instructions.**
 
 ### 4. [SM-DP+ eSIM Server (smdp-plus/)](smdp-plus/README.md)
 Contains a reference implementation of a GSMA SGP.22 v3.1 compliant Subscription Manager Data Preparation+ (SM-DP+) server:

@@ -18,6 +18,7 @@ flowchart TD
 
         subgraph Authentication Service
             Authelia["Authelia Service (Port 9091)"]
+            AutheliaLDAP["Authelia LDAP Service (Port 8094)"]
         end
 
         subgraph Web Apps
@@ -33,6 +34,7 @@ flowchart TD
     OIDC -->|Authorized | Dashboard
     OIDC -->|Forward API request| LPA
     OIDC -->|Forward API request| SMDP
+    OIDC -->|Forward User API request| AutheliaLDAP
 ```
 
 ## Repository Contents

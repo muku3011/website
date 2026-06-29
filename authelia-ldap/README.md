@@ -10,12 +10,15 @@ sequenceDiagram
     actor User as User Browser
     participant Apache as Apache (mod_auth_openidc)
     participant Authelia as Authelia SSO (Port 9091)
+    participant LDAP as Authelia LDAP Service (Port 10389)
     
     User->>Apache: Request protected page (/admin.html)
     Note over Apache: Check for OIDC session cookie
     alt No session exists
         Apache-->>User: Redirect to Authelia Login (/authelia)
-        User->>Authelia: Login credentials (Argon2 verify)
+        User->>Authelia: Submit login credentials
+        Authelia->>LDAP: Bind & search (validate credentials)
+        LDAP-->>Authelia: Success (User info & groups)
         Authelia-->>User: Issue OIDC Session Cookie & Redirect back
     end
     User->>Apache: Request protected page with OIDC session
@@ -29,8 +32,9 @@ sequenceDiagram
 
 ## Contents
 
-- **[install_authelia.sh](file:///Users/muku/Projects/website/authelia/install_authelia.sh)**: A comprehensive script to download the latest Authelia release, create a system user/group, set up configuration files (`/etc/authelia`), generate cryptographic secrets, hash administrator passwords, and register/start Authelia as a systemd service.
+- **[install_authelia.sh](file:///Users/muku/Projects/website/authelia-ldap/install_authelia.sh)**: A comprehensive script to download the latest Authelia release, create a system user/group, set up configuration files (`/etc/authelia`), generate cryptographic secrets, hash administrator passwords, and register/start Authelia as a systemd service.
 - **[configure_apache.sh](file:///Users/muku/Projects/website/scripts/configure_apache.sh)**: A script that installs the OpenID Connect module for Apache (`libapache2-mod-auth-openidc`), enables proxy modules, and configures Apache to reverse-proxy the `/authelia` subpath and secure specific paths (like `profiles.html` and `admin.html`) using OIDC authentication.
+- **Spring Boot LDAP & Identity Service (authelia-ldap)**: A custom Java service running an embedded LDAP directory server (Port 10389) and user management API (Port 8094) backed by PostgreSQL (`autheliadb`).
 
 ---
 
@@ -216,4 +220,34 @@ For non-browser clients (such as Python scripts, curl, or mobile apps) that cann
    
    // Redirect to clear both Apache session and Authelia session, then redirect to home
    window.location.replace('/redirect_uri?logout=https%3A%2F%2Fhutta.in%2Fauthelia%2Flogout%3Frd%3Dhttps%253A%252F%252Fhutta.in%252F');
+   ```
+
+---
+
+## Custom Spring Boot LDAP & Identity Service (authelia-ldap)
+
+In addition to Authelia configuration files, this directory contains a custom Spring Boot application that acts as an **Identity Provider (IdP) LDAP directory bridge**.
+
+### Key Features
+* **Embedded LDAP Server**: Runs an in-memory directory server (UnboundID) on port `10389`.
+* **User Management API**: Exposes standard REST endpoints (on port `8094`) to perform CRUD operations on user accounts and groups.
+* **Bootstrapping**: Automatically loads initial user data from `/etc/authelia/users_database.yml` on first startup if the database is empty.
+* **PostgreSQL Synchronization**: Keeps user directory data synced with a persistent PostgreSQL database (`autheliadb`) and dynamically updates the LDAP directory in real-time.
+
+### Compilation and Build
+To compile the Spring Boot application, run:
+```bash
+mvn clean package
+```
+
+### Pi Service Setup
+To register and run this service on your Raspberry Pi:
+1. Build the jar file on the Pi or copy the built jar to `/home/rbpi/authelia-ldap/authelia-ldap.jar`.
+2. Run the registration script:
+   ```bash
+   sudo ./setup_pi_service.sh
+   ```
+3. Start the service:
+   ```bash
+   sudo systemctl start authelia-ldap
    ```

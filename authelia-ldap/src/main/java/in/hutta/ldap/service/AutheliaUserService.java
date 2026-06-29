@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.util.*;
 
 @Service
+@SuppressWarnings("null")
 public class AutheliaUserService {
 
     private static final Logger log = LoggerFactory.getLogger(AutheliaUserService.class);
