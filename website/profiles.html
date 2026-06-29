@@ -50,7 +50,10 @@
                     </button>
                     <div class="user-profile-dropdown" id="user-profile-dropdown">
                         <div class="user-dropdown-header">
-                            <span class="user-signed-in-label">Signed in as</span>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <span class="user-signed-in-label">Signed in as</span>
+                                <span class="badge" id="dropdown-role-badge">Role: --</span>
+                            </div>
                             <div class="user-identity">
                                 <span class="user-display-name-header" id="dropdown-display-name">Loading...</span>
                                 <span class="user-card-username" id="dropdown-username-handle"></span>
@@ -60,8 +63,7 @@
                         
                         <div class="dropdown-divider"></div>
                         
-                        <div class="dropdown-footer-actions">
-                            <span class="badge" id="dropdown-role-badge">Role: --</span>
+                        <div class="dropdown-footer-actions" style="justify-content: flex-end;">
                             <button id="logout-btn" class="btn btn-secondary btn-logout">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                                 <span>Sign Out</span>
