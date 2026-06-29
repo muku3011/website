@@ -1482,13 +1482,144 @@ select:focus-visible {
     flex-direction: column;
     animation: lpa-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     transition: opacity 0.3s, transform 0.3s;
-    
-    /* Resizable properties */
-    resize: both;
-    min-width: 320px;
-    min-height: 400px;
-    max-width: 90vw;
-    max-height: 90vh;
+}
+
+/* -------------------------------------------------------------
+   IPHONE 15 PRO DEVICE FRAMING
+   ------------------------------------------------------------- */
+.lpa-sim-window.iphone-chassis {
+    width: 380px;
+    height: 760px;
+    max-width: calc(100vw - 48px);
+    max-height: calc(100vh - 48px);
+    border-radius: 48px;
+    border: 11px solid #1c1c1e; /* Matte black bezel */
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), inset 0 0 10px rgba(0, 0, 0, 0.8), 0 0 0 2px #48484a; /* Titanium outer frame */
+    background: #000;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: lpa-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.3s, transform 0.3s, width 0.3s, height 0.3s;
+}
+
+.iphone-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--card-bg);
+    border-radius: 36px;
+    padding-top: 40px; /* Offset for status bar & dynamic island */
+    padding-bottom: 20px; /* Offset for home indicator */
+    position: relative;
+}
+
+.iphone-status-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 32px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    z-index: 1010;
+    pointer-events: none;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.iphone-island {
+    width: 100px;
+    height: 25px;
+    background: #000;
+    border-radius: 20px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 8px;
+    z-index: 1020;
+    box-shadow: 0 1px 3px rgba(255, 255, 255, 0.05);
+}
+
+.iphone-status-icons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.iphone-signal-icon {
+    width: 12px;
+    height: 12px;
+    opacity: 0.95;
+    color: var(--text-primary);
+}
+
+.iphone-battery {
+    width: 18px;
+    height: 9px;
+    border: 1px solid var(--text-primary);
+    border-radius: 2.5px;
+    position: relative;
+    padding: 1px;
+}
+
+.iphone-battery::after {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: var(--text-primary);
+    border-radius: 1.5px;
+}
+
+.iphone-home-indicator {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 130px;
+    height: 5px;
+    background: var(--text-muted);
+    border-radius: 10px;
+    z-index: 1010;
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+/* Responsive scaling rules for small viewports */
+@media (max-height: 820px) {
+    .lpa-sim-window.iphone-chassis {
+        height: 640px;
+        border-width: 9px;
+        border-radius: 38px;
+    }
+    .iphone-screen {
+        padding-top: 36px;
+        padding-bottom: 16px;
+        border-radius: 28px;
+    }
+}
+
+@media (max-width: 420px) {
+    .lpa-sim-window.iphone-chassis {
+        width: 320px;
+        height: 640px;
+        border-width: 9px;
+        border-radius: 38px;
+    }
+    .iphone-screen {
+        padding-top: 36px;
+        padding-bottom: 16px;
+        border-radius: 28px;
+    }
+    .iphone-status-bar {
+        padding: 0 20px;
+    }
 }
 @keyframes lpa-slide-in {
     from { transform: translateY(20px) scale(0.95); opacity: 0; }

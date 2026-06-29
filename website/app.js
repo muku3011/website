@@ -1003,6 +1003,19 @@ function initLpaSimulator() {
     const clearLogsBtn = document.getElementById('lpa-sim-clear-logs');
     const downloadBtn = document.getElementById('lpa-sim-btn-download');
 
+    // Update iPhone time dynamically
+    const updateIphoneTime = () => {
+        const timeEl = document.querySelector('.iphone-time');
+        if (timeEl) {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            timeEl.textContent = `${hours}:${minutes}`;
+        }
+    };
+    updateIphoneTime();
+    setInterval(updateIphoneTime, 60000);
+
     if (minimizedBtn && expandedWindow) {
         minimizedBtn.addEventListener('click', () => {
             minimizedBtn.style.display = 'none';

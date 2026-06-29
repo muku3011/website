@@ -254,59 +254,76 @@
             <span>LPA Simulator</span>
         </button>
 
-        <!-- Expanded Floating Window -->
-        <div id="lpa-sim-expanded" class="lpa-sim-window" style="display: none;">
-            <div class="lpa-sim-header">
-                <div class="lpa-sim-title">
-                    <span class="lpa-sim-header-icon">⚡</span>
-                    <h4>LPA Simulator</h4>
-                    <span class="lpa-status-badge idle" id="lpa-status-badge">Idle</span>
+        <!-- Expanded Floating Window (iPhone 15 Pro Mockup) -->
+        <div id="lpa-sim-expanded" class="lpa-sim-window iphone-chassis" style="display: none;">
+            <!-- iOS Top Status Bar -->
+            <div class="iphone-status-bar">
+                <span class="iphone-time">10:09</span>
+                <div class="iphone-island"></div>
+                <div class="iphone-status-icons">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="iphone-signal-icon"><path d="M2 20h.01M7 20v-4M12 20v-8M17 20v-12M22 20V4"/></svg>
+                    <span>5G</span>
+                    <div class="iphone-battery"></div>
                 </div>
-                <button id="lpa-sim-btn-minimize" class="btn-icon-sm" title="Minimize">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                </button>
             </div>
 
-            <!-- Tab Navigation -->
-            <div class="lpa-sim-tabs">
-                <button class="lpa-tab-btn active" data-tab="lpa-tab-download">Download</button>
-                <button class="lpa-tab-btn" data-tab="lpa-tab-device">My Device eSIMs</button>
-            </div>
-            
-            <div class="lpa-sim-body">
-                <!-- Tab Panel 1: Download -->
-                <div id="lpa-tab-download" class="lpa-tab-pane active">
-                    <p class="lpa-sim-desc">Simulate a local eSIM client (LPA) downloading a profile from the SM-DP+ server.</p>
-                    
-                    <div class="form-group-sm">
-                        <label>Activation Code String</label>
-                        <textarea id="lpa-sim-ac-text" class="lpa-sim-textarea" readonly></textarea>
+            <!-- iPhone Screen Content -->
+            <div class="iphone-screen">
+                <div class="lpa-sim-header">
+                    <div class="lpa-sim-title">
+                        <span class="lpa-sim-header-icon">⚡</span>
+                        <h4>LPA Simulator</h4>
+                        <span class="lpa-status-badge idle" id="lpa-status-badge">Idle</span>
                     </div>
-
-                    <button id="lpa-sim-btn-download" class="btn btn-primary btn-sim-download" disabled>
-                        <svg class="download-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                        <span>Download Profile</span>
+                    <button id="lpa-sim-btn-minimize" class="btn-icon-sm" title="Minimize">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     </button>
-
-                    <div class="lpa-sim-console-container">
-                        <div class="lpa-sim-console-header">
-                            <span>LPA Client Console</span>
-                            <button id="lpa-sim-clear-logs" class="btn-text-sm">Clear</button>
-                        </div>
-                        <div id="lpa-sim-logs" class="lpa-sim-logs-area">
-                            <div class="log-entry info">LPA Client initialized. Ready to simulate download.</div>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- Tab Panel 2: Device profiles management -->
-                <div id="lpa-tab-device" class="lpa-tab-pane">
-                    <p class="lpa-sim-desc">Manage eSIM profiles installed on this simulated device. Only one profile can be enabled (active) at a time.</p>
-                    <div id="lpa-device-profiles-list" class="lpa-device-profiles-list">
-                        <div class="lpa-empty-state">No eSIM profiles installed yet.</div>
+                <!-- Tab Navigation -->
+                <div class="lpa-sim-tabs">
+                    <button class="lpa-tab-btn active" data-tab="lpa-tab-download">Download</button>
+                    <button class="lpa-tab-btn" data-tab="lpa-tab-device">My Device eSIMs</button>
+                </div>
+                
+                <div class="lpa-sim-body">
+                    <!-- Tab Panel 1: Download -->
+                    <div id="lpa-tab-download" class="lpa-tab-pane active">
+                        <p class="lpa-sim-desc">Simulate a local eSIM client (LPA) downloading a profile from the SM-DP+ server.</p>
+                        
+                        <div class="form-group-sm">
+                            <label>Activation Code String</label>
+                            <textarea id="lpa-sim-ac-text" class="lpa-sim-textarea" readonly></textarea>
+                        </div>
+
+                        <button id="lpa-sim-btn-download" class="btn btn-primary btn-sim-download" disabled>
+                            <svg class="download-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                            <span>Download Profile</span>
+                        </button>
+
+                        <div class="lpa-sim-console-container">
+                            <div class="lpa-sim-console-header">
+                                <span>LPA Client Console</span>
+                                <button id="lpa-sim-clear-logs" class="btn-text-sm">Clear</button>
+                            </div>
+                            <div id="lpa-sim-logs" class="lpa-sim-logs-area">
+                                <div class="log-entry info">LPA Client initialized. Ready to simulate download.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Panel 2: Device profiles management -->
+                    <div id="lpa-tab-device" class="lpa-tab-pane">
+                        <p class="lpa-sim-desc">Manage eSIM profiles installed on this simulated device. Only one profile can be enabled (active) at a time.</p>
+                        <div id="lpa-device-profiles-list" class="lpa-device-profiles-list">
+                            <div class="lpa-empty-state">No eSIM profiles installed yet.</div>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <!-- iOS Home Indicator -->
+            <div class="iphone-home-indicator"></div>
         </div>
     </div>
 
