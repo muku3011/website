@@ -10,7 +10,7 @@ sequenceDiagram
     actor User as User Browser
     participant LPA as LPA Simulator (Port 8093)
     participant SMDP as SM-DP+ Server (Port 8092)
-    participant DB as Local Database (H2)
+    participant DB as Local Database (PostgreSQL)
 
     User->>LPA: POST /lpa/download {activationCode}
     Note over LPA: Parse Code: SM-DP+ Address & ICCID

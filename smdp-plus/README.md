@@ -28,7 +28,7 @@ flowchart LR
 
 ## Contents
 
-- **[pom.xml](file:///Users/muku/Projects/website/smdp-plus/pom.xml)**: The Maven dependency configuration (Spring Web, JPA, H2 Database, Lombok, BouncyCastle, and Jackson YAML).
+- **[pom.xml](file:///Users/muku/Projects/website/smdp-plus/pom.xml)**: The Maven dependency configuration (Spring Web, JPA, PostgreSQL Driver, Flyway Migration, Lombok, BouncyCastle, and Jackson YAML).
 - **[setup_pi_service.sh](file:///Users/muku/Projects/website/smdp-plus/setup_pi_service.sh)**: A one-time setup script to create the deployment directory `/home/rbpi/smdp-plus` and register the `smdp-plus.service` systemd service.
 - **[Source Code](file:///Users/muku/Projects/website/smdp-plus/src/main/java/in/hutta/smdp/)**: The core Java implementation, including REST controllers, business services, DTO mappings, and the pluggable cryptographic session manager.
 - **[Tests](file:///Users/muku/Projects/website/smdp-plus/src/test/java/in/hutta/smdp/)**: Integration test suite verifying the eSIM profile provisioning lifecycle (`SmdpIntegrationTest.java`).
@@ -72,9 +72,9 @@ ssh rbpi@hutta.in "chmod +x /home/rbpi/smdp-plus/setup_pi_service.sh && sudo /ho
   - Start/Stop: `sudo systemctl [start|stop|restart] smdp-plus`
   - Status: `sudo systemctl status smdp-plus`
   - Logs: `sudo journalctl -u smdp-plus -f -n 100`
-- **H2 In-Memory Console**: `http://<your-pi-ip>:8092/h2-console`
-  - JDBC URL: `jdbc:h2:mem:smdpdb`
-  - Username: `sa` / Password: `password`
+- **PostgreSQL Database**:
+  - JDBC URL: `jdbc:postgresql://localhost:5432/smdpdb`
+  - Username: `smdp` / Password: `smdp_password`
 
 ---
 
