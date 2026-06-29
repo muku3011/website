@@ -73,6 +73,20 @@ document.addEventListener('DOMContentLoaded', () => {
             progressIndicator.style.width = scrolled + '%';
         });
     }
+
+    // Header scroll threshold effect
+    const header = document.querySelector('.app-header');
+    if (header) {
+        const handleScroll = () => {
+            if (window.scrollY > 20) {
+                header.classList.add('header-scrolled');
+            } else {
+                header.classList.remove('header-scrolled');
+            }
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll(); // Initial check
+    }
 });
 
 // -------------------------------------------------------------

@@ -775,4 +775,30 @@ if (logoutBtn) {
 document.addEventListener('DOMContentLoaded', () => {
     enforceRolePermissions();
     fetchUsers();
+
+    // Header scroll threshold effect
+    const header = document.querySelector('.app-header');
+    if (header) {
+        const handleScroll = () => {
+            if (window.scrollY > 20) {
+                header.classList.add('header-scrolled');
+            } else {
+                header.classList.remove('header-scrolled');
+            }
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll();
+    }
+
+    // Command-K / Ctrl-K keyboard shortcut to focus search input
+    window.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                e.preventDefault();
+                searchInput.focus();
+                searchInput.select();
+            }
+        }
+    });
 });
