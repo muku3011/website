@@ -62,7 +62,7 @@ function dismissToast(toast) {
     });
 }
 
-function showConfirm(title, message, onConfirm) {
+function showConfirm(title, message, onConfirm, onCancel) {
     let dialog = document.getElementById('dialog-confirm-action');
     if (!dialog) {
         dialog = document.createElement('dialog');
@@ -102,8 +102,18 @@ function showConfirm(title, message, onConfirm) {
         );
     }
     
+    let isConfirmed = false;
+    const handleClose = () => {
+        dialog.removeEventListener('close', handleClose);
+        if (!isConfirmed && typeof onCancel === 'function') {
+            onCancel();
+        }
+    };
+    dialog.addEventListener('close', handleClose);
+    
     const confirmBtn = dialog.querySelector('#confirm-action-btn');
     confirmBtn.addEventListener('click', () => {
+        isConfirmed = true;
         dialog.close();
         onConfirm();
     });
@@ -1344,27 +1354,56 @@ async function fetchLpaProfiles() {
 }
 
 async function toggleLpaProfileState(iccid, shouldEnable) {
-    const action = shouldEnable ? 'enable' : 'disable';
-    try {
-        const response = await fetch(`${LPA_SIMULATOR_BASE}/lpa/profiles/${iccid}/${action}`, {
-            method: 'PUT'
-        });
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+    if (shouldEnable) {
+        try {
+            const response = await fetch(`${LPA_SIMULATOR_BASE}/lpa/profiles`);
+            if (response.ok) {
+                const profiles = await response.json();
+                const alreadyActive = profiles.find(p => p.profileState === 'ENABLED');
+                if (alreadyActive) {
+                    showToast("Cannot enable profile. Only one profile can be active at a time.", "error");
+                    fetchLpaProfiles(); // Reset checkbox position
+                    return;
+                }
+            }
+        } catch (err) {
+            console.error("Failed to check profile active states", err);
         }
-        addLogLine(`LPA profile ${iccid} was ${shouldEnable ? 'enabled' : 'disabled'}.`, "success");
-        showToast(`LPA profile ${shouldEnable ? 'enabled' : 'disabled'} successfully.`, "success");
-        
-        // Refresh both lists
-        fetchLpaProfiles();
-        if (typeof fetchProfiles === 'function') {
-            fetchProfiles();
-        }
-    } catch (err) {
-        console.error(`Failed to ${action} profile`, err);
-        showToast(`Failed to ${action} profile: ${err.message}`, "error");
-        fetchLpaProfiles(); // reset checkbox state on failure
     }
+
+    const action = shouldEnable ? 'enable' : 'disable';
+    const actionText = shouldEnable ? 'activate' : 'deactivate';
+
+    showConfirm(
+        `Confirm Profile ${shouldEnable ? 'Activation' : 'Deactivation'}`,
+        `Are you sure you want to ${actionText} the eSIM profile with ICCID ${iccid}?`,
+        async () => {
+            try {
+                const response = await fetch(`${LPA_SIMULATOR_BASE}/lpa/profiles/${iccid}/${action}`, {
+                    method: 'PUT'
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                addLogLine(`LPA profile ${iccid} was ${shouldEnable ? 'enabled' : 'disabled'}.`, "success");
+                showToast(`LPA profile ${shouldEnable ? 'enabled' : 'disabled'} successfully.`, "success");
+                
+                // Refresh both lists
+                fetchLpaProfiles();
+                if (typeof fetchProfiles === 'function') {
+                    fetchProfiles();
+                }
+            } catch (err) {
+                console.error(`Failed to ${action} profile`, err);
+                showToast(`Failed to ${action} profile: ${err.message}`, "error");
+                fetchLpaProfiles(); // reset checkbox state on failure
+            }
+        },
+        () => {
+            // Cancel callback: reset checkbox state
+            fetchLpaProfiles();
+        }
+    );
 }
 
 async function updateLpaProfileNickname(iccid, currentNickname) {
