@@ -6,16 +6,16 @@ This directory contains the Infrastructure as Code (IaC) and the Dynamic DNS (DD
 
 ```mermaid
 flowchart TD
-    subgraph Local Machine
+    subgraph local ["Local Machine"]
         TF["Terraform IaC"]
     end
 
-    subgraph Google Cloud Platform
+    subgraph gcp ["Google Cloud Platform"]
         SA["GCP Service Account"]
         DNS["GCP Cloud DNS (hutta.in Zone)"]
     end
 
-    subgraph Raspberry Pi (Home Network)
+    subgraph rpi ["Raspberry Pi (Home Network)"]
         DDNS["ddns.py (Python Script)"]
         Cron["Systemd Timer / Cron (Every 10m)"]
         Ipify["ipify.org (Public IP Check)"]
