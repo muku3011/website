@@ -19,6 +19,8 @@
 
     <properties>
         <java.version>21</java.version>
+        <unboundid-ldapsdk.version>6.0.11</unboundid-ldapsdk.version>
+        <bouncycastle.version>1.78.1</bouncycastle.version>
     </properties>
 
     <dependencies>
@@ -51,7 +53,7 @@
         <dependency>
             <groupId>com.unboundid</groupId>
             <artifactId>unboundid-ldapsdk</artifactId>
-            <version>6.0.11</version>
+            <version>${unboundid-ldapsdk.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>
@@ -60,7 +62,7 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>
-            <version>1.78.1</version>
+            <version>${bouncycastle.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
