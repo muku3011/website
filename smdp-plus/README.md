@@ -6,17 +6,17 @@ This directory contains a lightweight, modular reference implementation of a GSM
 
 ```mermaid
 flowchart LR
-    subgraph Operator Systems
+    subgraph operator ["Operator Systems"]
         MNO["Mobile Network Operator (MNO)"]
     end
 
-    subgraph SM-DP+ Server (Port 8092)
+    subgraph smdp ["SM-DP+ Server (Port 8092)"]
         ES2["ES2+ Interface (Admin/Orders)"]
         ES9["ES9+ Interface (LPA Client)"]
         DB[("Database (PostgreSQL / smdpdb)")]
     end
 
-    subgraph Device
+    subgraph device ["Device"]
         LPA["Local Profile Assistant (LPA)"]
     end
 
@@ -80,7 +80,7 @@ ssh rbpi@hutta.in "chmod +x /home/rbpi/smdp-plus/setup_pi_service.sh && sudo /ho
 
 ## 3. Profile Management & TS.48 Test Profiles Import
 
-The database is initially seeded with sample profiles using [data.sql](file:///Users/muku/Projects/website/smdp-plus/src/main/resources/data.sql) on boot. You can also import official generic GSMA test profiles (such as those from the TS.48 specification) dynamically at runtime.
+eSIM profiles are imported and managed dynamically at runtime using the Admin API or by placing orders. You can import official generic GSMA test profiles (such as those from the TS.48 specification) directly.
 
 ### Importing GSMA TS.48 Test Profiles
 1. **Download the profiles**:
