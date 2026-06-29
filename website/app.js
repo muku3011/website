@@ -868,7 +868,8 @@ function enforceRolePermissions() {
     const userTriggerLabel = document.getElementById('user-display-name-label');
     const userInitials = document.getElementById('user-avatar-initials');
     const dropdownDisplayName = document.getElementById('dropdown-display-name');
-    const dropdownUsername = document.getElementById('dropdown-username');
+    const dropdownUsernameHandle = document.getElementById('dropdown-username-handle');
+    const dropdownAvatarInitials = document.getElementById('dropdown-avatar-initials');
     const dropdownEmail = document.getElementById('dropdown-email');
     const dropdownRole = document.getElementById('dropdown-role-badge');
     const dropdownGroups = document.getElementById('dropdown-user-groups');
@@ -876,6 +877,9 @@ function enforceRolePermissions() {
     // Update Avatar Initials
     if (userInitials) {
         userInitials.textContent = displayName.charAt(0).toUpperCase();
+    }
+    if (dropdownAvatarInitials) {
+        dropdownAvatarInitials.textContent = displayName.charAt(0).toUpperCase();
     }
 
     // Update Trigger Display Name
@@ -888,8 +892,8 @@ function enforceRolePermissions() {
         dropdownDisplayName.textContent = displayName;
     }
 
-    if (dropdownUsername) {
-        dropdownUsername.textContent = userNameVal;
+    if (dropdownUsernameHandle) {
+        dropdownUsernameHandle.textContent = `@${userNameVal}`;
     }
 
     if (dropdownEmail) {
