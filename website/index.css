@@ -2330,9 +2330,8 @@ select:focus-visible {
 
 .user-identity {
     display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 1px;
 }
 
 .user-display-name-header {

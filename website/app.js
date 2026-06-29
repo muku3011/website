@@ -904,11 +904,7 @@ function enforceRolePermissions() {
     }
 
     if (dropdownUsernameHandle) {
-        if (displayName.toLowerCase() === userNameVal.toLowerCase()) {
-            dropdownUsernameHandle.textContent = '';
-        } else {
-            dropdownUsernameHandle.textContent = `(@${userNameVal})`;
-        }
+        dropdownUsernameHandle.textContent = `@${userNameVal}`;
     }
 
     if (dropdownEmail) {
