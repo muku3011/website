@@ -175,6 +175,7 @@ function showPrompt(title, message, defaultValue, onSubmit) {
 // -------------------------------------------------------------
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const BACKEND_BASE = isLocal ? 'http://localhost:8092' : '';
+const AUTHELIA_BACKEND_BASE = isLocal ? 'http://localhost:8094' : '';
 
 // Helper to get cookies
 function getCookie(name) {
@@ -362,7 +363,7 @@ let currentUsers = [];
 
 async function fetchUsers() {
     try {
-        const response = await fetch(`${BACKEND_BASE}/gsma/rsp/v2/authelia/users`);
+        const response = await fetch(`${AUTHELIA_BACKEND_BASE}/gsma/rsp/v2/authelia/users`);
         if (!response.ok) throw new Error(`HTTP error ${response.status}`);
         currentUsers = await response.json();
         renderUsers();
@@ -371,7 +372,7 @@ async function fetchUsers() {
         addLogLine(`Failed to query user directory: ${err.message}`, "error");
         document.getElementById('users-list-body').innerHTML = `
             <tr>
-                <td colspan="5" class="table-empty" style="color: var(--warning-glow);">Error connecting to user API. Ensure server is running on 8092.</td>
+                <td colspan="5" class="table-empty" style="color: var(--warning-glow);">Error connecting to user API. Ensure server is running on 8094.</td>
             </tr>
         `;
     }
@@ -472,7 +473,7 @@ if (createUserForm) {
         addLogLine(`Initiating user creation: "${username}"...`, "info");
 
         try {
-            const response = await fetch(`${BACKEND_BASE}/gsma/rsp/v2/authelia/users?username=${encodeURIComponent(username)}`, {
+            const response = await fetch(`${AUTHELIA_BACKEND_BASE}/gsma/rsp/v2/authelia/users?username=${encodeURIComponent(username)}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ displayname, email, password, groups })
@@ -546,7 +547,7 @@ if (editUserForm) {
                 bodyPayload.password = password;
             }
 
-            const response = await fetch(`${BACKEND_BASE}/gsma/rsp/v2/authelia/users/${encodeURIComponent(username)}`, {
+            const response = await fetch(`${AUTHELIA_BACKEND_BASE}/gsma/rsp/v2/authelia/users/${encodeURIComponent(username)}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bodyPayload)
@@ -581,7 +582,7 @@ window.deleteUser = async function(username) {
             addLogLine(`Requesting deletion of user "${username}"...`, "warning");
 
             try {
-                const response = await fetch(`${BACKEND_BASE}/gsma/rsp/v2/authelia/users/${encodeURIComponent(username)}`, {
+                const response = await fetch(`${AUTHELIA_BACKEND_BASE}/gsma/rsp/v2/authelia/users/${encodeURIComponent(username)}`, {
                     method: 'DELETE'
                 });
 

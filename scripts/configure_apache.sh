@@ -44,6 +44,10 @@ cat << 'EOF' > /etc/apache2/sites-available/000-default-le-ssl.conf
 	ProxyPass /authelia http://127.0.0.1:9091/authelia
 	ProxyPassReverse /authelia http://127.0.0.1:9091/authelia
 
+	# Reverse Proxy for Authelia User Management API
+	ProxyPass /gsma/rsp/v2/authelia/ http://127.0.0.1:8094/gsma/rsp/v2/authelia/
+	ProxyPassReverse /gsma/rsp/v2/authelia/ http://127.0.0.1:8094/gsma/rsp/v2/authelia/
+
 	# Reverse Proxy for SM-DP+ backend
 	ProxyPass /gsma/rsp/v2/ http://127.0.0.1:8092/gsma/rsp/v2/
 	ProxyPassReverse /gsma/rsp/v2/ http://127.0.0.1:8092/gsma/rsp/v2/

@@ -97,4 +97,26 @@ else
     echo -e "${GREEN}[+] Database 'lpadb' already exists.${NC}"
 fi
 
+# 6. Setup Authelia User & Database
+# Check Authelia Role
+AUTHELIA_ROLE_EXISTS=$(run_pg_query "SELECT 1 FROM pg_roles WHERE rolname = 'authelia';")
+if [ "$AUTHELIA_ROLE_EXISTS" != "1" ]; then
+    echo -e "${YELLOW}[*] Creating role 'authelia'...${NC}"
+    run_pg_cmd "CREATE USER authelia WITH PASSWORD 'authelia_password';"
+    echo -e "${GREEN}[+] Role 'authelia' created successfully!${NC}"
+else
+    echo -e "${GREEN}[+] Role 'authelia' already exists.${NC}"
+fi
+
+# Check Authelia Database
+AUTHELIA_DB_EXISTS=$(run_pg_query "SELECT 1 FROM pg_database WHERE datname = 'autheliadb';")
+if [ "$AUTHELIA_DB_EXISTS" != "1" ]; then
+    echo -e "${YELLOW}[*] Creating database 'autheliadb'...${NC}"
+    run_pg_cmd "CREATE DATABASE autheliadb OWNER authelia;"
+    run_pg_cmd "GRANT ALL PRIVILEGES ON DATABASE autheliadb TO authelia;"
+    echo -e "${GREEN}[+] Database 'autheliadb' created successfully!${NC}"
+else
+    echo -e "${GREEN}[+] Database 'autheliadb' already exists.${NC}"
+fi
+
 echo -e "${GREEN}[+] PostgreSQL setup and verification completed successfully!${NC}"

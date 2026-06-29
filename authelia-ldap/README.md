@@ -30,7 +30,7 @@ sequenceDiagram
 ## Contents
 
 - **[install_authelia.sh](file:///Users/muku/Projects/website/authelia/install_authelia.sh)**: A comprehensive script to download the latest Authelia release, create a system user/group, set up configuration files (`/etc/authelia`), generate cryptographic secrets, hash administrator passwords, and register/start Authelia as a systemd service.
-- **[configure_apache.sh](file:///Users/muku/Projects/website/authelia/configure_apache.sh)**: A script that installs the OpenID Connect module for Apache (`libapache2-mod-auth-openidc`), enables proxy modules, and configures Apache to reverse-proxy the `/authelia` subpath and secure specific paths (like `profiles.html` and `admin.html`) using OIDC authentication.
+- **[configure_apache.sh](file:///Users/muku/Projects/website/scripts/configure_apache.sh)**: A script that installs the OpenID Connect module for Apache (`libapache2-mod-auth-openidc`), enables proxy modules, and configures Apache to reverse-proxy the `/authelia` subpath and secure specific paths (like `profiles.html` and `admin.html`) using OIDC authentication.
 
 ---
 
@@ -61,7 +61,7 @@ During installation, the script will:
 ### Step 2: Configure Apache Reverse Proxy & OIDC Integration
 Once Authelia is running, run the Apache configuration script:
 ```bash
-sudo ./configure_apache.sh
+sudo ../scripts/configure_apache.sh
 ```
 
 This script will:
