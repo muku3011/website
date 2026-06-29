@@ -12,11 +12,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Profile {
-    @Id
-    private String iccid;
-    private String eid;
-    private String state; // AVAILABLE, ORDERED, RELEASED, DOWNLOADED
-    
-    @Column(columnDefinition = "TEXT")
-    private String profilePayload; // Base64 mock BPP or profile bytes
+  @Id private String iccid;
+  private String eid;
+  private String state; // AVAILABLE, ORDERED, RELEASED, DOWNLOADED
+
+  @Column(columnDefinition = "TEXT")
+  private String profilePayload; // Base64 mock BPP or profile bytes
 }

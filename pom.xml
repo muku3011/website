@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.0</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>in.hutta</groupId>
+    <artifactId>website-parent</artifactId>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+    <name>website-parent</name>
+    <description>Root parent POM for Hutta.in Java Services</description>
+
+    <modules>
+        <module>smdp-plus</module>
+        <module>lpa-simulator</module>
+        <module>authelia-ldap</module>
+    </modules>
+
+    <properties>
+        <java.version>21</java.version>
+        <bouncycastle.version>1.78.1</bouncycastle.version>
+        <unboundid-ldapsdk.version>6.0.11</unboundid-ldapsdk.version>
+        <spotless.version>2.43.0</spotless.version>
+    </properties>
+
+    <build>
+        <plugins>
+            <!-- Spotless Plugin for consistent code formatting -->
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>${spotless.version}</version>
+                <configuration>
+                    <java>
+                        <googleJavaFormat/>
+                    </java>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <phase>validate</phase>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

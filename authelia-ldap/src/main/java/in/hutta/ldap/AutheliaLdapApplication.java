@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class AutheliaLdapApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(AutheliaLdapApplication.class, args);
-    }
+  public static void main(String[] args) {
+    SpringApplication.run(AutheliaLdapApplication.class, args);
+  }
 }

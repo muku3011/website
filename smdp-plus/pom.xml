@@ -11,16 +11,11 @@
     <description>GSMA SGP.22 v3.1 SM-DP+ Reference Implementation in Spring Boot</description>
 
     <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.0</version>
-        <relativePath/>
+        <groupId>in.hutta</groupId>
+        <artifactId>website-parent</artifactId>
+        <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
-
-    <properties>
-        <java.version>21</java.version>
-        <bouncycastle.version>1.78.1</bouncycastle.version>
-    </properties>
 
     <dependencies>
         <dependency>

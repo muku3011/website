@@ -10,18 +10,17 @@ import lombok.Data;
 @Data
 public class LocalProfile {
 
-    @Id
-    private String iccid;
+  @Id private String iccid;
 
-    private String smdpAddress;
+  private String smdpAddress;
 
-    private String profileNickname;
+  private String profileNickname;
 
-    private String serviceProviderName;
+  private String serviceProviderName;
 
-    private String profileState; // "ENABLED" or "DISABLED"
+  private String profileState; // "ENABLED" or "DISABLED"
 
-    @Lob
-    @Column(columnDefinition = "TEXT")
-    private String boundProfilePackage;
+  @Lob
+  @Column(columnDefinition = "TEXT")
+  private String boundProfilePackage;
 }

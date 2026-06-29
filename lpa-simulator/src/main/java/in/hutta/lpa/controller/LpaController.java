@@ -19,16 +19,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class LpaController {
 
-    private final LpaDownloadService lpaDownloadService;
+  private final LpaDownloadService lpaDownloadService;
 
-    @PostMapping("/download")
-    public ResponseEntity<DownloadResponse> downloadProfile(@RequestBody DownloadRequest request) {
-        log.info("Received LPA download request for activation code: {}", request.getActivationCode());
-        DownloadResponse response = lpaDownloadService.downloadProfile(request.getActivationCode());
-        if (response.isSuccess()) {
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.badRequest().body(response);
-        }
+  @PostMapping("/download")
+  public ResponseEntity<DownloadResponse> downloadProfile(@RequestBody DownloadRequest request) {
+    log.info("Received LPA download request for activation code: {}", request.getActivationCode());
+    DownloadResponse response = lpaDownloadService.downloadProfile(request.getActivationCode());
+    if (response.isSuccess()) {
+      return ResponseEntity.ok(response);
+    } else {
+      return ResponseEntity.badRequest().body(response);
     }
+  }
 }
