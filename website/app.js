@@ -1433,56 +1433,159 @@ window.deleteLpaProfile = deleteLpaProfile;
 window.fetchLpaProfiles = fetchLpaProfiles;
 
 function makeLpaDraggable() {
-    const lpaHeader = document.querySelector('.lpa-sim-header');
-    const lpaContainer = document.getElementById('lpa-sim-container');
+    const header = document.querySelector('.iphone-status-bar'); // Drag handle
+    const container = document.getElementById('lpa-sim-container');
+    const expandedWindow = document.getElementById('lpa-sim-expanded');
     
-    if (!lpaHeader || !lpaContainer) return;
-    
-    lpaHeader.style.cursor = 'move';
-    
+    if (!container || !expandedWindow) return;
+
+    // --- DRAGGING LOGIC ---
     let isDragging = false;
-    let startX, startY, initialLeft, initialTop;
-    
-    lpaHeader.addEventListener('mousedown', (e) => {
-        if (e.button !== 0 || e.target.closest('button')) return;
+    let startX, startY;
+    let initialLeft, initialTop;
+
+    const dragStart = (e) => {
+        // Only drag from status bar/header, and don't trigger if clicking dynamic island or buttons
+        if (e.target.closest('#lpa-sim-btn-minimize') || e.target.closest('.iphone-island')) return;
         
         isDragging = true;
-        const rect = lpaContainer.getBoundingClientRect();
+        const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
         
-        lpaContainer.style.bottom = 'auto';
-        lpaContainer.style.right = 'auto';
-        lpaContainer.style.left = `${rect.left}px`;
-        lpaContainer.style.top = `${rect.top}px`;
+        startX = clientX;
+        startY = clientY;
         
-        startX = e.clientX;
-        startY = e.clientY;
+        // Convert fixed right/bottom to top/left if not already done
+        const rect = container.getBoundingClientRect();
+        container.style.bottom = 'auto';
+        container.style.right = 'auto';
+        container.style.left = `${rect.left}px`;
+        container.style.top = `${rect.top}px`;
+        
         initialLeft = rect.left;
         initialTop = rect.top;
+
+        document.addEventListener('mousemove', dragMove);
+        document.addEventListener('mouseup', dragEnd);
+        document.addEventListener('touchmove', dragMove, { passive: false });
+        document.addEventListener('touchend', dragEnd);
         
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-        
-        e.preventDefault();
-    });
-    
-    function onMouseMove(e) {
+        if (e.cancelable) e.preventDefault();
+    };
+
+    const dragMove = (e) => {
         if (!isDragging) return;
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
         
-        const maxLeft = window.innerWidth - lpaContainer.offsetWidth;
-        const maxTop = window.innerHeight - lpaContainer.offsetHeight;
+        const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
         
-        const newLeft = Math.max(0, Math.min(maxLeft, initialLeft + dx));
-        const newTop = Math.max(0, Math.min(maxTop, initialTop + dy));
+        const deltaX = clientX - startX;
+        const deltaY = clientY - startY;
         
-        lpaContainer.style.left = `${newLeft}px`;
-        lpaContainer.style.top = `${newTop}px`;
-    }
-    
-    function onMouseUp() {
+        // Calculate new positions, keeping it inside viewport boundaries
+        let newLeft = initialLeft + deltaX;
+        let newTop = initialTop + deltaY;
+        
+        const maxLeft = window.innerWidth - container.offsetWidth;
+        const maxTop = window.innerHeight - container.offsetHeight;
+        
+        newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+        newTop = Math.max(0, Math.min(newTop, maxTop));
+        
+        container.style.left = `${newLeft}px`;
+        container.style.top = `${newTop}px`;
+        
+        if (e.cancelable) e.preventDefault();
+    };
+
+    const dragEnd = () => {
         isDragging = false;
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
+        document.removeEventListener('mousemove', dragMove);
+        document.removeEventListener('mouseup', dragEnd);
+        document.removeEventListener('touchmove', dragMove);
+        document.removeEventListener('touchend', dragEnd);
+    };
+
+    if (header) {
+        header.style.cursor = 'move';
+        header.addEventListener('mousedown', dragStart);
+        header.addEventListener('touchstart', dragStart, { passive: false });
     }
+
+    // Also support dragging from .lpa-sim-header
+    const innerHeader = document.querySelector('.lpa-sim-header');
+    if (innerHeader) {
+        innerHeader.style.cursor = 'move';
+        innerHeader.addEventListener('mousedown', dragStart);
+        innerHeader.addEventListener('touchstart', dragStart, { passive: false });
+    }
+
+    // --- RESIZING LOGIC ---
+    // Add a resize handle element dynamically to the bottom-right corner of the chassis
+    const resizeHandle = document.createElement('div');
+    resizeHandle.className = 'iphone-resize-handle';
+    expandedWindow.appendChild(resizeHandle);
+
+    let isResizing = false;
+    let startWidth, startHeight;
+    let resizeStartX;
+
+    const resizeStart = (e) => {
+        isResizing = true;
+        const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+        
+        resizeStartX = clientX;
+        startWidth = expandedWindow.offsetWidth;
+        startHeight = expandedWindow.offsetHeight;
+        
+        // Ensure position remains fixed/absolute relative to left/top
+        const rect = container.getBoundingClientRect();
+        container.style.bottom = 'auto';
+        container.style.right = 'auto';
+        container.style.left = `${rect.left}px`;
+        container.style.top = `${rect.top}px`;
+
+        document.addEventListener('mousemove', resizeMove);
+        document.addEventListener('mouseup', resizeEnd);
+        document.addEventListener('touchmove', resizeMove, { passive: false });
+        document.addEventListener('touchend', resizeEnd);
+        
+        if (e.cancelable) e.preventDefault();
+    };
+
+    const resizeMove = (e) => {
+        if (!isResizing) return;
+        
+        const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+        const deltaX = clientX - resizeStartX;
+        
+        // Maintain 1:2 aspect ratio
+        let newWidth = startWidth + deltaX;
+        
+        // Enforce boundaries
+        newWidth = Math.max(300, Math.min(newWidth, 600));
+        let newHeight = newWidth * 2;
+        
+        // Check viewport limits
+        if (newHeight > window.innerHeight - 20) {
+            newHeight = window.innerHeight - 20;
+            newWidth = newHeight / 2;
+        }
+
+        expandedWindow.style.setProperty('width', `${newWidth}px`, 'important');
+        expandedWindow.style.setProperty('height', `${newHeight}px`, 'important');
+        
+        if (e.cancelable) e.preventDefault();
+    };
+
+    const resizeEnd = () => {
+        isResizing = false;
+        document.removeEventListener('mousemove', resizeMove);
+        document.removeEventListener('mouseup', resizeEnd);
+        document.removeEventListener('touchmove', resizeMove);
+        document.removeEventListener('touchend', resizeEnd);
+    };
+
+    resizeHandle.addEventListener('mousedown', resizeStart);
+    resizeHandle.addEventListener('touchstart', resizeStart, { passive: false });
 }

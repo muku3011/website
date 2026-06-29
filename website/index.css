@@ -1621,6 +1621,36 @@ select:focus-visible {
         padding: 0 20px;
     }
 }
+
+/* Resize handle in the bottom-right corner of the chassis */
+.iphone-resize-handle {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 24px;
+    height: 24px;
+    cursor: nwse-resize;
+    z-index: 1050;
+}
+
+.iphone-resize-handle::after {
+    content: '';
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 0 10px 10px;
+    border-color: transparent transparent var(--text-muted) transparent;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+}
+
+.iphone-resize-handle:hover::after {
+    opacity: 0.9;
+    border-color: transparent transparent var(--primary-glow) transparent;
+}
 @keyframes lpa-slide-in {
     from { transform: translateY(20px) scale(0.95); opacity: 0; }
     to { transform: translateY(0) scale(1); opacity: 1; }
