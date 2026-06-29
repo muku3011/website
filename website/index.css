@@ -39,6 +39,13 @@ body.dark-theme {
     --shadow-color: rgba(0, 0, 0, 0.4);
     --glow-opacity: 0.15;
     --console-bg: hsl(222, 24%, 6%);
+
+    /* Table custom properties */
+    --table-header-bg: hsla(222, 24%, 10%, 0.4);
+    --table-header-color: var(--text-secondary);
+    --table-container-bg: hsla(222, 24%, 6%, 0.15);
+    --table-row-hover-bg: hsla(212, 100%, 60%, 0.02);
+    --table-border: var(--card-border);
 }
 
 /* Light Theme */
@@ -61,6 +68,13 @@ body.light-theme {
     --shadow-color: rgba(100, 110, 140, 0.1);
     --glow-opacity: 0.05;
     --console-bg: hsl(210, 30%, 90%);
+
+    /* Table custom properties */
+    --table-header-bg: hsla(210, 30%, 85%, 0.75);
+    --table-header-color: var(--text-primary);
+    --table-container-bg: hsla(210, 30%, 90%, 0.25);
+    --table-row-hover-bg: hsla(212, 100%, 60%, 0.04);
+    --table-border: hsla(210, 30%, 75%, 0.5);
 }
 
 /* -------------------------------------------------------------
@@ -583,6 +597,13 @@ body {
 
 /* Console logs widget styling */
 .ddns-console {
+    color-scheme: dark;
+    --console-bg: hsl(222, 24%, 6%);
+    --card-border: hsla(222, 20%, 25%, 0.4);
+    --text-primary: hsl(210, 40%, 98%);
+    --text-secondary: hsl(210, 20%, 75%);
+    --text-muted: hsl(210, 10%, 55%);
+
     background: var(--console-bg);
     border: 1px solid var(--card-border);
     border-radius: var(--border-radius-sm);
@@ -613,6 +634,20 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
+}
+
+#rsp-console,
+#audit-console {
+    color-scheme: dark !important;
+    --console-bg: hsl(222, 24%, 6%);
+    --card-border: hsla(222, 20%, 25%, 0.4);
+    --text-primary: hsl(210, 40%, 98%);
+    --text-secondary: hsl(210, 20%, 75%);
+    --text-muted: hsl(210, 10%, 55%);
+
+    background: var(--console-bg) !important;
+    border-color: var(--card-border) !important;
+    color: var(--text-secondary) !important;
 }
 
 .log-line.info { color: var(--text-secondary); }
@@ -1181,9 +1216,9 @@ select:focus-visible {
 /* Table Design */
 .table-container {
     overflow-x: auto;
-    border: 1px solid var(--card-border);
+    border: 1px solid var(--table-border);
     border-radius: var(--border-radius-sm);
-    background: hsla(222, 24%, 6%, 0.15);
+    background: var(--table-container-bg);
 }
 
 .profiles-table {
@@ -1196,14 +1231,14 @@ select:focus-visible {
 .profiles-table th,
 .profiles-table td {
     padding: 0.85rem 1rem;
-    border-bottom: 1px solid var(--card-border);
+    border-bottom: 1px solid var(--table-border);
 }
 
 .profiles-table th {
     font-family: var(--font-heading);
     font-weight: 600;
-    color: var(--text-secondary);
-    background: hsla(222, 24%, 10%, 0.4);
+    color: var(--table-header-color);
+    background: var(--table-header-bg);
     letter-spacing: 0.5px;
 }
 
@@ -1212,7 +1247,7 @@ select:focus-visible {
 }
 
 .profiles-table tbody tr:hover {
-    background: hsla(212, 100%, 60%, 0.02);
+    background: var(--table-row-hover-bg);
 }
 
 .profiles-table td {
@@ -1617,6 +1652,13 @@ select:focus-visible {
 }
 
 .lpa-sim-logs-area {
+    color-scheme: dark;
+    --console-bg: hsl(222, 24%, 6%);
+    --card-border: hsla(222, 20%, 25%, 0.4);
+    --text-primary: hsl(210, 40%, 98%);
+    --text-secondary: hsl(210, 20%, 75%);
+    --text-muted: hsl(210, 10%, 55%);
+
     background: var(--console-bg);
     border: 1px solid var(--card-border);
     border-radius: var(--border-radius-sm);
