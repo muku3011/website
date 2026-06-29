@@ -153,26 +153,7 @@ Used by the Local Profile Assistant (LPA) on the user's device to authenticate a
   POST /gsma/rsp/v2/es9plus/cancelSession
   ```
 
-### 3. Authelia User Directory Integration API
-Used to manage user accounts inside Authelia's local file-based users database (`/etc/authelia/users_database.yml`).
-- **List Users**:
-  ```text
-  GET /gsma/rsp/v2/authelia/users
-  ```
-- **Create User**:
-  ```text
-  POST /gsma/rsp/v2/authelia/users?username=<username>
-  ```
-- **Update User**:
-  ```text
-  PUT /gsma/rsp/v2/authelia/users/{username}
-  ```
-- **Delete User**:
-  ```text
-  DELETE /gsma/rsp/v2/authelia/users/{username}
-  ```
 
----
 
 ## 5. Running Tests
 

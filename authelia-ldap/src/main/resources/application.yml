@@ -27,4 +27,3 @@ ldap:
   base-dn: dc=hutta,dc=in
   admin-dn: cn=admin,dc=hutta,dc=in
   admin-password: ${LDAP_ADMIN_PASSWORD:admin_password}
-  bootstrap-file: /etc/authelia/users_database.yml

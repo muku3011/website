@@ -1,20 +1,14 @@
 package in.hutta.ldap.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import in.hutta.ldap.config.LdapServerManager;
 import in.hutta.ldap.model.AutheliaUser;
 import in.hutta.ldap.repository.AutheliaUserRepository;
 import in.hutta.ldap.util.Argon2idVerifier;
-import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.*;
 
 @Service
@@ -25,58 +19,10 @@ public class AutheliaUserService {
 
     private final AutheliaUserRepository userRepository;
     private final LdapServerManager ldapServerManager;
-    private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
-
-    @Value("${ldap.bootstrap-file}")
-    private String bootstrapFilePath;
 
     public AutheliaUserService(AutheliaUserRepository userRepository, LdapServerManager ldapServerManager) {
         this.userRepository = userRepository;
         this.ldapServerManager = ldapServerManager;
-    }
-
-    @PostConstruct
-    public void bootstrapFromYaml() {
-        try {
-            if (userRepository.count() == 0) {
-                log.info("Database user table is empty. Bootstrapping from Authelia users database: {}", bootstrapFilePath);
-                File file = new File(bootstrapFilePath);
-                if (file.exists()) {
-                    Map<?, ?> root = yamlMapper.readValue(file, Map.class);
-                    Map<?, ?> usersMap = (Map<?, ?>) root.get("users");
-                    if (usersMap != null) {
-                        List<AutheliaUser> entitiesToSave = new ArrayList<>();
-                        for (Map.Entry<?, ?> entry : usersMap.entrySet()) {
-                            String username = ((String) entry.getKey()).trim().toLowerCase();
-                            Map<?, ?> fields = (Map<?, ?>) entry.getValue();
-                            String displayname = (String) fields.get("displayname");
-                            String email = (String) fields.get("email");
-                            String password = (String) fields.get("password");
-                            List<?> groupsList = (List<?>) fields.get("groups");
-                            
-                            Set<String> groups = new LinkedHashSet<>();
-                            if (groupsList != null) {
-                                for (Object g : groupsList) {
-                                    groups.add(String.valueOf(g));
-                                }
-                            }
-                            
-                            // Load pre-hashed password directly
-                            AutheliaUser user = new AutheliaUser(username, displayname, email, password, groups);
-                            entitiesToSave.add(user);
-                        }
-                        userRepository.saveAll(entitiesToSave);
-                        log.info("Bootstrapped {} users from YAML file.", entitiesToSave.size());
-                        
-                        ldapServerManager.syncAllFromDatabase();
-                    }
-                } else {
-                    log.warn("Authelia users database file not found at {}. Skipping bootstrap.", bootstrapFilePath);
-                }
-            }
-        } catch (IOException e) {
-            log.error("Failed to bootstrap users from Authelia configuration file", e);
-        }
     }
 
     public List<AutheliaUser> getAllUsers() {

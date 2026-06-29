@@ -57,9 +57,7 @@ During installation, the script will:
 3. Setup the system user and directories (`/etc/authelia`, `/var/lib/authelia`).
 4. Download the latest binary from Github.
 5. Generate or reload secure random secrets.
-6. Prompt you for a secure administrator username, email, and password.
-7. Generate Argon2 password hashes and write them to `/etc/authelia/users_database.yml`.
-8. Write `/etc/authelia/configuration.yml`.
+6. Write `/etc/authelia/configuration.yml` with custom LDAP backend.
 9. Setup, enable, and start the systemd service (`authelia.service`).
 
 ### Step 2: Configure Apache Reverse Proxy & OIDC Integration
@@ -81,8 +79,7 @@ This script will:
 
 - **Binary Location**: `/usr/local/bin/authelia`
 - **Configuration Directory**: `/etc/authelia/`
-  - `configuration.yml`: Global Authelia settings, OIDC providers, and access control policies.
-  - `users_database.yml`: Local file user database with Argon2-hashed passwords.
+  - `configuration.yml`: Global Authelia settings, OIDC providers, and access control policies (configured to use custom LDAP backend).
 - **Data Directory**: `/var/lib/authelia/`
   - `db.sqlite3`: Local SQLite database.
   - `notification.txt`: File-based notification notifier (e.g., outputs TOTP registration links).
@@ -94,51 +91,18 @@ This script will:
 
 ## User Management
 
-Authelia is configured to use a local file-based database for user records, located at `/etc/authelia/users_database.yml`.
+Since Authelia is configured to use the custom database-backed LDAP service (`authelia-ldap`), users are stored in the PostgreSQL database `autheliadb` and managed dynamically.
 
-### 1. Structure of `users_database.yml`
-Each user entry has the following structure:
-```yaml
-users:
-  username:
-    displayname: "User Display Name"
-    password: "argon2-hashed-password"
-    email: "user@domain.com"
-    groups:
-      - admins
-      - users
+### 1. Adding/Modifying Users (via CLI)
+You can use the helper script [insert_admin.sh](file:///Users/muku/Projects/website/scripts/insert_admin.sh) located in the `scripts/` directory to insert or update users in the database:
+```bash
+cd ../scripts
+./insert_admin.sh
 ```
+This script will prompt you for user details, generate the secure Argon2id hash using Authelia's binary, update the PostgreSQL database, and restart the services to sync the LDAP directory.
 
-### 2. Adding or Modifying a User
-To add a new user or change a password:
-1. **Generate the Argon2 hash**:
-   Use the Authelia binary to securely generate a password hash matching the Argon2 settings in `configuration.yml`:
-   ```bash
-   /usr/local/bin/authelia crypto hash generate argon2 --password "your-secure-password"
-   ```
-   *Example Output:*
-   ```text
-   $argon2id$v=19$m=65536,t=3,p=4$q9Y7U1L...
-   ```
-2. **Edit the database file**:
-   Open `/etc/authelia/users_database.yml` as root:
-   ```bash
-   sudo nano /etc/authelia/users_database.yml
-   ```
-3. **Insert the user block**:
-   Paste the username, display name, email, groups, and the hash you generated under the `users:` key.
-4. **Secure the file permissions**:
-   Ensure the `authelia` system user and group have access. To enable web-based administration from the `smdp-plus` backend (running as `rbpi`), add the `rbpi` user to the `authelia` group and set group write permissions:
-   ```bash
-   sudo chown authelia:authelia /etc/authelia/users_database.yml
-   sudo chmod 660 /etc/authelia/users_database.yml
-   sudo usermod -aG authelia rbpi
-   ```
-5. **Reload the database**:
-   Restart Authelia to apply the changes:
-   ```bash
-   sudo systemctl restart authelia
-   ```
+### 2. Adding/Modifying Users (via Web Admin UI)
+The web-based administration panel (`admin.html`) communicates directly with the `authelia-ldap` REST API (port `8094`) to perform real-time user management (Create, Read, Update, Delete). Any actions in the UI will automatically and instantly update both the database and the LDAP server.
 
 ---
 
@@ -231,7 +195,6 @@ In addition to Authelia configuration files, this directory contains a custom Sp
 ### Key Features
 * **Embedded LDAP Server**: Runs an in-memory directory server (UnboundID) on port `10389`.
 * **User Management API**: Exposes standard REST endpoints (on port `8094`) to perform CRUD operations on user accounts and groups.
-* **Bootstrapping**: Automatically loads initial user data from `/etc/authelia/users_database.yml` on first startup if the database is empty.
 * **PostgreSQL Synchronization**: Keeps user directory data synced with a persistent PostgreSQL database (`autheliadb`) and dynamically updates the LDAP directory in real-time.
 
 ### Compilation and Build

@@ -155,48 +155,19 @@ fi
 # Indent the private key so it aligns correctly under YAML key block
 OIDC_PRIVATE_KEY_INDENTED=$(echo "$OIDC_PRIVATE_KEY" | sed 's/^/          /')
 
-# 8. Prompt for Password
-echo -e "\n${BLUE}====================================================${NC}"
-echo -e "${YELLOW}User Configuration Setup${NC}"
-echo -e "${BLUE}====================================================${NC}"
-read -p "Enter username for admin account [admin]: " ADMIN_USER
-ADMIN_USER=${ADMIN_USER:-admin}
-
-read -p "Enter display name for admin [Administrator]: " ADMIN_DISPLAY
-ADMIN_DISPLAY=${ADMIN_DISPLAY:-Administrator}
-
-read -p "Enter email for admin account [admin@hutta.in]: " ADMIN_EMAIL
-ADMIN_EMAIL=${ADMIN_EMAIL:-admin@hutta.in}
-
-while true; do
-    read -s -p "Enter secure password for admin account: " ADMIN_PASS
-    echo
-    read -s -p "Confirm secure password: " ADMIN_PASS_CONFIRM
-    echo
-    if [ "$ADMIN_PASS" = "$ADMIN_PASS_CONFIRM" ]; then
-        break
-    else
-        echo -e "${RED}Passwords do not match. Try again.${NC}"
-    fi
-done
-
-echo -e "${YELLOW}[*] Hashing password (this may take a few seconds)...${NC}"
+# 8. Hash OIDC Client Secret
+echo -e "${YELLOW}[*] Hashing OIDC client secret...${NC}"
 if /usr/local/bin/authelia crypto hash generate --help &>/dev/null; then
-    PASS_HASH=$(/usr/local/bin/authelia crypto hash generate argon2 --password "$ADMIN_PASS" | cut -d' ' -f2)
     CLIENT_SECRET_HASH=$(/usr/local/bin/authelia crypto hash generate argon2 --password "$CLIENT_SECRET" | cut -d' ' -f2)
 else
-    PASS_HASH=$(/usr/local/bin/authelia crypto hash-password "$ADMIN_PASS")
     CLIENT_SECRET_HASH=$(/usr/local/bin/authelia crypto hash-password "$CLIENT_SECRET")
 fi
 
 # 9. Backup Existing Configurations if they exist
 if [ -f "/etc/authelia/configuration.yml" ]; then
     BACKUP_SUFFIX=$(date +%Y%m%d%H%M%S)
-    echo -e "${YELLOW}[*] Backing up existing config files to *.bak.${BACKUP_SUFFIX}...${NC}"
+    echo -e "${YELLOW}[*] Backing up existing configuration file to *.bak.${BACKUP_SUFFIX}...${NC}"
     cp /etc/authelia/configuration.yml "/etc/authelia/configuration.yml.bak.${BACKUP_SUFFIX}"
-    if [ -f "/etc/authelia/users_database.yml" ]; then
-        cp /etc/authelia/users_database.yml "/etc/authelia/users_database.yml.bak.${BACKUP_SUFFIX}"
-    fi
 fi
 
 # 10. Create Config files with path: /authelia
@@ -242,16 +213,22 @@ access_control:
       policy: one_factor
 
 authentication_backend:
-  file:
-    path: /etc/authelia/users_database.yml
-    password:
-      algorithm: argon2
-      argon2:
-        variant: argon2id
-        iterations: 3
-        memory: 65536
-        parallelism: 4
-        key_length: 32
+  ldap:
+    implementation: custom
+    url: ldap://127.0.0.1:10389
+    timeout: 5s
+    start_tls: false
+    base_dn: dc=hutta,dc=in
+    additional_users_dn: ou=users
+    additional_groups_dn: ou=groups
+    user: cn=admin,dc=hutta,dc=in
+    password: admin_password
+    attributes:
+      display_name: cn
+      username: uid
+      mail: mail
+      group_name: cn
+      member: member
 
 identity_providers:
   oidc:
@@ -283,17 +260,6 @@ notifier:
     filename: /var/lib/authelia/notification.txt
 EOF
 
-cat <<EOF > /etc/authelia/users_database.yml
-users:
-  ${ADMIN_USER}:
-    displayname: "${ADMIN_DISPLAY}"
-    password: "${PASS_HASH}"
-    email: "${ADMIN_EMAIL}"
-    groups:
-      - admins
-      - users
-EOF
-
 # 11. Set Permissions
 echo -e "${YELLOW}[*] Setting file permissions...${NC}"
 chown -R authelia:authelia /etc/authelia
@@ -301,7 +267,6 @@ chown -R authelia:authelia /var/lib/authelia
 
 chmod 700 /var/lib/authelia
 chmod 600 /etc/authelia/configuration.yml
-chmod 600 /etc/authelia/users_database.yml
 
 # 12. Install Systemd Service Unit
 echo -e "${YELLOW}[*] Installing systemd service unit...${NC}"
@@ -340,7 +305,6 @@ echo -e "${BLUE}====================================================${NC}"
 echo -e "Service Status: \$(systemctl is-active authelia.service)"
 echo -e "Port/Path:      127.0.0.1:9091/authelia"
 echo -e "Admin Config:   /etc/authelia/configuration.yml"
-echo -e "User Database:  /etc/authelia/users_database.yml"
 echo -e "TOTP Link Log:  /var/lib/authelia/notification.txt"
 echo -e "${BLUE}----------------------------------------------------${NC}"
 echo -e "${YELLOW}IMPORTANT COPY-PASTE DATA FOR APACHE:${NC}"

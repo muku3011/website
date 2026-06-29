@@ -86,7 +86,6 @@ flowchart TD
         subgraph Auth ["Auth System"]
             Authelia["Authelia SSO (Port 9091)"]
             AutheliaLDAP["Authelia LDAP / IdP Service (Port 8094 / 10389)"]
-            YAML_DB["users_database.yml"]
         end
 
         subgraph Backend ["eSIM Backend Services"]
@@ -115,7 +114,6 @@ flowchart TD
     Proxy -->|Proxy /gsma/rsp/v2/| SMDP
 
     %% Authentication Directory
-    AutheliaLDAP <-->|Bootstrap Users| YAML_DB
     Authelia <-->|LDAP Auth / Port 10389| AutheliaLDAP
     AutheliaLDAP <-->|JPA / Flyway| autheliadb
 
@@ -130,7 +128,7 @@ flowchart TD
 
 * **Apache HTTP Server**: Serves the website frontend assets and acts as a secure reverse proxy with OIDC integration (`mod_auth_openidc`) for private routes.
 * **Authelia**: Authenticates users via Single Sign-On (SSO) by querying the local LDAP directory.
-* **Authelia LDAP & User Management (authelia-ldap)**: A custom Spring Boot service that runs an embedded LDAP server (Port 10389) and exposes a user management API (Port 8094). It bootstraps from `/etc/authelia/users_database.yml` and persists data in PostgreSQL (`autheliadb`).
+* **Authelia LDAP & User Management (authelia-ldap)**: A custom Spring Boot service that runs an embedded LDAP server (Port 10389) and exposes a user management API (Port 8094). It persists data in PostgreSQL (`autheliadb`).
 * **SM-DP+ eSIM Server**: Implements the standard GSMA SGP.22 endpoints (ES2+ and ES9+), backed by a persistent PostgreSQL database (`smdpdb`) and Flyway database migration controller.
 * **LPA Simulator**: Simulates eUICC operations and triggers remote SIM provisioning downloads, storing downloaded profiles in a persistent PostgreSQL database (`lpadb`).
 
