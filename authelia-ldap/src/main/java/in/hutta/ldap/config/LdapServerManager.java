@@ -77,36 +77,30 @@ public class LdapServerManager {
     private void setupSchemaNodes() {
         // Base DN
         try {
-            directoryServer.add(new String[]{
-                "dn: " + baseDn + "\n" +
-                "objectClass: top\n" +
-                "objectClass: domain\n" +
-                "dc: hutta\n\n"
-            });
+            Entry baseEntry = new Entry(baseDn);
+            baseEntry.addAttribute(new Attribute("objectClass", "top", "domain"));
+            baseEntry.addAttribute(new Attribute("dc", "hutta"));
+            directoryServer.add(baseEntry);
         } catch (Exception e) {
             log.debug("Root DN node already exists: {}", e.getMessage());
         }
 
         // ou=users
         try {
-            directoryServer.add(new String[]{
-                "dn: ou=users," + baseDn + "\n" +
-                "objectClass: top\n" +
-                "objectClass: organizationalUnit\n" +
-                "ou: users\n\n"
-            });
+            Entry usersEntry = new Entry("ou=users," + baseDn);
+            usersEntry.addAttribute(new Attribute("objectClass", "top", "organizationalUnit"));
+            usersEntry.addAttribute(new Attribute("ou", "users"));
+            directoryServer.add(usersEntry);
         } catch (Exception e) {
             log.debug("ou=users already exists: {}", e.getMessage());
         }
 
         // ou=groups
         try {
-            directoryServer.add(new String[]{
-                "dn: ou=groups," + baseDn + "\n" +
-                "objectClass: top\n" +
-                "objectClass: organizationalUnit\n" +
-                "ou: groups\n\n"
-            });
+            Entry groupsEntry = new Entry("ou=groups," + baseDn);
+            groupsEntry.addAttribute(new Attribute("objectClass", "top", "organizationalUnit"));
+            groupsEntry.addAttribute(new Attribute("ou", "groups"));
+            directoryServer.add(groupsEntry);
         } catch (Exception e) {
             log.debug("ou=groups already exists: {}", e.getMessage());
         }
@@ -140,17 +134,15 @@ public class LdapServerManager {
 
             for (AutheliaUser user : dbUsers) {
                 String userDn = "uid=" + user.getUsername() + ",ou=users," + baseDn;
-                directoryServer.add(new String[]{
-                    "dn: " + userDn + "\n" +
-                    "objectClass: top\n" +
-                    "objectClass: person\n" +
-                    "objectClass: organizationalPerson\n" +
-                    "objectClass: inetOrgPerson\n" +
-                    "uid: " + user.getUsername() + "\n" +
-                    "cn: " + user.getDisplayName() + "\n" +
-                    "sn: " + user.getUsername() + "\n" +
-                    "mail: " + user.getEmail() + "\n\n"
-                });
+                Entry userEntry = new Entry(userDn);
+                userEntry.addAttribute(new Attribute("objectClass", "top", "person", "organizationalPerson", "inetOrgPerson"));
+                userEntry.addAttribute(new Attribute("uid", user.getUsername()));
+                userEntry.addAttribute(new Attribute("cn", user.getDisplayName()));
+                userEntry.addAttribute(new Attribute("sn", user.getUsername()));
+                if (user.getEmail() != null && !user.getEmail().trim().isEmpty()) {
+                    userEntry.addAttribute(new Attribute("mail", user.getEmail()));
+                }
+                directoryServer.add(userEntry);
 
                 if (user.getGroups() != null) {
                     for (String group : user.getGroups()) {
@@ -163,17 +155,13 @@ public class LdapServerManager {
             for (Map.Entry<String, List<String>> entry : groupMembers.entrySet()) {
                 String groupName = entry.getKey();
                 List<String> members = entry.getValue();
-                StringBuilder sb = new StringBuilder();
-                sb.append("dn: cn=").append(groupName).append(",ou=groups,").append(baseDn).append("\n")
-                  .append("objectClass: top\n")
-                  .append("objectClass: groupOfNames\n")
-                  .append("cn: ").append(groupName).append("\n");
-                
-                for (String memberDn : members) {
-                    sb.append("member: ").append(memberDn).append("\n");
+                Entry groupEntry = new Entry("cn=" + groupName + ",ou=groups," + baseDn);
+                groupEntry.addAttribute(new Attribute("objectClass", "top", "groupOfNames"));
+                groupEntry.addAttribute(new Attribute("cn", groupName));
+                if (!members.isEmpty()) {
+                    groupEntry.addAttribute(new Attribute("member", members.toArray(new String[0])));
                 }
-                sb.append("\n");
-                directoryServer.add(new String[]{ sb.toString() });
+                directoryServer.add(groupEntry);
             }
             log.info("LDAP entries synced successfully. Loaded {} users.", dbUsers.size());
         } catch (Exception e) {
