@@ -2316,7 +2316,23 @@ select:focus-visible {
 .user-dropdown-header {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
+    margin-bottom: 0.25rem;
+}
+
+.user-signed-in-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.user-identity {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
 }
 
 .user-display-name-header {
@@ -2326,42 +2342,26 @@ select:focus-visible {
     font-family: var(--font-heading);
 }
 
+.user-card-username {
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
 .user-email-header {
     font-size: 0.75rem;
     color: var(--text-muted);
 }
 
-.user-dropdown-details {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.user-dropdown-details .detail-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.8rem;
-}
-
-.user-dropdown-details .detail-label {
-    color: var(--text-muted);
-}
-
-.user-dropdown-details .detail-value {
-    color: var(--text-primary);
-    font-weight: 600;
-    font-family: monospace;
-}
-
-.user-dropdown-footer {
+.dropdown-footer-actions {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
+    margin-top: 0.25rem;
 }
 
-.user-dropdown-footer .badge {
+.dropdown-footer-actions .badge {
     font-size: 0.65rem;
     padding: 0.25rem 0.5rem;
     border-radius: var(--border-radius-sm, 4px);
@@ -2373,30 +2373,29 @@ select:focus-visible {
     color: var(--text-secondary);
 }
 
-.btn-logout-simple {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    background: none;
-    border: none;
-    color: #ef5350;
+.btn-logout {
     font-size: 0.75rem;
-    font-weight: 600;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: background 0.2s, color 0.2s;
+    padding: 0.35rem 0.75rem;
+    background: var(--border-color);
+    border: 1px solid var(--card-border);
+    color: var(--text-secondary);
+    border-radius: var(--border-radius-sm, 4px);
+    transition: var(--transition-smooth);
 }
 
-.btn-logout-simple:hover {
-    background: rgba(239, 83, 80, 0.1);
+.btn-logout:hover {
+    background: rgba(239, 83, 80, 0.15) !important;
+    color: #ef5350 !important;
+    border-color: rgba(239, 83, 80, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(239, 83, 80, 0.1);
 }
 
-.btn-logout-simple svg {
+.btn-logout svg {
     transition: transform 0.2s;
+    margin-right: 0.25rem;
 }
 
-.btn-logout-simple:hover svg {
+.btn-logout:hover svg {
     transform: translateX(2px);
 }
 
