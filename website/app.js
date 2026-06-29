@@ -1130,7 +1130,7 @@ if (logoutBtn) {
                 left: 0;
                 width: 100vw;
                 height: 100vh;
-                background: rgba(10, 10, 12, 0.9);
+                background: var(--card-bg);
                 backdrop-filter: blur(8px);
                 -webkit-backdrop-filter: blur(8px);
                 z-index: 99999;

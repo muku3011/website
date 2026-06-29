@@ -46,6 +46,11 @@ body.dark-theme {
     --table-container-bg: hsla(222, 24%, 6%, 0.15);
     --table-row-hover-bg: hsla(212, 100%, 60%, 0.02);
     --table-border: var(--card-border);
+
+    /* User Profile Dropdown custom properties */
+    --dropdown-bg: rgba(18, 18, 24, 0.95);
+    --dropdown-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 1px rgba(255, 255, 255, 0.1);
+    --dropdown-item-border: rgba(255, 255, 255, 0.05);
 }
 
 /* Light Theme */
@@ -75,6 +80,11 @@ body.light-theme {
     --table-container-bg: hsla(210, 30%, 90%, 0.25);
     --table-row-hover-bg: hsla(212, 100%, 60%, 0.04);
     --table-border: hsla(210, 30%, 75%, 0.5);
+
+    /* User Profile Dropdown custom properties */
+    --dropdown-bg: rgba(255, 255, 255, 0.95);
+    --dropdown-shadow: 0 10px 40px rgba(100, 110, 140, 0.15), 0 0 1px rgba(0, 0, 0, 0.08);
+    --dropdown-item-border: rgba(0, 0, 0, 0.05);
 }
 
 /* -------------------------------------------------------------
@@ -2070,10 +2080,10 @@ select:focus-visible {
     top: calc(100% + 0.6rem);
     right: 0;
     width: 260px;
-    background: rgba(18, 18, 24, 0.95);
+    background: var(--dropdown-bg);
     border: 1px solid var(--card-border);
     border-radius: var(--border-radius-md, 12px);
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 1px rgba(255, 255, 255, 0.1);
+    box-shadow: var(--dropdown-shadow);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     padding: 1.25rem;
@@ -2129,7 +2139,7 @@ select:focus-visible {
     align-items: center;
     font-size: 0.8rem;
     padding-bottom: 0.35rem;
-    border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+    border-bottom: 1px dashed var(--dropdown-item-border);
 }
 
 .user-info-details .info-item:last-child {
@@ -2138,7 +2148,7 @@ select:focus-visible {
 }
 
 .user-info-details .info-label {
-    color: var(--text-muted);
+    color: var(--text-secondary);
 }
 
 .user-info-details .info-value {

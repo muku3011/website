@@ -141,8 +141,36 @@ body .MuiButton-textPrimary:hover {
 /* ==============================================================================
    COMMON PORTAL STYLES & PRIMARY BUTTON
    ============================================================================== */
-h1, h2, h3, h4, h5, h6, .MuiTypography-h5, .MuiTypography-root {
+h1, h2, h3, h4, h5, h6, 
+.MuiTypography-root, 
+.MuiTypography-body1, 
+.MuiTypography-body2, 
+.MuiTypography-subtitle1,
+.MuiTypography-subtitle2,
+.MuiListItemText-primary,
+.MuiListItemText-secondary,
+.MuiFormLabel-root,
+.MuiInputLabel-root,
+.MuiFormControlLabel-label,
+p, 
+span:not(.MuiButton-label):not(.MuiBadge-badge):not(.MuiChip-label) {
     font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    color: hsl(222, 24%, 12%) !important;
+}
+
+/* Ensure alerts preserve their colors */
+.MuiAlert-root .MuiTypography-root,
+.MuiAlert-root p,
+.MuiAlert-root span {
+    color: inherit !important;
+}
+
+/* Ensure primary button text is white */
+.MuiButton-containedPrimary,
+.MuiButton-containedPrimary .MuiButton-label,
+#sign-in-button,
+#sign-in-button .MuiButton-label {
+    color: #ffffff !important;
 }
 
 #sign-in-button, .MuiButton-containedPrimary {
