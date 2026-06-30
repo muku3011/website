@@ -1521,4 +1521,4 @@ function initOpenApiTools() {
 </html>`);
         docWin.document.close();
     });
-});
+}
