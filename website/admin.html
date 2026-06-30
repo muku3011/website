@@ -35,6 +35,37 @@
                 <a href="admin.html" class="nav-link active" id="nav-admin">Admin</a>
             </nav>
             <div class="header-actions">
+                <!-- User Profile Dropdown -->
+                <div class="user-profile-section" id="user-profile-menu">
+                    <button class="user-profile-trigger" id="user-profile-trigger" aria-label="User menu" aria-haspopup="true">
+                        <div class="user-avatar" id="user-avatar-initials">U</div>
+                        <span class="user-display-name" id="user-display-name-label">Loading...</span>
+                        <svg class="chevron-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                    </button>
+                    <div class="user-profile-dropdown" id="user-profile-dropdown">
+                        <div class="user-dropdown-header">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <span class="user-signed-in-label">Signed in as</span>
+                                <span class="badge" id="dropdown-role-badge">Role: --</span>
+                            </div>
+                            <div class="user-identity">
+                                <span class="user-display-name-header" id="dropdown-display-name">Loading...</span>
+                                <span class="user-card-username" id="dropdown-username-handle"></span>
+                            </div>
+                            <span class="user-email-header" id="dropdown-email">--</span>
+                        </div>
+                        
+                        <div class="dropdown-divider"></div>
+                        
+                        <div class="dropdown-footer-actions" style="justify-content: flex-end;">
+                            <button id="logout-btn" class="btn btn-secondary btn-logout">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                <span>Sign Out</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <button id="theme-toggle" class="btn-icon" aria-label="Toggle light and dark theme" title="Toggle Theme">
                     <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
                     <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>

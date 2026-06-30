@@ -147,6 +147,22 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <div style="background: var(--console-bg); border-radius: var(--border-radius-sm); border: 1px solid var(--card-border); padding: 1rem; margin-top: 0.5rem;">
+                        <h4 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 0.9rem;">Regex Examples</h4>
+                        <ul style="font-size: 0.85rem; padding-left: 1.5rem; margin-bottom: 1rem; color: var(--text-secondary);">
+                            <li><strong>Email:</strong> <code class="code-text-mono">\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b</code></li>
+                            <li><strong>URL:</strong> <code class="code-text-mono">https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)</code></li>
+                            <li><strong>Date (YYYY-MM-DD):</strong> <code class="code-text-mono">^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$</code></li>
+                        </ul>
+                        <h4 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 0.9rem;">Flags Definition</h4>
+                        <ul style="font-size: 0.85rem; padding-left: 1.5rem; margin-bottom: 0; color: var(--text-secondary);">
+                            <li><strong>g (Global):</strong> Don't return after first match. Search for all matches.</li>
+                            <li><strong>i (Insensitive):</strong> Case insensitive match.</li>
+                            <li><strong>m (Multiline):</strong> ^ and $ match start/end of line, not just string.</li>
+                        </ul>
+                    </div>
+
                     <div class="tool-io-grid">
                         <div class="input-pane">
                             <div class="pane-header">
@@ -182,24 +198,22 @@
                         <textarea class="code-editor" id="crypto-payload" placeholder="Enter text to encrypt/decrypt, or sign/verify..." spellcheck="false"></textarea>
                         
                         <div class="crypto-config-box" style="margin-top: 1rem; padding: 1rem; background: var(--console-bg); border: 1px solid var(--card-border); border-radius: var(--border-radius-sm); display: flex; flex-direction: column; gap: 0.75rem;">
-                            <div class="form-row-group">
-                                <div class="form-group">
-                                    <label for="crypto-op-type">Operation</label>
-                                    <select id="crypto-op-type" class="filter-select">
-                                        <option value="encrypt-sym">Symmetric Encryption (AES)</option>
-                                        <option value="decrypt-sym">Symmetric Decryption (AES)</option>
-                                        <option value="encrypt-asym">Asymmetric Encryption (RSA-OAEP)</option>
-                                        <option value="decrypt-asym">Asymmetric Decryption (RSA-OAEP)</option>
-                                        <option value="sign">Digital Signature (HMAC / RSA / ECDSA)</option>
-                                        <option value="verify">Signature Verification</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="crypto-algorithm">Algorithm</label>
-                                    <select id="crypto-algorithm" class="filter-select">
-                                        <!-- Populated dynamically -->
-                                    </select>
-                                </div>
+                            <div class="form-group">
+                                <label for="crypto-op-type">Operation</label>
+                                <select id="crypto-op-type" class="filter-select">
+                                    <option value="encrypt-sym">Symmetric Encryption (AES)</option>
+                                    <option value="decrypt-sym">Symmetric Decryption (AES)</option>
+                                    <option value="encrypt-asym">Asymmetric Encryption (RSA-OAEP)</option>
+                                    <option value="decrypt-asym">Asymmetric Decryption (RSA-OAEP)</option>
+                                    <option value="sign">Digital Signature (HMAC / RSA / ECDSA)</option>
+                                    <option value="verify">Signature Verification</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="crypto-algorithm">Algorithm</label>
+                                <select id="crypto-algorithm" class="filter-select">
+                                    <!-- Populated dynamically -->
+                                </select>
                             </div>
 
                             <!-- Key controls -->
@@ -262,6 +276,15 @@
                                 </select>
                             </div>
 
+                            <div class="form-group">
+                                <label for="keygen-format">Export Format</label>
+                                <select id="keygen-format" class="filter-select">
+                                    <option value="pem">PEM Format (Base64 encoded block)</option>
+                                    <option value="jwk">JWK Format (JSON Web Key)</option>
+                                    <option value="hex">Hex / Raw (Symmetric Keys only)</option>
+                                </select>
+                            </div>
+
                             <div class="form-group" id="keygen-rsa-size-group" style="display: none;">
                                 <label>RSA Modulus Size</label>
                                 <div style="display: flex; gap: 1rem; margin-top: 0.25rem;">
@@ -272,15 +295,6 @@
                                         <input type="radio" name="keygen-rsa-size" value="4096"> 4096-bit
                                     </label>
                                 </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="keygen-format">Export Format</label>
-                                <select id="keygen-format" class="filter-select">
-                                    <option value="pem">PEM Format (Base64 encoded block)</option>
-                                    <option value="jwk">JWK Format (JSON Web Key)</option>
-                                    <option value="hex">Hex / Raw (Symmetric Keys only)</option>
-                                </select>
                             </div>
 
                             <button class="btn btn-action-trigger btn-primary-action" id="btn-keygen-generate" style="width: 100%; justify-content: center; margin-top: auto;">Generate Key(s)</button>
@@ -448,7 +462,7 @@
                         <div class="pane-header">
                             <span>Decoded Segment Data</span>
                         </div>
-                        <div class="jwt-output-container">
+                        <div class="jwt-output-container" style="display: flex; flex-direction: column; gap: 1rem;">
                             <div style="display: flex; flex-direction: column; flex: 1;">
                                 <span style="font-size: 0.85rem; font-weight: 600; color: var(--warning-glow); margin-bottom: 0.25rem;">Header</span>
                                 <pre class="code-viewer-container" style="flex: 1; margin: 0;"><code id="jwt-header-output" class="code-viewer text-muted">JWT Header JSON</code></pre>
