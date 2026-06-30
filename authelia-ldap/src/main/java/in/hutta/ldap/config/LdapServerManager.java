@@ -142,6 +142,7 @@ public class LdapServerManager {
             new Attribute("objectClass", "top", "person", "organizationalPerson", "inetOrgPerson"));
         userEntry.addAttribute(new Attribute("uid", user.getUsername()));
         userEntry.addAttribute(new Attribute("cn", user.getDisplayName()));
+        userEntry.addAttribute(new Attribute("displayName", user.getDisplayName()));
         userEntry.addAttribute(new Attribute("sn", user.getUsername()));
         if (user.getEmail() != null && !user.getEmail().trim().isEmpty()) {
           userEntry.addAttribute(new Attribute("mail", user.getEmail()));
