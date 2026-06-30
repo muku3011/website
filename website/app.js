@@ -365,8 +365,8 @@ function renderProfiles() {
         return `
             <tr onclick="selectProfileForActivation('${profile.iccid}')" style="cursor: pointer;">
                 <td class="code-text-mono">${profile.iccid}</td>
-                <td>${networkBadge}</td>
-                <td class="code-text-mono">${profile.eid || '<span style="color: var(--text-muted);">--</span>'}</td>
+                <td class="col-mobile-hide">${networkBadge}</td>
+                <td class="code-text-mono col-mobile-hide">${profile.eid || '<span style="color: var(--text-muted);">--</span>'}</td>
                 <td><span class="status-pill ${stateClass}">${profile.state}</span></td>
                 <td>
                     <div class="btn-actions">

@@ -1267,6 +1267,13 @@ select:focus-visible {
     border-color: var(--primary-glow);
 }
 
+/* Responsive Table Columns */
+@media (max-width: 768px) {
+    .col-mobile-hide {
+        display: none !important;
+    }
+}
+
 /* Table Design */
 .table-container {
     overflow-x: auto;

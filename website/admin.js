@@ -440,8 +440,8 @@ function renderUsers() {
             <tr>
                 <td class="code-text-mono" style="font-weight:600;">${user.username}</td>
                 <td>${user.displayname}</td>
-                <td>${user.email}</td>
-                <td><div style="display:flex; flex-wrap:wrap; gap:0.25rem;">${groupPills}</div></td>
+                <td class="col-mobile-hide">${user.email}</td>
+                <td class="col-mobile-hide"><div style="display:flex; flex-wrap:wrap; gap:0.25rem;">${groupPills}</div></td>
                 <td>
                     <div class="btn-actions">
                         <button class="btn btn-action-trigger btn-secondary-action" onclick="openEditUserModal('${user.username}', '${user.displayname}', '${user.email}', '${user.groups.join(',')}')" ${actionsDisabled}>
