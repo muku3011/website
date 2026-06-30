@@ -40,6 +40,8 @@ build/
 # IDE/editor
 .idea/
 .vscode/
+website.code-workspace
+
 
 # Java / Maven
 **/target/
