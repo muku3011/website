@@ -921,9 +921,6 @@ function enforceRolePermissions() {
             dropdownRole.style.background = 'hsla(145, 80%, 50%, 0.15)';
             dropdownRole.style.color = 'var(--success-glow)';
             dropdownRole.style.border = '1px solid hsla(145, 80%, 50%, 0.3)';
-            
-            const navAdmin = document.getElementById('nav-admin');
-            if (navAdmin) navAdmin.style.display = 'inline-block';
         } else {
             dropdownRole.textContent = 'Viewer';
             dropdownRole.style.background = 'hsla(14, 90%, 60%, 0.15)';

@@ -175,6 +175,9 @@ body {
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
+    transition: var(--transition-smooth);
+    min-height: 88px;
+    box-sizing: border-box;
 }
 
 .brand {
@@ -2424,4 +2427,5 @@ select:focus-visible {
 .app-header.header-scrolled .header-container {
     padding-top: 0.65rem !important;
     padding-bottom: 0.65rem !important;
+    min-height: 74px;
 }
