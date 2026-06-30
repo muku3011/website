@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.userRole = 'admin';
     } else {
         userGroupsVal = getCookie('hutta_groups') || 'users';
-        const isAdmin = userGroupsVal.split(',').includes('admins');
+        const isAdmin = userGroupsVal.split(',').includes('users');
         window.userRole = isAdmin ? 'admin' : 'viewer';
     }
 
@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initJwtDecoder();
     initCryptoOperations();
     initKeyGenerator();
+    initOpenApiTools();
 });
 
 function getInitials(name) {
@@ -177,8 +178,56 @@ function initRegexTester() {
     const regexMatchStatus = document.getElementById('regex-match-status');
     const regexMatchHighlights = document.getElementById('regex-match-highlights');
     const regexGroupsList = document.getElementById('regex-groups-list');
+    const btnExplain = document.getElementById('btn-explain-regex');
+    const regexExplanationPanel = document.getElementById('regex-explanation-panel');
 
     if (!regexPattern || !regexInput) return;
+
+    if (btnExplain) {
+        btnExplain.addEventListener('click', () => {
+            const pattern = regexPattern.value;
+            if (!pattern) {
+                if (regexExplanationPanel) {
+                    regexExplanationPanel.style.display = 'block';
+                    regexExplanationPanel.innerHTML = '<strong style="color:var(--warning-glow);">Error:</strong> Please provide a regex pattern to explain.';
+                }
+                return;
+            }
+            
+            const exp = [];
+            if (pattern.startsWith('^')) exp.push('- <code class="code-text-mono">^</code> : Matches the start of the string.');
+            if (pattern.endsWith('$')) exp.push('- <code class="code-text-mono">$</code> : Matches the end of the string.');
+            if (pattern.includes('\\b')) exp.push('- <code class="code-text-mono">\\b</code> : Matches a word boundary.');
+            if (pattern.includes('\\d')) exp.push('- <code class="code-text-mono">\\d</code> : Matches any digit (0-9).');
+            if (pattern.includes('\\w')) exp.push('- <code class="code-text-mono">\\w</code> : Matches any word character (alphanumeric & underscore).');
+            if (pattern.includes('\\s')) exp.push('- <code class="code-text-mono">\\s</code> : Matches any whitespace character.');
+            if (pattern.includes('.*')) exp.push('- <code class="code-text-mono">.*</code> : Matches any character (except newline) zero or more times.');
+            if (pattern.includes('.+')) exp.push('- <code class="code-text-mono">.+</code> : Matches any character (except newline) one or more times.');
+            if (pattern.includes('[')) exp.push('- <code class="code-text-mono">[...]</code> : Matches any single character in the specified list/range.');
+            if (pattern.includes('(')) exp.push('- <code class="code-text-mono">(...)</code> : Captures the matched sub-expression as a group.');
+            if (pattern.includes('?')) exp.push('- <code class="code-text-mono">?</code> : Makes the preceding token optional (0 or 1 time) or makes a quantifier lazy.');
+            if (pattern.includes('|')) exp.push('- <code class="code-text-mono">|</code> : Acts like a boolean OR (matches the expression before or after the pipe).');
+            
+            let html = '<strong style="color:var(--primary-glow); margin-bottom: 0.5rem; display: inline-block;">Pattern Explanation (Basic Breakdown)</strong><br>';
+            if (exp.length > 0) {
+                html += exp.join('<br>');
+                html += '<br><br><span style="font-size: 0.8rem; opacity: 0.8;">Note: This is a simplified breakdown of recognized tokens.</span>';
+            } else {
+                html += 'No basic tokens recognized for automated explanation. It looks like literal characters or a complex pattern.';
+            }
+            
+            if (regexExplanationPanel) {
+                if (regexExplanationPanel.style.display === 'block' && regexExplanationPanel.dataset.pattern === pattern) {
+                    regexExplanationPanel.style.display = 'none';
+                    regexExplanationPanel.dataset.pattern = '';
+                } else {
+                    regexExplanationPanel.style.display = 'block';
+                    regexExplanationPanel.innerHTML = html;
+                    regexExplanationPanel.dataset.pattern = pattern;
+                }
+            }
+        });
+    }
 
     function runRegexTest() {
         const pattern = regexPattern.value;

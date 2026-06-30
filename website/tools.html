@@ -82,11 +82,51 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                     <span>JWT Decoder</span>
                 </li>
+                <li class="tools-menu-item" data-target="openapi-tools">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                    <span>OpenAPI Tools</span>
+                </li>
             </ul>
         </aside>
 
         <!-- Main Tool Area -->
         <section class="tools-content widget-card">
+            
+            <!-- PANEL: OpenAPI Tools -->
+            <div id="openapi-tools" class="tool-panel">
+                <div class="panel-header">
+                    <h2>OpenAPI & YAML Tools</h2>
+                    <p>Convert between YAML and JSON, or render readable API documentation from OpenAPI specifications.</p>
+                </div>
+                <div class="tool-io-grid" style="grid-template-columns: 1fr 1fr; align-items: stretch;">
+                    <div class="input-pane" style="display: flex; flex-direction: column;">
+                        <div class="pane-header">
+                            <span>Input (YAML or JSON)</span>
+                            <div class="action-buttons-group">
+                                <button class="btn btn-secondary btn-small" id="btn-to-yaml">Convert to YAML</button>
+                                <button class="btn btn-secondary btn-small" id="btn-to-json">Convert to JSON</button>
+                                <button class="btn btn-secondary btn-small" id="btn-render-docs">Render Docs</button>
+                                <button class="btn btn-secondary btn-small" id="btn-openapi-clear">Clear</button>
+                            </div>
+                        </div>
+                        <textarea class="code-editor" id="openapi-input" placeholder="Paste your OpenAPI YAML or JSON here..." spellcheck="false" style="flex: 1; min-height: 400px;"></textarea>
+                        <div id="openapi-error-log" class="validation-msg error" style="display: none; margin-top: 0.5rem;"></div>
+                    </div>
+                    <div class="output-pane" style="display: flex; flex-direction: column; background: var(--console-bg); border-radius: var(--border-radius-sm); border: 1px solid var(--card-border); overflow: hidden; position: relative;">
+                        <!-- Raw Output Container -->
+                        <div id="openapi-raw-container" style="display: flex; flex-direction: column; height: 100%; width: 100%;">
+                            <div class="pane-header" style="border-bottom: 1px solid var(--card-border); padding: 0.5rem 1rem;">
+                                <span>Output Data</span>
+                            </div>
+                            <textarea class="code-editor" id="openapi-output" readonly spellcheck="false" style="flex: 1; border: none; border-radius: 0;"></textarea>
+                        </div>
+                        <!-- Redoc Container -->
+                        <div id="openapi-redoc-container" style="display: none; height: 100%; width: 100%; background: #ffffff; overflow-y: auto;">
+                            <!-- Redoc will render here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <!-- PANEL: JSON Formatter -->
             <div id="json-formatter" class="tool-panel active">
@@ -145,15 +185,16 @@
                                     <input type="checkbox" id="flag-m"> m
                                 </label>
                             </div>
+                            <button class="btn btn-action-trigger btn-secondary-action btn-small" id="btn-explain-regex" style="margin-top: 1rem; width: 100%;">Explain Pattern</button>
                         </div>
                     </div>
                     
                     <div style="background: var(--console-bg); border-radius: var(--border-radius-sm); border: 1px solid var(--card-border); padding: 1rem; margin-top: 0.5rem;">
                         <h4 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 0.9rem;">Regex Examples</h4>
                         <ul style="font-size: 0.85rem; padding-left: 1.5rem; margin-bottom: 1rem; color: var(--text-secondary);">
-                            <li><strong>Email:</strong> <code class="code-text-mono">\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b</code></li>
-                            <li><strong>URL:</strong> <code class="code-text-mono">https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)</code></li>
-                            <li><strong>Date (YYYY-MM-DD):</strong> <code class="code-text-mono">^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$</code></li>
+                            <li><strong>Email:</strong> <code class="code-text-mono">\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b</code></li>
+                            <li><strong>URL:</strong> <code class="code-text-mono">https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)</code></li>
+                            <li><strong>Date (YYYY-MM-DD):</strong> <code class="code-text-mono">^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$</code></li>
                         </ul>
                         <h4 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 0.9rem;">Flags Definition</h4>
                         <ul style="font-size: 0.85rem; padding-left: 1.5rem; margin-bottom: 0; color: var(--text-secondary);">
@@ -176,6 +217,7 @@
                             </div>
                             <div class="regex-results-container" style="background: var(--console-bg); border-radius: var(--border-radius-sm); border: 1px solid var(--card-border); padding: 1rem; overflow-y: auto; height: 100%;">
                                 <div id="regex-match-status" class="validation-msg success" style="margin-bottom: 0.75rem;">No matches yet</div>
+                                <div id="regex-explanation-panel" style="display: none; margin-bottom: 1rem; background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 4px; border: 1px dashed var(--primary-glow); font-size: 0.85rem; line-height: 1.6; color: var(--text-secondary);"></div>
                                 <div id="regex-match-highlights" style="margin-bottom: 1rem; border-bottom: 1px solid var(--card-border); padding-bottom: 1rem; line-height: 1.5; white-space: pre-wrap; font-family: monospace;"></div>
                                 <div id="regex-groups-list" class="code-text-mono" style="font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.25rem;"></div>
                             </div>
@@ -483,6 +525,8 @@
         <p>&copy; 2026 hutta.in. Created by Mukesh Joshi. Built with HTML5, CSS Grid, and vanilla JS. Powered by Raspberry Pi, GCP, Authelia & Certbot.</p>
     </footer>
 
+    <script src="libs/js-yaml.min.js"></script>
+    <script src="libs/redoc.standalone.js"></script>
     <script src="tools.js"></script>
 </body>
 </html>
