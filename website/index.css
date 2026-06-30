@@ -180,6 +180,22 @@ body {
     box-sizing: border-box;
 }
 
+@media (min-width: 769px) {
+    .header-container {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    }
+    .brand {
+        justify-self: start;
+    }
+    .nav-menu {
+        justify-self: center;
+    }
+    .header-actions {
+        justify-self: end;
+    }
+}
+
 .brand {
     display: flex;
     align-items: center;
