@@ -1463,40 +1463,62 @@ function initOpenApiTools() {
             return showError('Redoc library failed to load. Check that libs/redoc.standalone.js is accessible.');
         }
 
-        showRedocPane();
-        if (redocEl) {
-            redocEl.innerHTML = '';
-            try {
-                Redoc.init(
-                    specObj,
-                    {
-                        scrollYOffset: 60,
-                        hideDownloadButton: false,
-                        theme: {
-                            colors: {
-                                primary: { main: '#6d28d9' },
-                            },
-                            typography: {
-                                fontFamily: '"Inter", "Segoe UI", sans-serif',
-                                headings: {
-                                    fontFamily: '"Outfit", "Inter", sans-serif',
-                                },
-                                code: {
-                                    fontFamily: '"JetBrains Mono", "Fira Code", monospace',
-                                },
-                            },
-                            sidebar: {
-                                backgroundColor: '#0f172a',
-                                textColor: '#94a3b8',
-                            },
-                        },
-                    },
-                    redocEl
-                );
-            } catch (e) {
-                showError('Redoc render failed: ' + e.message);
-                showRawOutput('');
-            }
+        // Build the absolute URL to redoc so the new window can load it
+        const redocSrc = window.location.origin + '/libs/redoc.standalone.js';
+        const apiTitle = (specObj.info && specObj.info.title) ? specObj.info.title : 'API Documentation';
+
+        // Serialize spec safely for inline embedding
+        let specJson;
+        try {
+            specJson = JSON.stringify(specObj);
+        } catch (e) {
+            return showError('Failed to serialise spec: ' + e.message);
         }
+
+        const docWin = window.open('', '_blank');
+        if (!docWin) {
+            return showError('Pop-up was blocked by the browser. Please allow pop-ups for this site and try again.');
+        }
+
+        docWin.document.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(apiTitle)}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="redoc-container"></div>
+  <script src="${redocSrc}"><\/script>
+  <script>
+    Redoc.init(
+      ${specJson},
+      {
+        scrollYOffset: 0,
+        hideDownloadButton: false,
+        theme: {
+          colors: { primary: { main: '#6d28d9' } },
+          typography: {
+            fontFamily: '"Inter", "Segoe UI", sans-serif',
+            headings: { fontFamily: '"Outfit", "Inter", sans-serif' },
+            code: { fontFamily: '"JetBrains Mono", "Fira Code", monospace' }
+          },
+          sidebar: {
+            backgroundColor: '#0f172a',
+            textColor: '#94a3b8'
+          }
+        }
+      },
+      document.getElementById('redoc-container')
+    );
+  <\/script>
+</body>
+</html>`);
+        docWin.document.close();
     });
-}
+});
