@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hutta.in | Developer Utilities</title>
+    <meta name="description" content="Local web-based developer utility workspace for hutta.in. Zero external calls, secure in-browser crypto, and encoding tools.">
+    <!-- Prevent Browser Caching of Protected Pages -->
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css?v=6">
+    <link rel="icon" type="image/png" href="favicon.png">
+</head>
+<body class="dark-theme">
+
+    <!-- Navigation Header -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <a href="index.html" class="brand-link">
+                    <div class="logo-orb"></div>
+                    <h1>hutta.in</h1>
+                </a>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="profiles.html" class="nav-link">Profiles</a>
+                <a href="admin.html" class="nav-link" id="nav-admin">Admin</a>
+                <a href="tools.html" class="nav-link active">Tools</a>
+            </nav>
+            <div class="header-actions">
+                <!-- User Profile Dropdown -->
+                <div class="user-profile-section" id="user-profile-menu">
+                    <button class="user-profile-trigger" id="user-profile-trigger" aria-label="User menu" aria-haspopup="true">
+                        <div class="user-avatar" id="user-avatar-initials">U</div>
+                        <span class="user-display-name" id="user-display-name-label">Loading...</span>
+                        <svg class="chevron-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                    </button>
+                    <div class="user-profile-dropdown" id="user-profile-dropdown">
+                        <div class="user-dropdown-header">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <span class="user-signed-in-label">Signed in as</span>
+                                <span class="badge" id="dropdown-role-badge">Role: --</span>
+                            </div>
+                            <div class="user-identity">
+                                <span class="user-display-name-header" id="dropdown-display-name">Loading...</span>
+                                <span class="user-card-username" id="dropdown-username-handle"></span>
+                            </div>
+                            <span class="user-email-header" id="dropdown-email">--</span>
+                        </div>
+                        
+                        <div class="dropdown-divider"></div>
+                        
+                        <div class="dropdown-footer-actions" style="justify-content: flex-end;">
+                            <button id="logout-btn" class="btn btn-secondary btn-logout">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                <span>Sign Out</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="theme-toggle" class="btn-icon" aria-label="Toggle light and dark theme" title="Toggle Theme">
+                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="tools-dashboard-grid">
+        <!-- Sidebar Navigation -->
+        <aside class="tools-sidebar widget-card">
+            <div class="sidebar-header">
+                <h3>Developer Toolbox</h3>
+            </div>
+            <ul class="tools-menu">
+                <li class="tools-menu-item active" data-target="json-formatter">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                    <span>JSON Formatter</span>
+                </li>
+                <li class="tools-menu-item" data-target="regex-tester">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    <span>Regex Tester</span>
+                </li>
+                <li class="tools-menu-item" data-target="crypto-ops">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    <span>Crypto Operations</span>
+                </li>
+                <li class="tools-menu-item" data-target="key-gen">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                    <span>Key Generator</span>
+                </li>
+                <li class="tools-menu-item" data-target="url-encoder">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    <span>URL Encoder / Decoder</span>
+                </li>
+                <li class="tools-menu-item" data-target="base64-converter">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    <span>Base64 Converter</span>
+                </li>
+                <li class="tools-menu-item" data-target="hash-generator">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/></svg>
+                    <span>Hash Generator</span>
+                </li>
+                <li class="tools-menu-item" data-target="jwt-decoder">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <span>JWT Decoder</span>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Tool Area -->
+        <section class="tools-content widget-card">
+            
+            <!-- PANEL: JSON Formatter -->
+            <div id="json-formatter" class="tool-panel active">
+                <div class="panel-header">
+                    <h2>JSON Formatter / Minifier</h2>
+                    <p>Format, minify, and validate JSON data locally.</p>
+                </div>
+                <div class="tool-io-grid">
+                    <div class="input-pane">
+                        <div class="pane-header">
+                            <span>Input Raw JSON</span>
+                            <div class="action-buttons-group">
+                                <button class="btn btn-secondary btn-small" id="btn-json-format">Format</button>
+                                <button class="btn btn-secondary btn-small" id="btn-json-minify">Minify</button>
+                                <button class="btn btn-secondary btn-small" id="btn-json-clear">Clear</button>
+                            </div>
+                        </div>
+                        <textarea class="code-editor" id="json-input" placeholder='Paste JSON here, e.g. {"name": "Mukesh", "role": "developer"}' spellcheck="false"></textarea>
+                        <div id="json-error-log" class="validation-msg error" style="display: none;"></div>
+                    </div>
+                    <div class="output-pane">
+                        <div class="pane-header">
+                            <span>Output Result</span>
+                            <div class="action-buttons-group">
+                                <button class="btn btn-primary-action btn-small" id="btn-json-copy">Copy</button>
+                                <button class="btn btn-secondary-action btn-small" id="btn-json-download">Download</button>
+                            </div>
+                        </div>
+                        <pre class="code-viewer-container"><code id="json-output" class="code-viewer text-muted">Output will appear here...</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL: Regex Tester -->
+            <div id="regex-tester" class="tool-panel">
+                <div class="panel-header">
+                    <h2>Regex Tester</h2>
+                    <p>Validate regular expressions and view matched groups in real-time.</p>
+                </div>
+                <div class="tool-form-layout" style="display: flex; flex-direction: column; gap: 1rem; height: 100%;">
+                    <div class="form-row-group">
+                        <div class="form-group" style="flex: 2;">
+                            <label for="regex-pattern">Regular Expression</label>
+                            <input type="text" id="regex-pattern" class="form-input code-text-mono" placeholder="e.g. \b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b">
+                        </div>
+                        <div class="form-group" style="flex: 1; max-width: 250px;">
+                            <label>Flags</label>
+                            <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
+                                <label style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem; cursor: pointer;">
+                                    <input type="checkbox" id="flag-g" checked> g
+                                </label>
+                                <label style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem; cursor: pointer;">
+                                    <input type="checkbox" id="flag-i"> i
+                                </label>
+                                <label style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.85rem; cursor: pointer;">
+                                    <input type="checkbox" id="flag-m"> m
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-io-grid">
+                        <div class="input-pane">
+                            <div class="pane-header">
+                                <span>Test String</span>
+                            </div>
+                            <textarea class="code-editor" id="regex-input" placeholder="Enter test string here..." spellcheck="false"></textarea>
+                        </div>
+                        <div class="output-pane">
+                            <div class="pane-header">
+                                <span>Match Results & Groups</span>
+                            </div>
+                            <div class="regex-results-container" style="background: var(--console-bg); border-radius: var(--border-radius-sm); border: 1px solid var(--card-border); padding: 1rem; overflow-y: auto; height: 100%;">
+                                <div id="regex-match-status" class="validation-msg success" style="margin-bottom: 0.75rem;">No matches yet</div>
+                                <div id="regex-match-highlights" style="margin-bottom: 1rem; border-bottom: 1px solid var(--card-border); padding-bottom: 1rem; line-height: 1.5; white-space: pre-wrap; font-family: monospace;"></div>
+                                <div id="regex-groups-list" class="code-text-mono" style="font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.25rem;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL: Crypto Operations -->
+            <div id="crypto-ops" class="tool-panel">
+                <div class="panel-header">
+                    <h2>Cryptographic Operations</h2>
+                    <p>Perform symmetric and asymmetric encryption and signatures locally in the browser.</p>
+                </div>
+                <div class="tool-io-grid">
+                    <div class="input-pane">
+                        <div class="pane-header">
+                            <span>Input Payload (Plaintext or Base64 Cipher)</span>
+                        </div>
+                        <textarea class="code-editor" id="crypto-payload" placeholder="Enter text to encrypt/decrypt, or sign/verify..." spellcheck="false"></textarea>
+                        
+                        <div class="crypto-config-box" style="margin-top: 1rem; padding: 1rem; background: var(--console-bg); border: 1px solid var(--card-border); border-radius: var(--border-radius-sm); display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div class="form-row-group">
+                                <div class="form-group">
+                                    <label for="crypto-op-type">Operation</label>
+                                    <select id="crypto-op-type" class="filter-select">
+                                        <option value="encrypt-sym">Symmetric Encryption (AES)</option>
+                                        <option value="decrypt-sym">Symmetric Decryption (AES)</option>
+                                        <option value="encrypt-asym">Asymmetric Encryption (RSA-OAEP)</option>
+                                        <option value="decrypt-asym">Asymmetric Decryption (RSA-OAEP)</option>
+                                        <option value="sign">Digital Signature (HMAC / RSA / ECDSA)</option>
+                                        <option value="verify">Signature Verification</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="crypto-algorithm">Algorithm</label>
+                                    <select id="crypto-algorithm" class="filter-select">
+                                        <!-- Populated dynamically -->
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Key controls -->
+                            <div class="form-group" id="crypto-passphrase-group">
+                                <label for="crypto-passphrase">Passphrase / Secret Key</label>
+                                <input type="password" id="crypto-passphrase" class="form-input" placeholder="Enter secret password for key derivation...">
+                            </div>
+
+                            <div class="form-group" id="crypto-key-import-group" style="display: none;">
+                                <label for="crypto-key-import">Imported Public/Private Key (PEM or JWK format)</label>
+                                <textarea id="crypto-key-import" class="form-input code-editor" style="height: 80px;" placeholder="Paste RSA/EC public or private key block..."></textarea>
+                            </div>
+
+                            <div class="form-group" id="crypto-signature-group" style="display: none;">
+                                <label for="crypto-signature-input">Signature (Base64 or Hex, required for Verification)</label>
+                                <input type="text" id="crypto-signature-input" class="form-input" placeholder="Paste signature to verify...">
+                            </div>
+
+                            <button class="btn btn-primary-action" id="btn-crypto-execute" style="width: 100%; justify-content: center; margin-top: 0.5rem;">Execute Operation</button>
+                        </div>
+                    </div>
+                    
+                    <div class="output-pane">
+                        <div class="pane-header">
+                            <span>Result Output</span>
+                            <div class="action-buttons-group">
+                                <button class="btn btn-primary-action btn-small" id="btn-crypto-copy">Copy</button>
+                            </div>
+                        </div>
+                        <div class="crypto-results-container" style="display: flex; flex-direction: column; height: 100%;">
+                            <pre class="code-viewer-container" style="flex: 1;"><code id="crypto-output" class="code-viewer text-muted">Result will appear here...</code></pre>
+                            <div id="crypto-status-indicator" class="validation-msg" style="display: none; margin-top: 0.75rem;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL: Key Generator -->
+            <div id="key-gen" class="tool-panel">
+                <div class="panel-header">
+                    <h2>Key & Keypair Generator</h2>
+                    <p>Generate secure symmetric keys or asymmetric public/private keypairs locally.</p>
+                </div>
+                <div class="tool-io-grid">
+                    <div class="input-pane">
+                        <div class="pane-header">
+                            <span>Generator Settings</span>
+                        </div>
+                        <div class="crypto-config-box" style="padding: 1rem; background: var(--console-bg); border: 1px solid var(--card-border); border-radius: var(--border-radius-sm); display: flex; flex-direction: column; gap: 1rem; height: 100%;">
+                            <div class="form-group">
+                                <label for="keygen-algorithm">Key Type & Algorithm</label>
+                                <select id="keygen-algorithm" class="filter-select">
+                                    <option value="aes-256">AES Symmetric Key (256-bit)</option>
+                                    <option value="aes-128">AES Symmetric Key (128-bit)</option>
+                                    <option value="hmac-256">HMAC Symmetric Key (SHA-256)</option>
+                                    <option value="rsa-oaep">RSA Keypair for Encryption (RSA-OAEP)</option>
+                                    <option value="rsa-pss">RSA Keypair for Signatures (RSA-PSS)</option>
+                                    <option value="ecdsa-p256">ECDSA Keypair for Signatures (NIST P-256)</option>
+                                    <option value="ecdsa-p384">ECDSA Keypair for Signatures (NIST P-384)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" id="keygen-rsa-size-group" style="display: none;">
+                                <label>RSA Modulus Size</label>
+                                <div style="display: flex; gap: 1rem; margin-top: 0.25rem;">
+                                    <label style="display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer;">
+                                        <input type="radio" name="keygen-rsa-size" value="2048" checked> 2048-bit
+                                    </label>
+                                    <label style="display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer;">
+                                        <input type="radio" name="keygen-rsa-size" value="4096"> 4096-bit
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="keygen-format">Export Format</label>
+                                <select id="keygen-format" class="filter-select">
+                                    <option value="pem">PEM Format (Base64 encoded block)</option>
+                                    <option value="jwk">JWK Format (JSON Web Key)</option>
+                                    <option value="hex">Hex / Raw (Symmetric Keys only)</option>
+                                </select>
+                            </div>
+
+                            <button class="btn btn-primary-action" id="btn-keygen-generate" style="width: 100%; justify-content: center; margin-top: auto;">Generate Key(s)</button>
+                        </div>
+                    </div>
+                    
+                    <div class="output-pane">
+                        <div class="pane-header">
+                            <span id="keygen-result-label">Generated Output</span>
+                            <div class="action-buttons-group">
+                                <button class="btn btn-primary-action btn-small" id="btn-keygen-copy" style="display: none;">Copy All</button>
+                                <button class="btn btn-secondary-action btn-small" id="btn-keygen-download" style="display: none;">Download</button>
+                            </div>
+                        </div>
+                        <div class="keygen-results-container" style="display: flex; flex-direction: column; gap: 1rem; height: 100%; overflow-y: auto; background: var(--console-bg); border: 1px solid var(--card-border); border-radius: var(--border-radius-sm); padding: 1rem;">
+                            <!-- Output segments will be dynamically populated -->
+                            <div id="keygen-output-wrapper" style="display: flex; flex-direction: column; gap: 1rem;">
+                                <span class="text-muted" style="font-size: 0.9rem;">Click Generate to create secure cryptographic keys.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL: URL Encoder / Decoder -->
+            <div id="url-encoder" class="tool-panel">
+                <div class="panel-header">
+                    <h2>URL Encoder / Decoder</h2>
+                    <p>Safely encode or decode URL components locally.</p>
+                </div>
+                <div class="tool-io-grid">
+                    <div class="input-pane">
+                        <div class="pane-header">
+                            <span>Source Input</span>
+                            <div class="action-buttons-group">
+                                <button class="btn btn-secondary btn-small" id="btn-url-encode">Encode</button>
+                                <button class="btn btn-secondary btn-small" id="btn-url-decode">Decode</button>
+                                <button class="btn btn-secondary btn-small" id="btn-url-clear">Clear</button>
+                            </div>
+                        </div>
+                        <textarea class="code-editor" id="url-input" placeholder="Enter text or URL parameter string here..." spellcheck="false"></textarea>
+                    </div>
+                    <div class="output-pane">
+                        <div class="pane-header">
+                            <span>Output Result</span>
+                            <div class="action-buttons-group">
+                                <button class="btn btn-primary-action btn-small" id="btn-url-copy">Copy</button>
+                            </div>
+                        </div>
+                        <textarea class="code-editor code-viewer" id="url-output" readonly placeholder="Output will appear here..." spellcheck="false"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL: Base64 Converter -->
+            <div id="base64-converter" class="tool-panel">
+                <div class="panel-header">
+                    <h2>Base64 Converter</h2>
+                    <p>Encode plain text or binary files to Base64, or decode them back.</p>
+                </div>
+                <div class="tool-io-grid">
+                    <div class="input-pane">
+                        <div class="pane-header">
+                            <span>Source Input</span>
+                            <div class="action-buttons-group">
+                                <button class="btn btn-secondary btn-small" id="btn-b64-encode">Encode</button>
+                                <button class="btn btn-secondary btn-small" id="btn-b64-decode">Decode</button>
+                                <button class="btn btn-secondary btn-small" id="btn-b64-clear">Clear</button>
+                            </div>
+                        </div>
+                        <textarea class="code-editor" id="b64-input" placeholder="Enter text or Base64 string here..." spellcheck="false"></textarea>
+                        
+                        <div style="margin-top: 1rem; border-top: 1px solid var(--card-border); padding-top: 1rem;">
+                            <label style="display: block; margin-bottom: 0.4rem; font-size: 0.9rem;">Or Convert Binary File:</label>
+                            <input type="file" id="b64-file-input" style="width: 100%; border: 1px dashed var(--card-border); padding: 0.5rem; border-radius: var(--border-radius-sm); font-size: 0.85rem;">
+                        </div>
+                    </div>
+                    <div class="output-pane">
+                        <div class="pane-header">
+                            <span>Output Result</span>
+                            <div class="action-buttons-group">
+                                <button class="btn btn-primary-action btn-small" id="btn-b64-copy">Copy</button>
+                            </div>
+                        </div>
+                        <textarea class="code-editor code-viewer" id="b64-output" readonly placeholder="Output will appear here..." spellcheck="false"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL: Hash Generator -->
+            <div id="hash-generator" class="tool-panel">
+                <div class="panel-header">
+                    <h2>Hash / Digest Generator</h2>
+                    <p>Calculate SHA-256, SHA-384, SHA-512, or SHA-1 hashes of your input locally.</p>
+                </div>
+                <div class="tool-io-grid">
+                    <div class="input-pane" style="display: flex; flex-direction: column;">
+                        <div class="pane-header">
+                            <span>Input Content</span>
+                        </div>
+                        <textarea class="code-editor" id="hash-input" placeholder="Type or paste text to generate cryptographic hashes..." style="flex: 1;" spellcheck="false"></textarea>
+                    </div>
+                    <div class="output-pane" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <div class="pane-header">
+                            <span>Calculated Digests</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem; background: var(--console-bg); border-radius: var(--border-radius-sm); border: 1px solid var(--card-border); padding: 1rem; overflow-y: auto; height: 100%;">
+                            <div class="form-group">
+                                <label style="display: flex; justify-content: space-between;">
+                                    <span>SHA-256</span>
+                                    <a href="#" class="code-text-mono" id="btn-copy-sha256" style="color: var(--primary-glow); font-size: 0.75rem; text-decoration: none;">Copy</a>
+                                </label>
+                                <input type="text" id="hash-sha256" readonly class="form-input code-text-mono" style="font-size: 0.8rem; background: var(--card-bg);" placeholder="SHA-256 hash output">
+                            </div>
+                            <div class="form-group">
+                                <label style="display: flex; justify-content: space-between;">
+                                    <span>SHA-512</span>
+                                    <a href="#" class="code-text-mono" id="btn-copy-sha512" style="color: var(--primary-glow); font-size: 0.75rem; text-decoration: none;">Copy</a>
+                                </label>
+                                <input type="text" id="hash-sha512" readonly class="form-input code-text-mono" style="font-size: 0.8rem; background: var(--card-bg);" placeholder="SHA-512 hash output">
+                            </div>
+                            <div class="form-group">
+                                <label style="display: flex; justify-content: space-between;">
+                                    <span>SHA-384</span>
+                                    <a href="#" class="code-text-mono" id="btn-copy-sha384" style="color: var(--primary-glow); font-size: 0.75rem; text-decoration: none;">Copy</a>
+                                </label>
+                                <input type="text" id="hash-sha384" readonly class="form-input code-text-mono" style="font-size: 0.8rem; background: var(--card-bg);" placeholder="SHA-384 hash output">
+                            </div>
+                            <div class="form-group">
+                                <label style="display: flex; justify-content: space-between;">
+                                    <span>SHA-1</span>
+                                    <a href="#" class="code-text-mono" id="btn-copy-sha1" style="color: var(--primary-glow); font-size: 0.75rem; text-decoration: none;">Copy</a>
+                                </label>
+                                <input type="text" id="hash-sha1" readonly class="form-input code-text-mono" style="font-size: 0.8rem; background: var(--card-bg);" placeholder="SHA-1 hash output">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL: JWT Decoder -->
+            <div id="jwt-decoder" class="tool-panel">
+                <div class="panel-header">
+                    <h2>JWT Decoder</h2>
+                    <p>Decode and parse JSON Web Tokens locally in the browser.</p>
+                </div>
+                <div class="tool-io-grid">
+                    <div class="input-pane">
+                        <div class="pane-header">
+                            <span>JSON Web Token</span>
+                            <div class="action-buttons-group">
+                                <button class="btn btn-secondary btn-small" id="btn-jwt-clear">Clear</button>
+                            </div>
+                        </div>
+                        <textarea class="code-editor" id="jwt-input" placeholder="Paste JWT token here (eyJo...) " spellcheck="false" style="font-size: 0.8rem;"></textarea>
+                        <div id="jwt-error-log" class="validation-msg error" style="display: none;"></div>
+                    </div>
+                    <div class="output-pane" style="display: flex; flex-direction: column; gap: 0.75rem; overflow-y: auto;">
+                        <div class="pane-header">
+                            <span>Decoded Segment Data</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem; flex: 1;">
+                            <div style="display: flex; flex-direction: column; flex: 1;">
+                                <span style="font-size: 0.85rem; font-weight: 600; color: var(--warning-glow); margin-bottom: 0.25rem;">Header</span>
+                                <pre class="code-viewer-container" style="flex: 1; margin: 0;"><code id="jwt-header-output" class="code-viewer text-muted">JWT Header JSON</code></pre>
+                            </div>
+                            <div style="display: flex; flex-direction: column; flex: 2;">
+                                <span style="font-size: 0.85rem; font-weight: 600; color: var(--primary-glow); margin-bottom: 0.25rem;">Payload</span>
+                                <pre class="code-viewer-container" style="flex: 1; margin: 0;"><code id="jwt-payload-output" class="code-viewer text-muted">JWT Payload JSON</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <p>&copy; 2026 hutta.in. Created by Mukesh Joshi. Built with HTML5, CSS Grid, and vanilla JS. Powered by Raspberry Pi, GCP, Authelia & Certbot.</p>
+    </footer>
+
+    <script src="tools.js"></script>
+</body>
+</html>
