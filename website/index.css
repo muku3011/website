@@ -89,6 +89,7 @@ body.light-theme {
 
 html {
     overflow-y: scroll;
+    background-color: var(--bg-gradient-end);
 }
 
 * {
