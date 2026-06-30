@@ -1035,6 +1035,19 @@ input:checked + .slider:before {
 .success-text { color: var(--success-glow) !important; }
 .warning-text { color: var(--warning-glow) !important; }
 
+/* Form Groups (General) */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.form-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
 /* Dialog forms */
 .dialog-form .form-group {
     display: flex;
