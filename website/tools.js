@@ -1328,3 +1328,175 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
 }
+
+// -------------------------------------------------------------
+// OpenAPI & YAML Tools
+// -------------------------------------------------------------
+function initOpenApiTools() {
+    const inputArea    = document.getElementById('openapi-input');
+    const outputArea   = document.getElementById('openapi-output');
+    const rawContainer = document.getElementById('openapi-raw-container');
+    const redocEl      = document.getElementById('openapi-redoc-container');
+    const errorLog     = document.getElementById('openapi-error-log');
+
+    if (!inputArea) return;
+
+    // ── Helpers ──────────────────────────────────────────────
+    function showError(msg) {
+        if (!errorLog) return;
+        errorLog.textContent = msg;
+        errorLog.style.display = 'block';
+    }
+
+    function hideError() {
+        if (!errorLog) return;
+        errorLog.style.display = 'none';
+        errorLog.textContent = '';
+    }
+
+    function showRawOutput(content) {
+        if (redocEl)      { redocEl.style.display = 'none'; redocEl.innerHTML = ''; }
+        if (rawContainer)   rawContainer.style.display = 'flex';
+        if (outputArea)     outputArea.value = content;
+    }
+
+    function showRedocPane() {
+        if (rawContainer) rawContainer.style.display = 'none';
+        if (redocEl)      redocEl.style.display = 'block';
+    }
+
+    /** Try JSON first, then YAML. Returns parsed object or throws. */
+    function parseAny(text) {
+        try {
+            return JSON.parse(text);
+        } catch (_) {
+            // fall through to YAML
+        }
+        return jsyaml.load(text);  // may throw YAMLException
+    }
+
+    /** Very basic check that the object looks like an OpenAPI/Swagger spec */
+    function looksLikeSpec(obj) {
+        return obj && typeof obj === 'object' &&
+            (obj.openapi || obj.swagger);
+    }
+
+    // ── Clear ────────────────────────────────────────────────
+    safeAddListener('btn-openapi-clear', 'click', () => {
+        inputArea.value = '';
+        if (outputArea)   outputArea.value = '';
+        if (redocEl)    { redocEl.innerHTML = ''; redocEl.style.display = 'none'; }
+        if (rawContainer) rawContainer.style.display = 'flex';
+        hideError();
+    });
+
+    // ── Convert to YAML ──────────────────────────────────────
+    safeAddListener('btn-to-yaml', 'click', () => {
+        hideError();
+        const input = inputArea.value.trim();
+        if (!input) return showError('Input is empty. Paste valid JSON to convert to YAML.');
+
+        let obj;
+        try {
+            obj = JSON.parse(input);
+        } catch (e) {
+            return showError('Invalid JSON: ' + e.message);
+        }
+
+        try {
+            const yaml = jsyaml.dump(obj, { indent: 2, lineWidth: -1 });
+            showRawOutput(yaml);
+        } catch (e) {
+            showError('YAML serialisation error: ' + e.message);
+        }
+    });
+
+    // ── Convert to JSON ──────────────────────────────────────
+    safeAddListener('btn-to-json', 'click', () => {
+        hideError();
+        const input = inputArea.value.trim();
+        if (!input) return showError('Input is empty. Paste valid YAML to convert to JSON.');
+
+        let obj;
+        try {
+            obj = jsyaml.load(input);
+        } catch (e) {
+            return showError('Invalid YAML: ' + e.message);
+        }
+
+        if (obj === null || obj === undefined) {
+            return showError('YAML parsed to null/empty. Please provide a non-empty YAML document.');
+        }
+
+        try {
+            showRawOutput(JSON.stringify(obj, null, 2));
+        } catch (e) {
+            showError('JSON serialisation error: ' + e.message);
+        }
+    });
+
+    // ── Render Docs ──────────────────────────────────────────
+    safeAddListener('btn-render-docs', 'click', () => {
+        hideError();
+        const input = inputArea.value.trim();
+        if (!input) return showError('Input is empty. Paste an OpenAPI YAML or JSON spec to render docs.');
+
+        // Auto-detect format
+        let specObj;
+        try {
+            specObj = parseAny(input);
+        } catch (e) {
+            return showError('Input must be valid JSON or YAML: ' + e.message);
+        }
+
+        if (!specObj || typeof specObj !== 'object') {
+            return showError('Parsed input is not an object. Please provide a valid OpenAPI spec.');
+        }
+
+        if (!looksLikeSpec(specObj)) {
+            return showError(
+                'Not a valid OpenAPI/Swagger spec — missing required "openapi" or "swagger" field at the root.'
+            );
+        }
+
+        if (typeof Redoc === 'undefined') {
+            return showError('Redoc library failed to load. Check that libs/redoc.standalone.js is accessible.');
+        }
+
+        showRedocPane();
+        if (redocEl) {
+            redocEl.innerHTML = '';
+            try {
+                Redoc.init(
+                    specObj,
+                    {
+                        scrollYOffset: 60,
+                        hideDownloadButton: false,
+                        theme: {
+                            colors: {
+                                primary: { main: '#6d28d9' },
+                            },
+                            typography: {
+                                fontFamily: '"Inter", "Segoe UI", sans-serif',
+                                headings: {
+                                    fontFamily: '"Outfit", "Inter", sans-serif',
+                                },
+                                code: {
+                                    fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+                                },
+                            },
+                            sidebar: {
+                                backgroundColor: '#0f172a',
+                                textColor: '#94a3b8',
+                            },
+                        },
+                    },
+                    redocEl
+                );
+            } catch (e) {
+                showError('Redoc render failed: ' + e.message);
+                showRawOutput('');
+            }
+        }
+    });
+}
