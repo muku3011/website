@@ -42,66 +42,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Profile Dropdown
-    let displayName = '';
-    let userNameVal = '';
-    let userEmailVal = '';
+    // Set User Role from Cookie (for nav visibility)
     let userGroupsVal = '';
-
     if (isLocal) {
-        displayName = 'Local Dev';
-        userNameVal = 'localadmin';
-        userEmailVal = 'admin@hutta.local';
-        userGroupsVal = 'admins, users';
         window.userRole = 'admin';
     } else {
-        userNameVal = getCookie('hutta_user') || 'viewer';
-        displayName = getCookie('hutta_name') || userNameVal;
-        userEmailVal = getCookie('hutta_email') || 'no-email@hutta.in';
         userGroupsVal = getCookie('hutta_groups') || 'users';
         const isAdmin = userGroupsVal.split(',').includes('admins');
         window.userRole = isAdmin ? 'admin' : 'viewer';
     }
 
-    // Enforce Role UI
-    const userTriggerLabel = document.getElementById('user-display-name-label');
-    const userInitials = document.getElementById('user-avatar-initials');
-    const dropdownDisplayName = document.getElementById('dropdown-display-name');
-    const dropdownUsernameHandle = document.getElementById('dropdown-username-handle');
-    const dropdownEmail = document.getElementById('dropdown-email');
-    const dropdownRole = document.getElementById('dropdown-role-badge');
-
-    if (userInitials) userInitials.textContent = getInitials(displayName);
-    if (userTriggerLabel) userTriggerLabel.textContent = displayName;
-    if (dropdownDisplayName) dropdownDisplayName.textContent = displayName;
-    if (dropdownUsernameHandle) dropdownUsernameHandle.textContent = `@${userNameVal}`;
-    if (dropdownEmail) dropdownEmail.textContent = userEmailVal;
-    if (dropdownRole) dropdownRole.textContent = `Role: ${window.userRole.toUpperCase()}`;
-
     const adminNav = document.getElementById('nav-admin');
     if (adminNav && window.userRole !== 'admin') {
         adminNav.style.display = 'none';
-    }
-
-    const profileMenu = document.getElementById('user-profile-menu');
-    const profileTrigger = document.getElementById('user-profile-trigger');
-    if (profileTrigger && profileMenu) {
-        profileTrigger.addEventListener('click', (e) => {
-            e.stopPropagation();
-            profileMenu.classList.toggle('active');
-        });
-        document.addEventListener('click', (e) => {
-            if (!profileMenu.contains(e.target)) {
-                profileMenu.classList.remove('active');
-            }
-        });
-    }
-
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
-            window.location.href = '/api/logout';
-        });
     }
 
     // Initialize all tools
@@ -394,10 +347,39 @@ function initBase64Converter() {
         }
     });
 
+    const b64Dropzone = document.getElementById('b64-dropzone');
+    if (b64Dropzone && b64FileInput) {
+        b64Dropzone.addEventListener('click', () => b64FileInput.click());
+
+        b64Dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            b64Dropzone.classList.add('dragover');
+        });
+
+        b64Dropzone.addEventListener('dragleave', () => {
+            b64Dropzone.classList.remove('dragover');
+        });
+
+        b64Dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            b64Dropzone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                b64FileInput.files = e.dataTransfer.files;
+                b64FileInput.dispatchEvent(new Event('change'));
+            }
+        });
+    }
+
     safeAddListener('btn-b64-clear', 'click', () => {
         b64Input.value = '';
         b64Output.value = '';
         if (b64FileInput) b64FileInput.value = '';
+        if (b64Dropzone) {
+            const subtext = b64Dropzone.querySelector('.dropzone-text');
+            if (subtext) {
+                subtext.textContent = 'Drag & drop file here or click to browse';
+            }
+        }
     });
 
     safeAddListener('btn-b64-copy', 'click', () => {
@@ -409,6 +391,14 @@ function initBase64Converter() {
         b64FileInput.addEventListener('change', () => {
             const file = b64FileInput.files[0];
             if (!file) return;
+
+            if (b64Dropzone) {
+                const subtext = b64Dropzone.querySelector('.dropzone-text');
+                if (subtext) {
+                    subtext.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                }
+            }
+
             const reader = new FileReader();
             reader.onload = () => {
                 const dataUrl = reader.result;

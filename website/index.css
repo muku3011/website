@@ -2748,3 +2748,17 @@ select:focus-visible {
     }
 }
 
+.jwt-output-container {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    flex: 1;
+}
+
+@media (max-width: 576px) {
+    .jwt-output-container {
+        flex-direction: column;
+    }
+}
+
+

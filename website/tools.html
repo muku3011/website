@@ -30,42 +30,11 @@
             
             <nav class="nav-menu">
                 <a href="index.html" class="nav-link">Home</a>
+                <a href="tools.html" class="nav-link active" id="nav-tools">Tools</a>
                 <a href="profiles.html" class="nav-link">Profiles</a>
                 <a href="admin.html" class="nav-link" id="nav-admin">Admin</a>
-                <a href="tools.html" class="nav-link active">Tools</a>
             </nav>
             <div class="header-actions">
-                <!-- User Profile Dropdown -->
-                <div class="user-profile-section" id="user-profile-menu">
-                    <button class="user-profile-trigger" id="user-profile-trigger" aria-label="User menu" aria-haspopup="true">
-                        <div class="user-avatar" id="user-avatar-initials">U</div>
-                        <span class="user-display-name" id="user-display-name-label">Loading...</span>
-                        <svg class="chevron-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                    </button>
-                    <div class="user-profile-dropdown" id="user-profile-dropdown">
-                        <div class="user-dropdown-header">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                                <span class="user-signed-in-label">Signed in as</span>
-                                <span class="badge" id="dropdown-role-badge">Role: --</span>
-                            </div>
-                            <div class="user-identity">
-                                <span class="user-display-name-header" id="dropdown-display-name">Loading...</span>
-                                <span class="user-card-username" id="dropdown-username-handle"></span>
-                            </div>
-                            <span class="user-email-header" id="dropdown-email">--</span>
-                        </div>
-                        
-                        <div class="dropdown-divider"></div>
-                        
-                        <div class="dropdown-footer-actions" style="justify-content: flex-end;">
-                            <button id="logout-btn" class="btn btn-secondary btn-logout">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                                <span>Sign Out</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
                 <button id="theme-toggle" class="btn-icon" aria-label="Toggle light and dark theme" title="Toggle Theme">
                     <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
                     <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
@@ -142,8 +111,8 @@
                         <div class="pane-header">
                             <span>Output Result</span>
                             <div class="action-buttons-group">
-                                <button class="btn btn-primary-action btn-small" id="btn-json-copy">Copy</button>
-                                <button class="btn btn-secondary-action btn-small" id="btn-json-download">Download</button>
+                                <button class="btn btn-action-trigger btn-primary-action btn-small" id="btn-json-copy">Copy</button>
+                                <button class="btn btn-action-trigger btn-secondary-action btn-small" id="btn-json-download">Download</button>
                             </div>
                         </div>
                         <pre class="code-viewer-container"><code id="json-output" class="code-viewer text-muted">Output will appear here...</code></pre>
@@ -249,7 +218,7 @@
                                 <input type="text" id="crypto-signature-input" class="form-input" placeholder="Paste signature to verify...">
                             </div>
 
-                            <button class="btn btn-primary-action" id="btn-crypto-execute" style="width: 100%; justify-content: center; margin-top: 0.5rem;">Execute Operation</button>
+                            <button class="btn btn-action-trigger btn-primary-action" id="btn-crypto-execute" style="width: 100%; justify-content: center; margin-top: 0.5rem;">Execute Operation</button>
                         </div>
                     </div>
                     
@@ -257,7 +226,7 @@
                         <div class="pane-header">
                             <span>Result Output</span>
                             <div class="action-buttons-group">
-                                <button class="btn btn-primary-action btn-small" id="btn-crypto-copy">Copy</button>
+                                <button class="btn btn-action-trigger btn-primary-action btn-small" id="btn-crypto-copy">Copy</button>
                             </div>
                         </div>
                         <div class="crypto-results-container" style="display: flex; flex-direction: column; height: 100%;">
@@ -314,7 +283,7 @@
                                 </select>
                             </div>
 
-                            <button class="btn btn-primary-action" id="btn-keygen-generate" style="width: 100%; justify-content: center; margin-top: auto;">Generate Key(s)</button>
+                            <button class="btn btn-action-trigger btn-primary-action" id="btn-keygen-generate" style="width: 100%; justify-content: center; margin-top: auto;">Generate Key(s)</button>
                         </div>
                     </div>
                     
@@ -322,8 +291,8 @@
                         <div class="pane-header">
                             <span id="keygen-result-label">Generated Output</span>
                             <div class="action-buttons-group">
-                                <button class="btn btn-primary-action btn-small" id="btn-keygen-copy" style="display: none;">Copy All</button>
-                                <button class="btn btn-secondary-action btn-small" id="btn-keygen-download" style="display: none;">Download</button>
+                                <button class="btn btn-action-trigger btn-primary-action btn-small" id="btn-keygen-copy" style="display: none;">Copy All</button>
+                                <button class="btn btn-action-trigger btn-secondary-action btn-small" id="btn-keygen-download" style="display: none;">Download</button>
                             </div>
                         </div>
                         <div class="keygen-results-container" style="display: flex; flex-direction: column; gap: 1rem; height: 100%; overflow-y: auto; background: var(--console-bg); border: 1px solid var(--card-border); border-radius: var(--border-radius-sm); padding: 1rem;">
@@ -358,7 +327,7 @@
                         <div class="pane-header">
                             <span>Output Result</span>
                             <div class="action-buttons-group">
-                                <button class="btn btn-primary-action btn-small" id="btn-url-copy">Copy</button>
+                                <button class="btn btn-action-trigger btn-primary-action btn-small" id="btn-url-copy">Copy</button>
                             </div>
                         </div>
                         <textarea class="code-editor code-viewer" id="url-output" readonly placeholder="Output will appear here..." spellcheck="false"></textarea>
@@ -385,15 +354,21 @@
                         <textarea class="code-editor" id="b64-input" placeholder="Enter text or Base64 string here..." spellcheck="false"></textarea>
                         
                         <div style="margin-top: 1rem; border-top: 1px solid var(--card-border); padding-top: 1rem;">
-                            <label style="display: block; margin-bottom: 0.4rem; font-size: 0.9rem;">Or Convert Binary File:</label>
-                            <input type="file" id="b64-file-input" style="width: 100%; border: 1px dashed var(--card-border); padding: 0.5rem; border-radius: var(--border-radius-sm); font-size: 0.85rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 500;">Or Convert Binary File:</label>
+                            <div id="b64-dropzone" class="dropzone-area" style="padding: 1rem; gap: 0.35rem;">
+                                <div class="dropzone-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                </div>
+                                <p class="dropzone-text" style="font-size: 0.8rem; font-weight: 500; margin: 0;">Drag & drop file here or click to browse</p>
+                                <input type="file" id="b64-file-input" style="display: none;">
+                            </div>
                         </div>
                     </div>
                     <div class="output-pane">
                         <div class="pane-header">
                             <span>Output Result</span>
                             <div class="action-buttons-group">
-                                <button class="btn btn-primary-action btn-small" id="btn-b64-copy">Copy</button>
+                                <button class="btn btn-action-trigger btn-primary-action btn-small" id="btn-b64-copy">Copy</button>
                             </div>
                         </div>
                         <textarea class="code-editor code-viewer" id="b64-output" readonly placeholder="Output will appear here..." spellcheck="false"></textarea>
@@ -420,31 +395,31 @@
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 0.75rem; background: var(--console-bg); border-radius: var(--border-radius-sm); border: 1px solid var(--card-border); padding: 1rem; overflow-y: auto; height: 100%;">
                             <div class="form-group">
-                                <label style="display: flex; justify-content: space-between;">
-                                    <span>SHA-256</span>
-                                    <a href="#" class="code-text-mono" id="btn-copy-sha256" style="color: var(--primary-glow); font-size: 0.75rem; text-decoration: none;">Copy</a>
-                                </label>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                    <label style="margin: 0; font-weight: 500; font-size: 0.85rem;">SHA-256</label>
+                                    <button class="btn btn-action-trigger btn-primary-action btn-small" id="btn-copy-sha256" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">Copy</button>
+                                </div>
                                 <input type="text" id="hash-sha256" readonly class="form-input code-text-mono" style="font-size: 0.8rem; background: var(--card-bg);" placeholder="SHA-256 hash output">
                             </div>
                             <div class="form-group">
-                                <label style="display: flex; justify-content: space-between;">
-                                    <span>SHA-512</span>
-                                    <a href="#" class="code-text-mono" id="btn-copy-sha512" style="color: var(--primary-glow); font-size: 0.75rem; text-decoration: none;">Copy</a>
-                                </label>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                    <label style="margin: 0; font-weight: 500; font-size: 0.85rem;">SHA-512</label>
+                                    <button class="btn btn-action-trigger btn-primary-action btn-small" id="btn-copy-sha512" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">Copy</button>
+                                </div>
                                 <input type="text" id="hash-sha512" readonly class="form-input code-text-mono" style="font-size: 0.8rem; background: var(--card-bg);" placeholder="SHA-512 hash output">
                             </div>
                             <div class="form-group">
-                                <label style="display: flex; justify-content: space-between;">
-                                    <span>SHA-384</span>
-                                    <a href="#" class="code-text-mono" id="btn-copy-sha384" style="color: var(--primary-glow); font-size: 0.75rem; text-decoration: none;">Copy</a>
-                                </label>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                    <label style="margin: 0; font-weight: 500; font-size: 0.85rem;">SHA-384</label>
+                                    <button class="btn btn-action-trigger btn-primary-action btn-small" id="btn-copy-sha384" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">Copy</button>
+                                </div>
                                 <input type="text" id="hash-sha384" readonly class="form-input code-text-mono" style="font-size: 0.8rem; background: var(--card-bg);" placeholder="SHA-384 hash output">
                             </div>
                             <div class="form-group">
-                                <label style="display: flex; justify-content: space-between;">
-                                    <span>SHA-1</span>
-                                    <a href="#" class="code-text-mono" id="btn-copy-sha1" style="color: var(--primary-glow); font-size: 0.75rem; text-decoration: none;">Copy</a>
-                                </label>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                    <label style="margin: 0; font-weight: 500; font-size: 0.85rem;">SHA-1</label>
+                                    <button class="btn btn-action-trigger btn-primary-action btn-small" id="btn-copy-sha1" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">Copy</button>
+                                </div>
                                 <input type="text" id="hash-sha1" readonly class="form-input code-text-mono" style="font-size: 0.8rem; background: var(--card-bg);" placeholder="SHA-1 hash output">
                             </div>
                         </div>
@@ -473,7 +448,7 @@
                         <div class="pane-header">
                             <span>Decoded Segment Data</span>
                         </div>
-                        <div style="display: flex; flex-direction: column; gap: 0.75rem; flex: 1;">
+                        <div class="jwt-output-container">
                             <div style="display: flex; flex-direction: column; flex: 1;">
                                 <span style="font-size: 0.85rem; font-weight: 600; color: var(--warning-glow); margin-bottom: 0.25rem;">Header</span>
                                 <pre class="code-viewer-container" style="flex: 1; margin: 0;"><code id="jwt-header-output" class="code-viewer text-muted">JWT Header JSON</code></pre>
