@@ -87,9 +87,10 @@ body.light-theme {
     --dropdown-item-border: rgba(0, 0, 0, 0.05);
 }
 
-/* -------------------------------------------------------------
-   BASE RESET & LAYOUT
-   ------------------------------------------------------------- */
+html {
+    overflow-y: scroll;
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
