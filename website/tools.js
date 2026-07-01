@@ -70,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initKeyGenerator();
     initOpenApiTools();
     initIpCidrCalculator();
+    initCharEncoding();
 });
 
 function getInitials(name) {
@@ -1837,4 +1838,320 @@ function initIpCidrCalculator() {
 
     // Run initial calculation on load
     calculateSubnet();
+}
+
+// -------------------------------------------------------------
+// CHARACTER ENCODINGS & GSM 03.38 TRANSLATOR
+// -------------------------------------------------------------
+function initCharEncoding() {
+    const textInput = document.getElementById('enc-text-input');
+    const bytesOutput = document.getElementById('enc-bytes-output');
+    const formatSelect = document.getElementById('encoding-format');
+    const warningDiv = document.getElementById('enc-validation-warning');
+    const btnClear = document.getElementById('btn-enc-clear');
+
+    // Metrics
+    const charCountLabel = document.getElementById('enc-char-count');
+    const byteSizeLabel = document.getElementById('enc-byte-size');
+    const compressionLabel = document.getElementById('enc-compression');
+    const binBitstream = document.getElementById('enc-bin-bitstream');
+
+    if (!textInput || !bytesOutput || !formatSelect) return;
+
+    // GSM 03.38 Basic Character Set Mapping String (0 to 127)
+    // 0x1B is ESC
+    const GSM_BASIC = "@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞ\x1BÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà";
+    
+    // GSM 03.38 Extension Table (Preceded by ESC 0x1B)
+    const GSM_EXTENSION_ENC = {
+        '\f': 0x0A, '^': 0x14, '{': 0x28, '}': 0x29, '\\': 0x2F,
+        '[': 0x3C, '~': 0x3D, ']': 0x3E, '|': 0x40, '€': 0x65
+    };
+    const GSM_EXTENSION_DEC = {
+        0x0A: '\f', 0x14: '^', 0x28: '{', 0x29: '}', 0x2F: '\\',
+        0x3C: '[', 0x3D: '~', 0x3E: ']', 0x40: '|', 0x65: '€'
+    };
+
+    // Helper: Pack 7-bit septets into 8-bit octets (SMS packing)
+    function packSeptets(septets) {
+        const octets = [];
+        let buffer = 0;
+        let bufferSize = 0;
+        for (let i = 0; i < septets.length; i++) {
+            const septet = septets[i] & 0x7F;
+            buffer |= (septet << bufferSize);
+            bufferSize += 7;
+            while (bufferSize >= 8) {
+                octets.push(buffer & 0xFF);
+                buffer >>>= 8;
+                bufferSize -= 8;
+            }
+        }
+        if (bufferSize > 0) {
+            octets.push(buffer & 0xFF);
+        }
+        return octets;
+    }
+
+    // Helper: Unpack 8-bit octets into 7-bit septets
+    function unpackOctets(octets) {
+        const septets = [];
+        let buffer = 0;
+        let bufferSize = 0;
+        for (let i = 0; i < octets.length; i++) {
+            buffer |= (octets[i] << bufferSize);
+            bufferSize += 8;
+            while (bufferSize >= 7) {
+                septets.push(buffer & 0x7F);
+                buffer >>>= 7;
+                bufferSize -= 7;
+            }
+        }
+        return septets;
+    }
+
+    // Encode text to bytes based on format
+    function encodeText(text, format) {
+        let bytes = [];
+        let unrepresentable = [];
+
+        if (format === 'utf8') {
+            bytes = Array.from(new TextEncoder().encode(text));
+        } else if (format === 'utf16') {
+            for (let i = 0; i < text.length; i++) {
+                const code = text.charCodeAt(i);
+                bytes.push((code >>> 8) & 0xFF);
+                bytes.push(code & 0xFF);
+            }
+        } else if (format === 'ascii') {
+            for (let i = 0; i < text.length; i++) {
+                const code = text.charCodeAt(i);
+                if (code <= 127) {
+                    bytes.push(code);
+                } else {
+                    bytes.push(0x3F); // '?'
+                    unrepresentable.push(text.charAt(i));
+                }
+            }
+        } else if (format === 'gsm7' || format === 'gsm7packed') {
+            const septets = [];
+            for (let i = 0; i < text.length; i++) {
+                const char = text.charAt(i);
+                if (GSM_EXTENSION_ENC[char] !== undefined) {
+                    septets.push(0x1B);
+                    septets.push(GSM_EXTENSION_ENC[char]);
+                } else {
+                    const idx = GSM_BASIC.indexOf(char);
+                    if (idx >= 0 && idx !== 0x1B) {
+                        septets.push(idx);
+                    } else {
+                        septets.push(63); // '?'
+                        unrepresentable.push(char);
+                    }
+                }
+            }
+            if (format === 'gsm7') {
+                bytes = septets;
+            } else {
+                bytes = packSeptets(septets);
+            }
+        } else if (format === 'gsm8') {
+            for (let i = 0; i < text.length; i++) {
+                const char = text.charAt(i);
+                // GSM 8-bit generally maps ISO-8859-1 or maps GSM-7 basic directly
+                // We map characters <= 255. Non-mappable gets '?'
+                const code = text.charCodeAt(i);
+                if (code <= 255) {
+                    bytes.push(code);
+                } else {
+                    bytes.push(0x3F); // '?'
+                    unrepresentable.push(char);
+                }
+            }
+        }
+
+        return { bytes, unrepresentable };
+    }
+
+    // Decode bytes to text based on format
+    function decodeBytes(bytes, format) {
+        let text = '';
+        let errStr = null;
+
+        try {
+            if (format === 'utf8') {
+                text = new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(bytes));
+            } else if (format === 'utf16') {
+                for (let i = 0; i < bytes.length; i += 2) {
+                    if (i + 1 < bytes.length) {
+                        const code = (bytes[i] << 8) | bytes[i + 1];
+                        text += String.fromCharCode(code);
+                    }
+                }
+            } else if (format === 'ascii') {
+                text = bytes.map(b => b <= 127 ? String.fromCharCode(b) : '?').join('');
+            } else if (format === 'gsm7' || format === 'gsm7packed') {
+                let septets = bytes;
+                if (format === 'gsm7packed') {
+                    septets = unpackOctets(bytes);
+                }
+                
+                for (let i = 0; i < septets.length; i++) {
+                    const septet = septets[i];
+                    if (septet === 0x1B) {
+                        if (i + 1 < septets.length) {
+                            const nextSeptet = septets[++i];
+                            text += GSM_EXTENSION_DEC[nextSeptet] || '';
+                        }
+                    } else {
+                        text += GSM_BASIC.charAt(septet) || '';
+                    }
+                }
+                // Strip trailing null padding if it was added during packing
+                if (format === 'gsm7packed') {
+                    text = text.replace(/\0+$/, '');
+                }
+            } else if (format === 'gsm8') {
+                text = bytes.map(b => String.fromCharCode(b)).join('');
+            }
+        } catch (e) {
+            errStr = e.message;
+        }
+
+        return { text, error: errStr };
+    }
+
+    // Helper: Parse Hex String input to integer byte array
+    function parseHex(hexStr) {
+        const cleaned = hexStr.replace(/[^0-9a-fA-F]/g, '');
+        const bytes = [];
+        for (let i = 0; i < cleaned.length; i += 2) {
+            bytes.push(parseInt(cleaned.substr(i, 2), 16));
+        }
+        return bytes;
+    }
+
+    // Helper: Format byte array into clean Hex String
+    function formatHex(bytes) {
+        return bytes.map(b => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
+    }
+
+    // Update bitstream visual display
+    function updateBitstream(bytes, format) {
+        if (!binBitstream) return;
+        if (bytes.length === 0) {
+            binBitstream.textContent = '--';
+            return;
+        }
+
+        // Show 7-bit blocks for unpacked GSM-7, and 8-bit blocks for all others
+        const bitLen = format === 'gsm7' ? 7 : 8;
+        binBitstream.innerHTML = bytes.map(b => {
+            const binary = b.toString(2).padStart(bitLen, '0');
+            return `<span style="margin-right: 8px; color: var(--primary-glow);">${binary}</span>`;
+        }).join('');
+    }
+
+    // Dual-directional synchronization logic
+    let syncActive = false;
+
+    function handleTextInput() {
+        if (syncActive) return;
+        syncActive = true;
+
+        const text = textInput.value;
+        const format = formatSelect.value;
+        
+        const { bytes, unrepresentable } = encodeText(text, format);
+        bytesOutput.value = formatHex(bytes);
+        
+        // Update stats
+        if (charCountLabel) charCountLabel.textContent = text.length;
+        if (byteSizeLabel) byteSizeLabel.textContent = `${bytes.length} byte${bytes.length !== 1 ? 's' : ''}`;
+        
+        // Calculate packing compression ratio for GSM 7 packed compared to unpacked
+        if (compressionLabel) {
+            if (format === 'gsm7packed' && text.length > 0) {
+                const unpackedSize = text.length; // 1 septet per char
+                const ratio = ((1 - (bytes.length / unpackedSize)) * 100).toFixed(1);
+                compressionLabel.textContent = `${ratio}% (8 septets in 7 octets)`;
+                compressionLabel.style.color = ratio > 0 ? 'var(--success-glow)' : 'var(--text-primary)';
+            } else {
+                compressionLabel.textContent = '0%';
+                compressionLabel.style.color = 'var(--text-primary)';
+            }
+        }
+
+        // Warn about unrepresentable characters
+        if (warningDiv) {
+            if (unrepresentable.length > 0) {
+                const unique = Array.from(new Set(unrepresentable));
+                warningDiv.innerHTML = `<strong>Warning:</strong> Selected encoding does not support characters: <code>${unique.join(' ')}</code>. They will map to <code>?</code> (0x3F).`;
+                warningDiv.style.display = 'block';
+            } else {
+                warningDiv.style.display = 'none';
+            }
+        }
+
+        updateBitstream(bytes, format);
+        syncActive = false;
+    }
+
+    function handleBytesInput() {
+        if (syncActive) return;
+        syncActive = true;
+
+        const hexStr = bytesOutput.value;
+        const format = formatSelect.value;
+        const bytes = parseHex(hexStr);
+        
+        const { text, error } = decodeBytes(bytes, format);
+
+        if (error) {
+            if (warningDiv) {
+                warningDiv.innerHTML = `<strong>Error decoding bytes:</strong> ${error}`;
+                warningDiv.style.display = 'block';
+            }
+        } else {
+            textInput.value = text;
+            if (warningDiv) warningDiv.style.display = 'none';
+        }
+
+        // Update stats
+        if (charCountLabel) charCountLabel.textContent = text.length;
+        if (byteSizeLabel) byteSizeLabel.textContent = `${bytes.length} byte${bytes.length !== 1 ? 's' : ''}`;
+        
+        if (compressionLabel) {
+            if (format === 'gsm7packed' && text.length > 0) {
+                const unpackedSize = text.length;
+                const ratio = ((1 - (bytes.length / unpackedSize)) * 100).toFixed(1);
+                compressionLabel.textContent = `${ratio}%`;
+            } else {
+                compressionLabel.textContent = '0%';
+            }
+        }
+
+        updateBitstream(bytes, format);
+        syncActive = false;
+    }
+
+    // Attach listeners
+    textInput.addEventListener('input', handleTextInput);
+    bytesOutput.addEventListener('input', handleBytesInput);
+    formatSelect.addEventListener('change', handleTextInput);
+
+    if (btnClear) {
+        btnClear.addEventListener('click', () => {
+            textInput.value = '';
+            bytesOutput.value = '';
+            if (charCountLabel) charCountLabel.textContent = '0';
+            if (byteSizeLabel) byteSizeLabel.textContent = '0 bytes';
+            if (compressionLabel) compressionLabel.textContent = '0%';
+            if (binBitstream) binBitstream.textContent = '--';
+            if (warningDiv) warningDiv.style.display = 'none';
+        });
+    }
+
+    // Initial calculation on load
+    handleTextInput();
 }
