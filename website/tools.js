@@ -780,6 +780,68 @@ function initCryptoOperations() {
         copyToClipboard(cryptoOutput.textContent, 'btn-crypto-copy');
     });
 
+    // Toggle passphrase visibility
+    const togglePassBtn = document.getElementById('btn-toggle-passphrase');
+    if (togglePassBtn && cryptoPassphrase) {
+        togglePassBtn.addEventListener('click', () => {
+            const isPass = cryptoPassphrase.type === 'password';
+            cryptoPassphrase.type = isPass ? 'text' : 'password';
+            togglePassBtn.style.color = isPass ? 'var(--primary-glow)' : 'var(--text-muted)';
+        });
+    }
+
+    // Upload PEM key file
+    const uploadPemBtn = document.getElementById('btn-upload-pem');
+    const filePemUploader = document.getElementById('file-pem-uploader');
+    if (uploadPemBtn && filePemUploader) {
+        uploadPemBtn.addEventListener('click', () => filePemUploader.click());
+        filePemUploader.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                if (cryptoKeyImport) {
+                    cryptoKeyImport.value = evt.target.result;
+                    showCryptoSuccess(`Successfully uploaded key file: ${file.name}`);
+                }
+            };
+            reader.readAsText(file);
+        });
+    }
+
+    // Load generated key from Keygen tab
+    const loadGenKeyBtn = document.getElementById('btn-load-generated-key');
+    if (loadGenKeyBtn) {
+        loadGenKeyBtn.addEventListener('click', () => {
+            const keys = window.currentGeneratedKeys;
+            if (!keys) {
+                showCryptoError('No keys have been generated yet in the Key & Keypair Generator tab.');
+                return;
+            }
+            
+            const op = cryptoOpType.value;
+            if (keys.type === 'symmetric') {
+                if (cryptoPassphrase) {
+                    cryptoPassphrase.value = keys.key;
+                    showCryptoSuccess('Loaded generated symmetric key into Passphrase field.');
+                }
+            } else {
+                // Asymmetric keys
+                if (op.includes('encrypt') || op === 'verify') {
+                    if (cryptoKeyImport) {
+                        cryptoKeyImport.value = keys.pub;
+                        showCryptoSuccess('Loaded generated Public Key.');
+                    }
+                } else {
+                    if (cryptoKeyImport) {
+                        cryptoKeyImport.value = keys.priv;
+                        showCryptoSuccess('Loaded generated Private Key.');
+                    }
+                }
+            }
+        });
+    }
+
     function showCryptoError(msg) {
         cryptoOutput.textContent = 'Error executing operation.';
         if (cryptoStatusIndicator) {
@@ -802,7 +864,7 @@ function initCryptoOperations() {
 // KEY & KEYPAIR GENERATOR
 // -------------------------------------------------------------
 function initKeyGenerator() {
-    let currentGeneratedKeys = null;
+    window.currentGeneratedKeys = null;
     const keygenAlgorithm = document.getElementById('keygen-algorithm');
     const keygenRsaSizeGroup = document.getElementById('keygen-rsa-size-group');
     const keygenFormat = document.getElementById('keygen-format');
@@ -830,7 +892,7 @@ function initKeyGenerator() {
         if (keygenOutputWrapper) keygenOutputWrapper.innerHTML = '<span class="text-muted">Generating secure keys...</span>';
         if (keygenCopyBtn) keygenCopyBtn.style.display = 'none';
         if (keygenDownloadBtn) keygenDownloadBtn.style.display = 'none';
-        currentGeneratedKeys = null;
+        window.currentGeneratedKeys = null;
 
         const algoVal = keygenAlgorithm.value;
         const format = keygenFormat.value;
@@ -849,12 +911,18 @@ function initKeyGenerator() {
                 if (keygenOutputWrapper) {
                     keygenOutputWrapper.innerHTML = `
                         <div style="display:flex; flex-direction:column; gap:0.4rem;">
-                            <span style="font-size:0.8rem; font-weight:600; color:var(--primary-glow)">Symmetric AES Key (${size}-bit)</span>
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:0.8rem; font-weight:600; color:var(--primary-glow)">Symmetric AES Key (${size}-bit)</span>
+                                <div class="action-buttons-group">
+                                    <button class="btn btn-secondary btn-small btn-keygen-copy-individual" data-target="output-sym-key">Copy</button>
+                                    <button class="btn btn-secondary btn-small btn-keygen-download-individual" data-key-type="symmetric" data-filename="aes_key.txt">Download</button>
+                                </div>
+                            </div>
                             <pre class="code-viewer-container" style="height:100px; margin:0;"><code class="code-viewer" id="output-sym-key">${escapeHtml(str)}</code></pre>
                         </div>
                     `;
                 }
-                currentGeneratedKeys = { type: 'symmetric', key: str, filename: 'aes_key.txt' };
+                window.currentGeneratedKeys = { type: 'symmetric', key: str, filename: 'aes_key.txt' };
             }
             else if (algoVal.startsWith('hmac')) {
                 const key = await window.crypto.subtle.generateKey(
@@ -868,12 +936,18 @@ function initKeyGenerator() {
                 if (keygenOutputWrapper) {
                     keygenOutputWrapper.innerHTML = `
                         <div style="display:flex; flex-direction:column; gap:0.4rem;">
-                            <span style="font-size:0.8rem; font-weight:600; color:var(--primary-glow)">HMAC Secret Key (SHA-256)</span>
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-size:0.8rem; font-weight:600; color:var(--primary-glow)">HMAC Secret Key (SHA-256)</span>
+                                <div class="action-buttons-group">
+                                    <button class="btn btn-secondary btn-small btn-keygen-copy-individual" data-target="output-sym-key">Copy</button>
+                                    <button class="btn btn-secondary btn-small btn-keygen-download-individual" data-key-type="symmetric" data-filename="hmac_key.txt">Download</button>
+                                </div>
+                            </div>
                             <pre class="code-viewer-container" style="height:100px; margin:0;"><code class="code-viewer" id="output-sym-key">${escapeHtml(str)}</code></pre>
                         </div>
                     `;
                 }
-                currentGeneratedKeys = { type: 'symmetric', key: str, filename: 'hmac_key.txt' };
+                window.currentGeneratedKeys = { type: 'symmetric', key: str, filename: 'hmac_key.txt' };
             }
             else if (algoVal.startsWith('rsa')) {
                 const rsaSize = parseInt(document.querySelector('input[name="keygen-rsa-size"]:checked').value);
@@ -892,7 +966,7 @@ function initKeyGenerator() {
                     usages
                 );
 
-                const exportedPub = await window.crypto.subtle.exportKey(algoVal === 'rsa-oaep' ? 'spki' : 'spki', keypair.publicKey);
+                const exportedPub = await window.crypto.subtle.exportKey('spki', keypair.publicKey);
                 const exportedPriv = await window.crypto.subtle.exportKey('pkcs8', keypair.privateKey);
 
                 const pubStr = formatAsymmetricKey(exportedPub, format, 'PUBLIC KEY');
@@ -902,17 +976,29 @@ function initKeyGenerator() {
                     keygenOutputWrapper.innerHTML = `
                         <div style="display:flex; flex-direction:column; gap:0.8rem;">
                             <div style="display:flex; flex-direction:column; gap:0.3rem;">
-                                <span style="font-size:0.8rem; font-weight:600; color:var(--primary-glow)">Public Key</span>
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="font-size:0.8rem; font-weight:600; color:var(--primary-glow)">Public Key</span>
+                                    <div class="action-buttons-group">
+                                        <button class="btn btn-secondary btn-small btn-keygen-copy-individual" data-target="output-pub-key">Copy</button>
+                                        <button class="btn btn-secondary btn-small btn-keygen-download-individual" data-key-type="public" data-filename="public_key.pem">Download</button>
+                                    </div>
+                                </div>
                                 <pre class="code-viewer-container" style="height:150px; margin:0;"><code class="code-viewer" id="output-pub-key">${escapeHtml(pubStr)}</code></pre>
                             </div>
                             <div style="display:flex; flex-direction:column; gap:0.3rem;">
-                                <span style="font-size:0.8rem; font-weight:600; color:var(--warning-glow)">Private Key</span>
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="font-size:0.8rem; font-weight:600; color:var(--warning-glow)">Private Key</span>
+                                    <div class="action-buttons-group">
+                                        <button class="btn btn-secondary btn-small btn-keygen-copy-individual" data-target="output-priv-key">Copy</button>
+                                        <button class="btn btn-secondary btn-small btn-keygen-download-individual" data-key-type="private" data-filename="private_key.pem">Download</button>
+                                    </div>
+                                </div>
                                 <pre class="code-viewer-container" style="height:150px; margin:0;"><code class="code-viewer" id="output-priv-key">${escapeHtml(privStr)}</code></pre>
                             </div>
                         </div>
                     `;
                 }
-                currentGeneratedKeys = { type: 'asymmetric', pub: pubStr, priv: privStr };
+                window.currentGeneratedKeys = { type: 'asymmetric', pub: pubStr, priv: privStr };
             }
             else if (algoVal.startsWith('ecdsa')) {
                 const curve = algoVal.includes('p384') ? 'P-384' : 'P-256';
@@ -936,21 +1022,30 @@ function initKeyGenerator() {
                     keygenOutputWrapper.innerHTML = `
                         <div style="display:flex; flex-direction:column; gap:0.8rem;">
                             <div style="display:flex; flex-direction:column; gap:0.3rem;">
-                                <span style="font-size:0.8rem; font-weight:600; color:var(--primary-glow)">Public Key (${curve})</span>
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="font-size:0.8rem; font-weight:600; color:var(--primary-glow)">Public Key (${curve})</span>
+                                    <div class="action-buttons-group">
+                                        <button class="btn btn-secondary btn-small btn-keygen-copy-individual" data-target="output-pub-key">Copy</button>
+                                        <button class="btn btn-secondary btn-small btn-keygen-download-individual" data-key-type="public" data-filename="public_key.pem">Download</button>
+                                    </div>
+                                </div>
                                 <pre class="code-viewer-container" style="height:120px; margin:0;"><code class="code-viewer" id="output-pub-key">${escapeHtml(pubStr)}</code></pre>
                             </div>
                             <div style="display:flex; flex-direction:column; gap:0.3rem;">
-                                <span style="font-size:0.8rem; font-weight:600; color:var(--warning-glow)">Private Key (${curve})</span>
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <span style="font-size:0.8rem; font-weight:600; color:var(--warning-glow)">Private Key (${curve})</span>
+                                    <div class="action-buttons-group">
+                                        <button class="btn btn-secondary btn-small btn-keygen-copy-individual" data-target="output-priv-key">Copy</button>
+                                        <button class="btn btn-secondary btn-small btn-keygen-download-individual" data-key-type="private" data-filename="private_key.pem">Download</button>
+                                    </div>
+                                </div>
                                 <pre class="code-viewer-container" style="height:120px; margin:0;"><code class="code-viewer" id="output-priv-key">${escapeHtml(privStr)}</code></pre>
                             </div>
                         </div>
                     `;
                 }
-                currentGeneratedKeys = { type: 'asymmetric', pub: pubStr, priv: privStr };
+                window.currentGeneratedKeys = { type: 'asymmetric', pub: pubStr, priv: privStr };
             }
-
-            if (keygenCopyBtn) keygenCopyBtn.style.display = 'inline-flex';
-            if (keygenDownloadBtn) keygenDownloadBtn.style.display = 'inline-flex';
 
         } catch (err) {
             if (keygenOutputWrapper) {
@@ -959,29 +1054,34 @@ function initKeyGenerator() {
         }
     });
 
-    if (keygenCopyBtn) {
-        keygenCopyBtn.addEventListener('click', () => {
-            if (!currentGeneratedKeys) return;
-            let content = '';
-            if (currentGeneratedKeys.type === 'symmetric') {
-                content = currentGeneratedKeys.key;
-            } else {
-                content = `Public Key:\n${currentGeneratedKeys.pub}\n\nPrivate Key:\n${currentGeneratedKeys.priv}`;
+    if (keygenOutputWrapper) {
+        keygenOutputWrapper.addEventListener('click', (e) => {
+            const copyBtn = e.target.closest('.btn-keygen-copy-individual');
+            if (copyBtn) {
+                const targetId = copyBtn.getAttribute('data-target');
+                const targetEl = document.getElementById(targetId);
+                if (targetEl) {
+                    copyToClipboard(targetEl.textContent, copyBtn);
+                }
             }
-            copyToClipboard(content, 'btn-keygen-copy');
-        });
-    }
 
-    if (keygenDownloadBtn) {
-        keygenDownloadBtn.addEventListener('click', () => {
-            if (!currentGeneratedKeys) return;
-            if (currentGeneratedKeys.type === 'symmetric') {
-                downloadFile(currentGeneratedKeys.key, currentGeneratedKeys.filename, 'text/plain');
-            } else {
-                downloadFile(currentGeneratedKeys.pub, 'public_key.pem', 'application/x-pem-file');
-                setTimeout(() => {
-                    downloadFile(currentGeneratedKeys.priv, 'private_key.pem', 'application/x-pem-file');
-                }, 100);
+            const downloadBtn = e.target.closest('.btn-keygen-download-individual');
+            if (downloadBtn) {
+                const keyType = downloadBtn.getAttribute('data-key-type');
+                const filename = downloadBtn.getAttribute('data-filename');
+                if (keyType === 'symmetric') {
+                    if (window.currentGeneratedKeys && window.currentGeneratedKeys.type === 'symmetric') {
+                        downloadFile(window.currentGeneratedKeys.key, filename, 'text/plain');
+                    }
+                } else if (keyType === 'public') {
+                    if (window.currentGeneratedKeys && window.currentGeneratedKeys.type === 'asymmetric') {
+                        downloadFile(window.currentGeneratedKeys.pub, filename, 'application/x-pem-file');
+                    }
+                } else if (keyType === 'private') {
+                    if (window.currentGeneratedKeys && window.currentGeneratedKeys.type === 'asymmetric') {
+                        downloadFile(window.currentGeneratedKeys.priv, filename, 'application/x-pem-file');
+                    }
+                }
             }
         });
     }
@@ -1332,15 +1432,17 @@ function escapeHtml(str) {
 
 // -------------------------------------------------------------
 // OpenAPI & YAML Tools
-// -------------------------------------------------------------
 function initOpenApiTools() {
     const inputArea    = document.getElementById('openapi-input');
     const outputArea   = document.getElementById('openapi-output');
     const rawContainer = document.getElementById('openapi-raw-container');
+    const redocWrapper = document.getElementById('openapi-redoc-wrapper');
     const redocEl      = document.getElementById('openapi-redoc-container');
     const errorLog     = document.getElementById('openapi-error-log');
 
     if (!inputArea) return;
+
+    let currentSpecObj = null;
 
     // ── Helpers ──────────────────────────────────────────────
     function showError(msg) {
@@ -1356,14 +1458,16 @@ function initOpenApiTools() {
     }
 
     function showRawOutput(content) {
-        if (redocEl)      { redocEl.style.display = 'none'; redocEl.innerHTML = ''; }
+        if (redocWrapper)   redocWrapper.style.display = 'none';
+        if (redocEl)        redocEl.innerHTML = '';
         if (rawContainer)   rawContainer.style.display = 'flex';
         if (outputArea)     outputArea.value = content;
+        currentSpecObj = null;
     }
 
     function showRedocPane() {
-        if (rawContainer) rawContainer.style.display = 'none';
-        if (redocEl)      redocEl.style.display = 'block';
+        if (rawContainer)   rawContainer.style.display = 'none';
+        if (redocWrapper)   redocWrapper.style.display = 'flex';
     }
 
     /** Try JSON first, then YAML. Returns parsed object or throws. */
@@ -1386,9 +1490,11 @@ function initOpenApiTools() {
     safeAddListener('btn-openapi-clear', 'click', () => {
         inputArea.value = '';
         if (outputArea)   outputArea.value = '';
-        if (redocEl)    { redocEl.innerHTML = ''; redocEl.style.display = 'none'; }
+        if (redocWrapper) redocWrapper.style.display = 'none';
+        if (redocEl)      redocEl.innerHTML = '';
         if (rawContainer) rawContainer.style.display = 'flex';
         hideError();
+        currentSpecObj = null;
     });
 
     // ── Convert to YAML ──────────────────────────────────────
@@ -1442,7 +1548,6 @@ function initOpenApiTools() {
         const input = inputArea.value.trim();
         if (!input) return showError('Input is empty. Paste an OpenAPI YAML or JSON spec to render docs.');
 
-        // Auto-detect format
         let specObj;
         try {
             specObj = parseAny(input);
@@ -1450,73 +1555,90 @@ function initOpenApiTools() {
             return showError('Input must be valid JSON or YAML: ' + e.message);
         }
 
-        if (!specObj || typeof specObj !== 'object') {
-            return showError('Parsed input is not an object. Please provide a valid OpenAPI spec.');
-        }
-
-        if (!looksLikeSpec(specObj)) {
-            return showError(
-                'Not a valid OpenAPI/Swagger spec — missing required "openapi" or "swagger" field at the root.'
-            );
+        if (!specObj || typeof specObj !== 'object' || !looksLikeSpec(specObj)) {
+            return showError('Not a valid OpenAPI/Swagger spec.');
         }
 
         if (typeof Redoc === 'undefined') {
             return showError('Redoc library failed to load. Check that libs/redoc.standalone.js is accessible.');
         }
 
-        // Build the absolute URL to redoc so the new window can load it
-        const redocSrc = window.location.origin + '/libs/redoc.standalone.js';
-        const apiTitle = (specObj.info && specObj.info.title) ? specObj.info.title : 'API Documentation';
+        currentSpecObj = specObj;
+        showRedocPane();
 
-        // Serialize spec safely for inline embedding
+        const isDark = !document.body.classList.contains('light-theme');
+        const themeOpts = {
+            scrollYOffset: 0,
+            hideDownloadButton: false,
+            disableSearch: false,
+            nativeScrollbars: true,
+            theme: {
+                colors: {
+                    primary: { main: isDark ? 'hsl(var(--hue-primary), 100%, 65%)' : 'hsl(var(--hue-primary), 90%, 50%)' },
+                    text: {
+                        primary: isDark ? 'hsl(210, 40%, 98%)' : 'hsl(222, 24%, 12%)',
+                        secondary: isDark ? 'hsl(210, 20%, 75%)' : 'hsl(222, 15%, 35%)'
+                    },
+                    border: {
+                        dark: isDark ? 'hsla(222, 20%, 25%, 0.4)' : 'hsla(210, 30%, 80%, 0.4)',
+                        light: isDark ? 'hsla(222, 20%, 25%, 0.2)' : 'hsla(210, 30%, 80%, 0.2)'
+                    }
+                },
+                sidebar: {
+                    backgroundColor: isDark ? 'hsl(222, 24%, 6%)' : 'hsl(210, 30%, 90%)',
+                    textColor: isDark ? 'hsl(210, 20%, 75%)' : 'hsl(222, 15%, 35%)',
+                    activeTextColor: isDark ? 'hsl(var(--hue-primary), 100%, 60%)' : 'hsl(var(--hue-primary), 90%, 50%)'
+                },
+                rightPanel: {
+                    backgroundColor: isDark ? 'hsl(222, 24%, 10%)' : 'hsl(210, 30%, 95%)',
+                    textColor: isDark ? 'hsl(210, 40%, 98%)' : 'hsl(222, 24%, 12%)'
+                },
+                typography: {
+                    fontFamily: "'Inter', sans-serif",
+                    headings: {
+                        fontFamily: "'Outfit', sans-serif"
+                    }
+                }
+            }
+        };
+
+        try {
+            redocEl.innerHTML = '';
+            Redoc.init(specObj, themeOpts, redocEl);
+        } catch (e) {
+            showError('Failed to initialize ReDoc: ' + e.message);
+        }
+    });
+
+    // ── Open Fullscreen ──────────────────────────────────────
+    safeAddListener('btn-openapi-fullscreen', 'click', () => {
+        if (!currentSpecObj) return;
+
+        const redocSrc = window.location.origin + '/libs/redoc.standalone.js';
+        const apiTitle = (currentSpecObj.info && currentSpecObj.info.title) ? currentSpecObj.info.title : 'API Documentation';
+
         let specJson;
         try {
-            specJson = JSON.stringify(specObj);
+            specJson = JSON.stringify(currentSpecObj);
         } catch (e) {
             return showError('Failed to serialise spec: ' + e.message);
         }
 
         const docWin = window.open('', '_blank');
-        if (!docWin) {
-            return showError('Pop-up was blocked by the browser. Please allow pop-ups for this site and try again.');
-        }
+        if (!docWin) return showError('Pop-up was blocked.');
 
         docWin.document.write(`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(apiTitle)}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-  </style>
+  <style>body { margin: 0; padding: 0; font-family: sans-serif; }</style>
 </head>
 <body>
   <div id="redoc-container"></div>
   <script src="${redocSrc}"><\/script>
   <script>
-    Redoc.init(
-      ${specJson},
-      {
-        scrollYOffset: 0,
-        hideDownloadButton: false,
-        theme: {
-          colors: { primary: { main: '#6d28d9' } },
-          typography: {
-            fontFamily: '"Inter", "Segoe UI", sans-serif',
-            headings: { fontFamily: '"Outfit", "Inter", sans-serif' },
-            code: { fontFamily: '"JetBrains Mono", "Fira Code", monospace' }
-          },
-          sidebar: {
-            backgroundColor: '#0f172a',
-            textColor: '#94a3b8'
-          }
-        }
-      },
-      document.getElementById('redoc-container')
-    );
+    Redoc.init(${specJson}, {}, document.getElementById('redoc-container'));
   <\/script>
 </body>
 </html>`);

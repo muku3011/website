@@ -98,7 +98,7 @@
                     <h2>OpenAPI & YAML Tools</h2>
                     <p>Convert between YAML and JSON, or render readable API documentation from OpenAPI specifications.</p>
                 </div>
-                <div class="tool-io-grid" style="grid-template-columns: 1fr 1fr; align-items: stretch;">
+                <div class="tool-io-grid">
                     <div class="input-pane" style="display: flex; flex-direction: column;">
                         <div class="pane-header">
                             <span>Input (YAML or JSON)</span>
@@ -120,9 +120,17 @@
                             </div>
                             <textarea class="code-editor" id="openapi-output" readonly spellcheck="false" style="flex: 1; border: none; border-radius: 0;"></textarea>
                         </div>
-                        <!-- Redoc Container -->
-                        <div id="openapi-redoc-container" style="display: none; height: 100%; width: 100%; background: #ffffff; overflow-y: auto;">
-                            <!-- Redoc will render here -->
+                        <!-- Redoc Container Wrapper -->
+                        <div id="openapi-redoc-wrapper" style="display: none; flex-direction: column; height: 100%; width: 100%;">
+                            <div class="pane-header" style="border-bottom: 1px solid var(--card-border); padding: 0.5rem 1rem;">
+                                <span>API Documentation</span>
+                                <div class="action-buttons-group">
+                                    <button class="btn btn-secondary btn-small" id="btn-openapi-fullscreen">Open Fullscreen</button>
+                                </div>
+                            </div>
+                            <div id="openapi-redoc-container" style="flex: 1; background: var(--console-bg); overflow-y: auto;">
+                                <!-- Redoc will render here -->
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -261,12 +269,24 @@
                             <!-- Key controls -->
                             <div class="form-group" id="crypto-passphrase-group">
                                 <label for="crypto-passphrase">Passphrase / Secret Key</label>
-                                <input type="password" id="crypto-passphrase" class="form-input" placeholder="Enter secret password for key derivation...">
+                                <div style="position: relative; display: flex; align-items: center;">
+                                    <input type="password" id="crypto-passphrase" class="form-input" placeholder="Enter secret password for key derivation..." style="padding-right: 2.5rem; width: 100%;">
+                                    <button type="button" id="btn-toggle-passphrase" style="position: absolute; right: 0.5rem; background: none; border: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center; justify-content: center; padding: 0.25rem;" aria-label="Toggle passphrase visibility">
+                                        <svg id="eye-icon-svg" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    </button>
+                                </div>
                             </div>
 
                             <div class="form-group" id="crypto-key-import-group" style="display: none;">
-                                <label for="crypto-key-import">Imported Public/Private Key (PEM or JWK format)</label>
-                                <textarea id="crypto-key-import" class="form-input code-editor" style="height: 80px;" placeholder="Paste RSA/EC public or private key block..."></textarea>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                                    <label for="crypto-key-import" style="margin: 0; font-size: 0.85rem; font-weight: 500;">Imported Public/Private Key (PEM or JWK)</label>
+                                    <div style="display: flex; gap: 0.4rem;">
+                                        <button type="button" class="btn btn-secondary btn-small" id="btn-load-generated-key" style="padding: 0.15rem 0.4rem; font-size: 0.65rem;">Load Generated</button>
+                                        <button type="button" class="btn btn-secondary btn-small" id="btn-upload-pem" style="padding: 0.15rem 0.4rem; font-size: 0.65rem;">Upload File</button>
+                                        <input type="file" id="file-pem-uploader" style="display: none;" accept=".pem,.key,.pub,.txt,.json">
+                                    </div>
+                                </div>
+                                <textarea id="crypto-key-import" class="form-input code-editor" style="height: 100px;" placeholder="Paste RSA/EC public or private key block or click load/upload..."></textarea>
                             </div>
 
                             <div class="form-group" id="crypto-signature-group" style="display: none;">
