@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initCryptoOperations();
     initKeyGenerator();
     initOpenApiTools();
+    initIpCidrCalculator();
 });
 
 function getInitials(name) {
@@ -1644,4 +1645,196 @@ function initOpenApiTools() {
 </html>`);
         docWin.document.close();
     });
+}
+
+// -------------------------------------------------------------
+// IP CIDR CALCULATOR & SUBNET PLANNER
+// -------------------------------------------------------------
+function initIpCidrCalculator() {
+    const ipInput = document.getElementById('cidr-ip');
+    const ipError = document.getElementById('cidr-ip-error');
+    const rangeSlider = document.getElementById('cidr-range');
+    const prefixLabel = document.getElementById('cidr-prefix-label');
+    const maskSelect = document.getElementById('cidr-mask');
+
+    // Outputs
+    const outCidrNotation = document.getElementById('out-cidr-notation');
+    const outNetAddress = document.getElementById('out-net-address');
+    const outIpRange = document.getElementById('out-ip-range');
+    const outBroadAddress = document.getElementById('out-broad-address');
+    const outTotalHosts = document.getElementById('out-total-hosts');
+    const outWildcardMask = document.getElementById('out-wildcard-mask');
+    const outIpClass = document.getElementById('out-ip-class');
+
+    // Binaries
+    const binIpAddress = document.getElementById('bin-ip-address');
+    const binSubnetMask = document.getElementById('bin-subnet-mask');
+    const binNetAddress = document.getElementById('bin-net-address');
+    const binBroadAddress = document.getElementById('bin-broad-address');
+
+    if (!ipInput || !rangeSlider || !maskSelect) return;
+
+    // Helper: Prefix to Subnet Mask IP String
+    function prefixToMaskString(prefix) {
+        let mask = 0;
+        if (prefix > 0) {
+            mask = (0xFFFFFFFF << (32 - prefix)) >>> 0;
+        }
+        return [
+            (mask >>> 24) & 255,
+            (mask >>> 16) & 255,
+            (mask >>> 8) & 255,
+            mask & 255
+        ].join('.');
+    }
+
+    // Populate dropdown selector options
+    maskSelect.innerHTML = '';
+    for (let p = 32; p >= 0; p--) {
+        const maskStr = prefixToMaskString(p);
+        const option = document.createElement('option');
+        option.value = p;
+        option.textContent = `${maskStr} (/${p})`;
+        if (p === 24) option.selected = true;
+        maskSelect.appendChild(option);
+    }
+
+    // Helper: Format bits into HTML with network/host color codes
+    function getBinarySpanString(val, prefix) {
+        const binaryStr = val.toString(2).padStart(32, '0');
+        let html = '';
+        for (let i = 0; i < 32; i++) {
+            const bit = binaryStr.charAt(i);
+            const isNetwork = i < prefix;
+            const colorClass = isNetwork ? 'var(--success-glow)' : 'var(--warning-glow)';
+            html += `<span style="color: ${colorClass}; font-weight: 500;">${bit}</span>`;
+            if (i === 7 || i === 15 || i === 23) {
+                html += `<span style="color: var(--text-muted); opacity: 0.5; margin: 0 4px;">.</span>`;
+            }
+        }
+        return html;
+    }
+
+    // Helper: Integer IP to dotted decimal string
+    function intToIpString(val) {
+        return [
+            (val >>> 24) & 255,
+            (val >>> 16) & 255,
+            (val >>> 8) & 255,
+            val & 255
+        ].join('.');
+    }
+
+    function calculateSubnet() {
+        const ipStr = ipInput.value.trim();
+        const prefix = parseInt(rangeSlider.value);
+        
+        // Synchronize UI Labels
+        if (prefixLabel) prefixLabel.textContent = `/${prefix}`;
+        
+        // Validate IPv4 format
+        const ipPattern = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+        const match = ipStr.match(ipPattern);
+        
+        let isValid = false;
+        let octets = [];
+        
+        if (match) {
+            octets = match.slice(1).map(Number);
+            isValid = octets.every(o => o >= 0 && o <= 255);
+        }
+
+        if (!isValid) {
+            ipInput.classList.add('invalid');
+            if (ipError) {
+                ipError.textContent = "Invalid IPv4 address format. Address must contain 4 octets between 0 and 255.";
+                ipError.style.display = 'block';
+            }
+            // Clear outputs
+            if (outCidrNotation) outCidrNotation.textContent = '--';
+            if (outNetAddress) outNetAddress.textContent = '--';
+            if (outIpRange) outIpRange.textContent = '--';
+            if (outBroadAddress) outBroadAddress.textContent = '--';
+            if (outTotalHosts) outTotalHosts.textContent = '--';
+            if (outWildcardMask) outWildcardMask.textContent = '--';
+            if (outIpClass) outIpClass.textContent = '--';
+            
+            if (binIpAddress) binIpAddress.textContent = '--';
+            if (binSubnetMask) binSubnetMask.textContent = '--';
+            if (binNetAddress) binNetAddress.textContent = '--';
+            if (binBroadAddress) binBroadAddress.textContent = '--';
+            return;
+        }
+
+        ipInput.classList.remove('invalid');
+        if (ipError) ipError.style.display = 'none';
+
+        // 32-bit unsigned integers represent IP space
+        const ipVal = ((octets[0] << 24) | (octets[1] << 16) | (octets[2] << 8) | octets[3]) >>> 0;
+        const maskVal = prefix > 0 ? (0xFFFFFFFF << (32 - prefix)) >>> 0 : 0;
+        
+        const netVal = (ipVal & maskVal) >>> 0;
+        const broadVal = (netVal | ~maskVal) >>> 0;
+        const wildcardVal = (~maskVal) >>> 0;
+
+        // Legacy Classes
+        let ipClass = 'Unknown';
+        const firstOctet = octets[0];
+        if (firstOctet >= 240) ipClass = 'Class E (Experimental)';
+        else if (firstOctet >= 224) ipClass = 'Class D (Multicast)';
+        else if (firstOctet >= 192) ipClass = 'Class C';
+        else if (firstOctet >= 128) ipClass = 'Class B';
+        else if (firstOctet >= 1) {
+            if (firstOctet === 127) ipClass = 'Class A (Loopback)';
+            else ipClass = 'Class A';
+        }
+
+        // Host count and usable ranges
+        let totalUsableHosts = 0;
+        let usableRange = '';
+
+        if (prefix === 32) {
+            totalUsableHosts = 1;
+            usableRange = `${intToIpString(ipVal)} (Single Host)`;
+        } else if (prefix === 31) {
+            totalUsableHosts = 2;
+            usableRange = `${intToIpString(netVal)} - ${intToIpString(broadVal)}`;
+        } else {
+            totalUsableHosts = (broadVal - netVal - 1);
+            const firstUsable = intToIpString(netVal + 1);
+            const lastUsable = intToIpString(broadVal - 1);
+            usableRange = `${firstUsable} - ${lastUsable}`;
+        }
+
+        // Populate outputs
+        if (outCidrNotation) outCidrNotation.textContent = `${intToIpString(ipVal)}/${prefix}`;
+        if (outNetAddress) outNetAddress.textContent = intToIpString(netVal);
+        if (outIpRange) outIpRange.textContent = usableRange;
+        if (outBroadAddress) outBroadAddress.textContent = intToIpString(broadVal);
+        if (outTotalHosts) outTotalHosts.textContent = totalUsableHosts.toLocaleString();
+        if (outWildcardMask) outWildcardMask.textContent = intToIpString(wildcardVal);
+        if (outIpClass) outIpClass.textContent = ipClass;
+
+        // Populate binary diagrams
+        if (binIpAddress) binIpAddress.innerHTML = getBinarySpanString(ipVal, prefix);
+        if (binSubnetMask) binSubnetMask.innerHTML = getBinarySpanString(maskVal, prefix);
+        if (binNetAddress) binNetAddress.innerHTML = getBinarySpanString(netVal, prefix);
+        if (binBroadAddress) binBroadAddress.innerHTML = getBinarySpanString(broadVal, prefix);
+    }
+
+    // Attach Event Listeners
+    ipInput.addEventListener('input', calculateSubnet);
+    
+    rangeSlider.addEventListener('input', () => {
+        maskSelect.value = rangeSlider.value;
+        calculateSubnet();
+    });
+    
+    maskSelect.addEventListener('change', () => {
+        rangeSlider.value = maskSelect.value;
+        calculateSubnet();
+    });
+
+    // Run initial calculation on load
+    calculateSubnet();
 }

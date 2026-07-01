@@ -87,6 +87,10 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
                     <span>OpenAPI Tools</span>
                 </li>
+                <li class="tools-menu-item" data-target="ip-cidr-calc">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+                    <span>IP CIDR Calculator</span>
+                </li>
             </ul>
         </aside>
 
@@ -532,8 +536,124 @@
                             <div style="display: flex; flex-direction: column; flex: 2;">
                                 <span style="font-size: 0.85rem; font-weight: 600; color: var(--primary-glow); margin-bottom: 0.25rem;">Payload</span>
                                 <pre class="code-viewer-container" style="flex: 1; margin: 0;"><code id="jwt-payload-output" class="code-viewer text-muted">JWT Payload JSON</code></pre>
+            </div>
+
+            <!-- PANEL: IP CIDR Calculator -->
+            <div id="ip-cidr-calc" class="tool-panel">
+                <div class="panel-header">
+                    <h2>IP CIDR Calculator & Subnet Planner</h2>
+                    <p>Calculate subnet details, host counts, wildcard masks, and view visual binary breakdowns of network partition spaces.</p>
+                </div>
+                <div class="tool-io-grid">
+                    <div class="input-pane" style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div class="pane-header">
+                            <span>Calculator Configuration</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 1.2rem; padding: 0.5rem 0;">
+                            <div class="form-group">
+                                <label for="cidr-ip" style="font-weight: 500;">IP Address</label>
+                                <input type="text" id="cidr-ip" value="192.168.1.1" placeholder="e.g. 192.168.1.1" class="form-input" style="font-family: monospace;">
+                                <div id="cidr-ip-error" class="validation-msg error" style="display: none; margin-top: 0.25rem;"></div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <label for="cidr-range" style="font-weight: 500;">CIDR Prefix Length</label>
+                                    <span id="cidr-prefix-label" style="font-weight: 600; color: var(--primary-glow); font-family: monospace;">/24</span>
+                                </div>
+                                <input type="range" id="cidr-range" min="0" max="32" value="24" class="form-range" style="width: 100%; margin-top: 0.5rem;">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cidr-mask" style="font-weight: 500;">Subnet Mask</label>
+                                <select id="cidr-mask" class="form-input" style="background: var(--console-bg); border: 1px solid var(--card-border); color: var(--text-primary); padding: 0.6rem; font-family: monospace;">
+                                </select>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="output-pane" style="display: flex; flex-direction: column; background: var(--console-bg); border-radius: var(--border-radius-sm); border: 1px solid var(--card-border); overflow: hidden;">
+                        <div class="pane-header" style="border-bottom: 1px solid var(--card-border); padding: 0.5rem 1rem;">
+                            <span>Calculated Network Details</span>
+                        </div>
+                        <div style="padding: 1.2rem; display: flex; flex-direction: column; gap: 0.8rem; font-size: 0.9rem;">
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 0.4rem;">
+                                <span style="color: var(--text-muted);">CIDR Notation:</span>
+                                <strong id="out-cidr-notation" style="font-family: monospace; color: var(--primary-glow);">--</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 0.4rem;">
+                                <span style="color: var(--text-muted);">Network Address:</span>
+                                <strong id="out-net-address" style="font-family: monospace;">--</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 0.4rem;">
+                                <span style="color: var(--text-muted);">Usable IP Range:</span>
+                                <strong id="out-ip-range" style="font-family: monospace;">--</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 0.4rem;">
+                                <span style="color: var(--text-muted);">Broadcast Address:</span>
+                                <strong id="out-broad-address" style="font-family: monospace;">--</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 0.4rem;">
+                                <span style="color: var(--text-muted);">Total Usable Hosts:</span>
+                                <strong id="out-total-hosts" style="font-family: monospace; color: var(--success-glow);">--</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--card-border); padding-bottom: 0.4rem;">
+                                <span style="color: var(--text-muted);">Wildcard Mask:</span>
+                                <strong id="out-wildcard-mask" style="font-family: monospace;">--</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="color: var(--text-muted);">IP Class (Legacy):</span>
+                                <strong id="out-ip-class" style="font-family: monospace;">--</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Binary Visualization / Educational Details -->
+                <div style="margin-top: 1.5rem; border-top: 1px solid var(--card-border); padding-top: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem;">
+                    <div>
+                        <h3 style="font-family: var(--font-heading); font-size: 1.1rem; color: var(--primary-glow); margin-bottom: 0.5rem;">Binary Breakdown</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                            The network bits are colored in <span style="color: var(--success-glow); font-weight: 600;">green</span>, and the host bits are colored in <span style="color: var(--warning-glow); font-weight: 600;">pink/orange</span>.
+                        </p>
+                        
+                        <div style="background: var(--console-bg); border: 1px solid var(--card-border); border-radius: var(--border-radius-sm); padding: 1.2rem; font-family: monospace; font-size: 0.85rem; line-height: 1.6; display: flex; flex-direction: column; gap: 0.8rem; overflow-x: auto;">
+                            <div>
+                                <span style="display: inline-block; width: 140px; color: var(--text-muted);">IP Address:</span>
+                                <span id="bin-ip-address">--</span>
+                            </div>
+                            <div>
+                                <span style="display: inline-block; width: 140px; color: var(--text-muted);">Subnet Mask:</span>
+                                <span id="bin-subnet-mask">--</span>
+                            </div>
+                            <div style="border-top: 1px dashed var(--card-border); padding-top: 0.8rem;">
+                                <span style="display: inline-block; width: 140px; color: var(--text-muted);">Network Address:</span>
+                                <span id="bin-net-address">--</span>
+                            </div>
+                            <div>
+                                <span style="display: inline-block; width: 140px; color: var(--text-muted);">Broadcast Address:</span>
+                                <span id="bin-broad-address">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- How Subnetting Works Educational Panel -->
+                    <div style="background: hsla(210, 20%, 15%, 0.3); border: 1px solid var(--card-border); border-radius: var(--border-radius-sm); padding: 1.2rem; font-size: 0.85rem; line-height: 1.5;">
+                        <h4 style="font-family: var(--font-heading); font-size: 0.95rem; color: var(--primary-glow); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="9" x2="12.01" y2="9"/></svg>
+                            How CIDR Subnet Calculation Works
+                        </h4>
+                        <ol style="margin-left: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; color: var(--text-secondary);">
+                            <li><strong>Binary Conversion:</strong> IP addresses consist of 32 bits divided into 4 groups of 8 (octets). For example, <code>192.168.1.1</code> translates to <code>11000000.10101000.00000001.00000001</code>.</li>
+                            <li><strong>Subnet Masking (CIDR Prefix):</strong> The prefix length (e.g. <code>/24</code>) represents the number of contiguous leading bits set to <code>1</code> in the subnet mask. A prefix of <code>/24</code> means 24 ones followed by 8 zeros: <code>11111111.11111111.11111111.00000000</code> (or <code>255.255.255.0</code>).</li>
+                            <li><strong>Calculating Network Address:</strong> Performed by executing a bitwise logical <code>AND</code> operation between the IP address and the Subnet Mask. Only bits where both the IP and the mask are <code>1</code> remain set:
+                                <br><code style="font-family: monospace; display: block; margin-top: 0.2rem; background: var(--console-bg); padding: 0.2rem 0.4rem; border-radius: 4px; border: 1px solid var(--card-border);">Network Address = IP & Subnet Mask</code>
+                            </li>
+                            <li><strong>Calculating Broadcast Address:</strong> Computed by combining the Network Address with the inverted (bitwise NOT) Subnet Mask using a bitwise logical <code>OR</code>. This sets all host-portion bits to <code>1</code>:
+                                <br><code style="font-family: monospace; display: block; margin-top: 0.2rem; background: var(--console-bg); padding: 0.2rem 0.4rem; border-radius: 4px; border: 1px solid var(--card-border);">Broadcast Address = Network Address | ~Subnet Mask</code>
+                            </li>
+                            <li><strong>Usable Hosts:</strong> Calculated as $2^{\text{host bits}} - 2$. We subtract 2 because the first IP address is reserved for the <strong>Network Address</strong> and the last IP address is reserved for the <strong>Broadcast Address</strong>.</li>
+                        </ol>
                     </div>
                 </div>
             </div>
