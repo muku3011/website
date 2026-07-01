@@ -8,7 +8,13 @@ const isLocal = window.location.hostname === 'localhost' || window.location.host
 function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return decodeURIComponent(parts.pop().split(';').shift());
+    if (parts.length === 2) {
+        let val = decodeURIComponent(parts.pop().split(';').shift());
+        if (val.startsWith('"') && val.endsWith('"')) {
+            val = val.substring(1, val.length - 1);
+        }
+        return val;
+    }
     return null;
 }
 
