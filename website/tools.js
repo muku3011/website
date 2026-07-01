@@ -18,35 +18,8 @@ function getCookie(name) {
     return null;
 }
 
-// Theme Handling
-function initTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    setTheme(savedTheme);
-}
-
-function setTheme(theme) {
-    const body = document.body;
-    if (theme === 'dark') {
-        body.classList.remove('light-theme');
-        body.classList.add('dark-theme');
-    } else {
-        body.classList.remove('dark-theme');
-        body.classList.add('light-theme');
-    }
-    localStorage.setItem('theme', theme);
-}
-
 // Global UI Setup on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
-    initTheme();
-
-    const themeToggleBtn = document.getElementById('theme-toggle');
-    if (themeToggleBtn) {
-        themeToggleBtn.addEventListener('click', () => {
-            const currentTheme = document.body.classList.contains('light-theme') ? 'light' : 'dark';
-            setTheme(currentTheme === 'light' ? 'dark' : 'light');
-        });
-    }
 
     // Set User Role from Cookie (for nav visibility)
     let userGroupsVal = '';

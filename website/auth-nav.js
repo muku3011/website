@@ -1,5 +1,22 @@
 // Unified Authentication, Navigation and Idle Session Tracker
 (function() {
+    // Theme Management
+    function setTheme(theme) {
+        const body = document.body;
+        if (theme === 'dark') {
+            body.classList.remove('light-theme');
+            body.classList.add('dark-theme');
+        } else {
+            body.classList.remove('dark-theme');
+            body.classList.add('light-theme');
+        }
+        localStorage.setItem('theme', theme);
+    }
+
+    // Set theme immediately to prevent visual flash on load
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    setTheme(savedTheme);
+
     // Utility: Parse cookies
     function getCookie(name) {
         const value = `; ${document.cookie}`;
@@ -277,8 +294,19 @@
         resetIdleTimer();
     }
 
+    function initThemeToggle() {
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = document.body.classList.contains('light-theme') ? 'light' : 'dark';
+                setTheme(currentTheme === 'light' ? 'dark' : 'light');
+            });
+        }
+    }
+
     // Trigger DOM Initializations
     document.addEventListener('DOMContentLoaded', () => {
+        initThemeToggle();
         initNavigation();
         initHeaderActions();
         initIdleTimer();

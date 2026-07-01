@@ -1,33 +1,4 @@
-// -------------------------------------------------------------
-// THEME MANAGER
-// -------------------------------------------------------------
-const themeToggle = document.getElementById('theme-toggle');
-const body = document.body;
 
-// Load persisted theme or default to dark
-const savedTheme = localStorage.getItem('theme') || 'dark';
-setTheme(savedTheme);
-
-if (themeToggle) {
-    themeToggle.addEventListener('click', () => {
-        const currentTheme = body.classList.contains('dark-theme') ? 'dark' : 'light';
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        setTheme(newTheme);
-    });
-}
-
-function setTheme(theme) {
-    if (theme === 'dark') {
-        body.classList.remove('light-theme');
-        body.classList.add('dark-theme');
-    } else {
-        body.classList.remove('dark-theme');
-        body.classList.add('light-theme');
-    }
-    localStorage.setItem('theme', theme);
-}
-
-// -------------------------------------------------------------
 // SCROLL REVEAL FALLBACK (INTERSECTION OBSERVER)
 // -------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
