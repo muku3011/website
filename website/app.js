@@ -866,7 +866,7 @@ if (isLocal) {
     userEmailVal = getCookie('hutta_email') || 'no-email@hutta.in';
     userGroupsVal = getCookie('hutta_groups') || 'users';
     
-    const isAdmin = userGroupsVal.split(',').includes('admins');
+    const isAdmin = userGroupsVal.split(',').map(g => g.trim()).includes('admins');
     window.userRole = isAdmin ? 'admin' : 'viewer';
 }
 

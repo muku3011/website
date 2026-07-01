@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.userRole = 'admin';
     } else {
         userGroupsVal = getCookie('hutta_groups') || 'users';
-        const isAdmin = userGroupsVal.split(',').includes('users');
+        const isAdmin = userGroupsVal.split(',').map(g => g.trim()).includes('admins');
         window.userRole = isAdmin ? 'admin' : 'viewer';
     }
 
