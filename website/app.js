@@ -419,6 +419,45 @@ window.updateActivationDetails = function() {
     
     const selectedProfile = currentProfiles.find(p => p.iccid === window.selectedIccid);
     
+    // Update Metadata Details
+    const metadataContainer = document.getElementById('profile-metadata-details');
+    if (metadataContainer) {
+        if (selectedProfile) {
+            metadataContainer.style.display = 'block';
+            
+            const detailClass = document.getElementById('detail-profile-class');
+            const detailMccMnc = document.getElementById('detail-mcc-mnc');
+            const detailCreatedAt = document.getElementById('detail-created-at');
+            const detailDownloadedAt = document.getElementById('detail-downloaded-at');
+            const detailOrderId = document.getElementById('detail-order-id');
+
+            if (detailClass) detailClass.textContent = selectedProfile.profileClass || 'OPERATIONAL';
+            if (detailMccMnc) detailMccMnc.textContent = selectedProfile.mccMnc || '00101';
+            
+            if (detailCreatedAt) {
+                if (selectedProfile.createdAt) {
+                    const date = new Date(selectedProfile.createdAt);
+                    detailCreatedAt.textContent = date.toLocaleString();
+                } else {
+                    detailCreatedAt.textContent = '--';
+                }
+            }
+            if (detailDownloadedAt) {
+                if (selectedProfile.downloadedAt) {
+                    const date = new Date(selectedProfile.downloadedAt);
+                    detailDownloadedAt.textContent = date.toLocaleString();
+                } else {
+                    detailDownloadedAt.textContent = '--';
+                }
+            }
+            if (detailOrderId) {
+                detailOrderId.textContent = selectedProfile.orderId || '--';
+            }
+        } else {
+            metadataContainer.style.display = 'none';
+        }
+    }
+    
     if (!selectedProfile) {
         if (qrImg) qrImg.style.display = 'none';
         if (qrPlaceholder) {
@@ -577,6 +616,11 @@ if (btnImport) {
         if (overrideIccid) {
             formData.append('iccid', overrideIccid);
         }
+
+        const profileClassVal = document.getElementById('import-profile-class')?.value || 'OPERATIONAL';
+        const mccMncVal = document.getElementById('import-mcc-mnc')?.value.trim() || '00101';
+        formData.append('profileClass', profileClassVal);
+        formData.append('mccMnc', mccMncVal);
 
         try {
             const response = await fetch(`${BACKEND_BASE}/gsma/rsp/v2/admin/importProfile`, {

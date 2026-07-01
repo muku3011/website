@@ -68,6 +68,19 @@
                     <label for="override-iccid">Override ICCID (Optional)</label>
                     <input type="text" id="override-iccid" placeholder="e.g. 89000123456789012399" class="form-input">
                 </div>
+
+                <div class="form-group" style="margin-top: 0.75rem;">
+                    <label for="import-profile-class">Profile Class</label>
+                    <select id="import-profile-class" class="form-input" style="background: var(--console-bg); border: 1px solid var(--card-border); color: var(--text-primary); padding: 0.6rem;">
+                        <option value="OPERATIONAL">OPERATIONAL (Commercial)</option>
+                        <option value="TEST">TEST (TS.48 Conformance)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-top: 0.75rem;">
+                    <label for="import-mcc-mnc">MCC / MNC</label>
+                    <input type="text" id="import-mcc-mnc" value="00101" placeholder="e.g. 20810" class="form-input">
+                </div>
                 
                 <button id="btn-import-profile" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
@@ -107,6 +120,18 @@
                         <button id="btn-copy-ac" type="button" class="btn btn-secondary" style="padding: 0.6rem 0.8rem;" title="Copy to Clipboard">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
                         </button>
+                    </div>
+                </div>
+
+                <!-- GSMA SAS Auditable Metadata -->
+                <div id="profile-metadata-details" style="width: 100%; display: none; margin-top: 1rem; border-top: 1px solid var(--card-border); padding-top: 1rem;">
+                    <h4 style="font-size: 0.85rem; font-weight: 600; color: var(--primary-glow); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px;">Metadata (GSMA SAS Audit Log)</h4>
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 0.4rem; font-size: 0.8rem; line-height: 1.4;">
+                        <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Profile Class:</span><span id="detail-profile-class" style="font-weight: 500;">--</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">MCC/MNC:</span><span id="detail-mcc-mnc" style="font-weight: 500;">--</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Created At:</span><span id="detail-created-at" style="font-weight: 500;">--</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Downloaded At:</span><span id="detail-downloaded-at" style="font-weight: 500;">--</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Order ID:</span><span id="detail-order-id" style="font-family: monospace; font-size: 0.75rem; word-break: break-all;">--</span></div>
                     </div>
                 </div>
             </div>

@@ -24,17 +24,22 @@ public class AdminController {
   @PostMapping(value = "/importProfile")
   public ResponseEntity<?> importProfile(
       @RequestParam("file") MultipartFile file,
-      @RequestParam(value = "iccid", required = false) String iccid) {
+      @RequestParam(value = "iccid", required = false) String iccid,
+      @RequestParam(value = "profileClass", required = false, defaultValue = "OPERATIONAL")
+          String profileClass,
+      @RequestParam(value = "mccMnc", required = false, defaultValue = "00101") String mccMnc) {
 
     if (file == null || file.isEmpty()) {
       return ResponseEntity.badRequest().body("Error: Uploaded file is empty or missing");
     }
 
     log.info(
-        "Admin importProfile: name={}, size={}, iccid={}",
+        "Admin importProfile: name={}, size={}, iccid={}, profileClass={}, mccMnc={}",
         file.getOriginalFilename(),
         file.getSize(),
-        iccid);
+        iccid,
+        profileClass,
+        mccMnc);
 
     try {
       byte[] contentBytes = file.getBytes();
@@ -54,7 +59,8 @@ public class AdminController {
         // Ignore, keep using raw contentBytes
       }
 
-      return importProfileBytes(profileBytes, iccid, file.getOriginalFilename());
+      return importProfileBytes(
+          profileBytes, iccid, file.getOriginalFilename(), profileClass, mccMnc);
     } catch (IOException e) {
       log.error("Failed to read uploaded file", e);
       return ResponseEntity.internalServerError()
@@ -63,7 +69,11 @@ public class AdminController {
   }
 
   private ResponseEntity<?> importProfileBytes(
-      byte[] profileBytes, String overrideIccid, String filename) {
+      byte[] profileBytes,
+      String overrideIccid,
+      String filename,
+      String profileClass,
+      String mccMnc) {
     String iccid = overrideIccid;
     if (iccid == null || iccid.trim().isEmpty()) {
       iccid = extractIccid(profileBytes);
@@ -83,6 +93,11 @@ public class AdminController {
     profile.setState("AVAILABLE");
     profile.setProfilePayload(payload);
     profile.setNetworkType(networkType);
+    profile.setProfileClass(profileClass != null ? profileClass : "OPERATIONAL");
+    profile.setMccMnc(mccMnc != null ? mccMnc : "00101");
+    profile.setCreatedAt(java.time.LocalDateTime.now());
+    profile.setDownloadedAt(null);
+    profile.setOrderId(null);
 
     profileRepository.save(profile);
     log.info("Profile imported successfully: ICCID={}, networkType={}", iccid, networkType);

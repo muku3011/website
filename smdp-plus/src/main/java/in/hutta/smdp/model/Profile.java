@@ -19,4 +19,19 @@ public class Profile {
 
   @Column(columnDefinition = "TEXT")
   private String profilePayload; // Base64 mock BPP or profile bytes
+
+  @Column(name = "profile_class")
+  private String profileClass;
+
+  @Column(name = "mcc_mnc")
+  private String mccMnc;
+
+  @Column(name = "created_at")
+  private java.time.LocalDateTime createdAt;
+
+  @Column(name = "downloaded_at")
+  private java.time.LocalDateTime downloadedAt;
+
+  @Column(name = "order_id")
+  private String orderId;
 }

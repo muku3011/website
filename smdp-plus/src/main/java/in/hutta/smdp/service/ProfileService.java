@@ -37,6 +37,7 @@ public class ProfileService {
       if ("AVAILABLE".equals(profile.getState())) {
         profile.setEid(eid);
         profile.setState("ORDERED");
+        profile.setOrderId("order_" + java.util.UUID.randomUUID().toString().substring(0, 8));
         profileRepository.save(profile);
         log.info(
             "Profile reserved successfully: ICCID={}, state={}",
@@ -181,6 +182,10 @@ public class ProfileService {
 
       // Complete download lifecycle
       profile.setState("DOWNLOADED");
+      profile.setDownloadedAt(java.time.LocalDateTime.now());
+      if (session.getEid() != null) {
+        profile.setEid(session.getEid());
+      }
       profileRepository.save(profile);
 
       // Clean up session context
