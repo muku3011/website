@@ -815,134 +815,26 @@ dialogs.forEach(dialog => {
 // -------------------------------------------------------------
 // AUTHORIZATION & LOGOUT HANDLER
 // -------------------------------------------------------------
-// Dropdown Toggle Logic
-const profileMenu = document.getElementById('user-profile-menu');
-const profileTrigger = document.getElementById('user-profile-trigger');
-
-if (profileTrigger && profileMenu) {
-    profileTrigger.addEventListener('click', (e) => {
-        e.stopPropagation();
-        profileMenu.classList.toggle('active');
-    });
-    
-    document.addEventListener('click', (e) => {
-        if (!profileMenu.contains(e.target)) {
-            profileMenu.classList.remove('active');
-        }
-    });
-}
-const logoutBtn = document.getElementById('logout-btn');
-
-function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) {
-        let val = decodeURIComponent(parts.pop().split(';').shift());
-        if (val.startsWith('"') && val.endsWith('"')) {
-            val = val.substring(1, val.length - 1);
-        }
-        return val;
-    }
-    return null;
-}
-
-// Determine auth/role
-window.userRole = 'viewer';
-let displayName = '';
-let userNameVal = '';
-let userEmailVal = '';
-let userGroupsVal = '';
-
-const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-if (isLocal) {
-    window.userRole = 'admin';
-    displayName = 'Local Dev';
-    userNameVal = 'localadmin';
-    userEmailVal = 'admin@hutta.local';
-    userGroupsVal = 'admins, users';
-} else {
-    userNameVal = getCookie('hutta_user') || 'viewer';
-    displayName = getCookie('hutta_name') || userNameVal;
-    userEmailVal = getCookie('hutta_email') || 'no-email@hutta.in';
-    userGroupsVal = getCookie('hutta_groups') || 'users';
-    
-    const isAdmin = userGroupsVal.split(',').map(g => g.trim()).includes('admins');
-    window.userRole = isAdmin ? 'admin' : 'viewer';
-}
-
-function getInitials(name) {
-    if (!name) return 'U';
-    const parts = name.trim().split(/\s+/);
-    if (parts.length >= 2) {
-        return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
-    }
-    return name.charAt(0).toUpperCase();
-}
-
+// -------------------------------------------------------------
+// AUTHORIZATION & PERMISSIONS
+// -------------------------------------------------------------
 function enforceRolePermissions() {
-    const userTriggerLabel = document.getElementById('user-display-name-label');
-    const userInitials = document.getElementById('user-avatar-initials');
-    const dropdownDisplayName = document.getElementById('dropdown-display-name');
-    const dropdownUsernameHandle = document.getElementById('dropdown-username-handle');
-    const dropdownEmail = document.getElementById('dropdown-email');
-    const dropdownRole = document.getElementById('dropdown-role-badge');
-    const dropdownGroups = document.getElementById('dropdown-user-groups');
+    if (window.userRole !== 'admin') {
+        // Disable all admin-only buttons & dropzones
+        document.querySelectorAll('.btn-delete, .btn-primary-action, .btn-secondary-action, .btn-success-action, #btn-import-profile').forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.4';
+            btn.style.cursor = 'not-allowed';
+            btn.title = 'Actions restricted to Administrator';
+        });
 
-    // Update Avatar Initials
-    if (userInitials) {
-        userInitials.textContent = getInitials(displayName);
-    }
-
-    // Update Trigger Display Name
-    if (userTriggerLabel) {
-        userTriggerLabel.textContent = displayName;
-    }
-
-    // Update Dropdown details
-    if (dropdownDisplayName) {
-        dropdownDisplayName.textContent = displayName;
-    }
-
-    if (dropdownUsernameHandle) {
-        dropdownUsernameHandle.textContent = `@${userNameVal}`;
-    }
-
-    if (dropdownEmail) {
-        dropdownEmail.textContent = userEmailVal;
-    }
-
-    if (dropdownGroups) {
-        dropdownGroups.textContent = userGroupsVal.split(',').join(', ');
-    }
-
-    if (dropdownRole) {
-        if (window.userRole === 'admin') {
-            dropdownRole.textContent = 'Administrator';
-            dropdownRole.style.background = 'hsla(145, 80%, 50%, 0.15)';
-            dropdownRole.style.color = 'var(--success-glow)';
-            dropdownRole.style.border = '1px solid hsla(145, 80%, 50%, 0.3)';
-        } else {
-            dropdownRole.textContent = 'Viewer';
-            dropdownRole.style.background = 'hsla(14, 90%, 60%, 0.15)';
-            dropdownRole.style.color = 'var(--warning-glow)';
-            dropdownRole.style.border = '1px solid hsla(14, 90%, 60%, 0.3)';
-            
-            // Disable all admin-only buttons & dropzones
-            document.querySelectorAll('.btn-delete, .btn-primary-action, .btn-secondary-action, .btn-success-action, #btn-import-profile').forEach(btn => {
-                btn.disabled = true;
-                btn.style.opacity = '0.4';
-                btn.style.cursor = 'not-allowed';
-                btn.title = 'Actions restricted to Administrator';
-            });
-
-            if (dropzone) {
-                dropzone.style.opacity = '0.4';
-                dropzone.style.cursor = 'not-allowed';
-                dropzone.title = 'Imports restricted to Administrator';
-                // Remove click listener
-                const clone = dropzone.cloneNode(true);
-                dropzone.parentNode.replaceChild(clone, dropzone);
-            }
+        if (typeof dropzone !== 'undefined' && dropzone) {
+            dropzone.style.opacity = '0.4';
+            dropzone.style.cursor = 'not-allowed';
+            dropzone.title = 'Imports restricted to Administrator';
+            // Remove click listener
+            const clone = dropzone.cloneNode(true);
+            dropzone.parentNode.replaceChild(clone, dropzone);
         }
     }
 }
@@ -1182,134 +1074,6 @@ function initLpaSimulator() {
     }
 }
 
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-        if (isLocal) {
-            window.location.replace('index.html');
-        } else {
-            // Show themed full-screen logout overlay
-            const overlay = document.createElement('div');
-            overlay.id = 'logout-loading-overlay';
-            overlay.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
-                background: var(--card-bg);
-                backdrop-filter: blur(8px);
-                -webkit-backdrop-filter: blur(8px);
-                z-index: 99999;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                opacity: 0;
-                transition: opacity 0.3s ease;
-                font-family: var(--font-primary), system-ui, -apple-system, sans-serif;
-            `;
-            
-            overlay.innerHTML = `
-                <style>
-                    .logout-spinner-container {
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        gap: 1.5rem;
-                        text-align: center;
-                    }
-                    .logout-spinner-orb {
-                        width: 60px;
-                        height: 60px;
-                        border-radius: 50%;
-                        background: linear-gradient(135deg, var(--primary-glow, #0070f3), var(--secondary-glow, #ff0070));
-                        box-shadow: 0 0 30px var(--primary-glow, #0070f3);
-                        animation: logout-pulse 2s infinite ease-in-out, logout-rotate 4s infinite linear;
-                    }
-                    .logout-spinner-text {
-                        color: var(--text-primary, #ffffff);
-                        font-size: 1.1rem;
-                        font-weight: 500;
-                        letter-spacing: 0.5px;
-                        margin: 0;
-                        font-family: var(--font-heading), system-ui;
-                    }
-                    @keyframes logout-pulse {
-                        0%, 100% { transform: scale(0.9); opacity: 0.8; box-shadow: 0 0 20px var(--primary-glow, #0070f3); }
-                        50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 45px var(--secondary-glow, #ff0070); }
-                    }
-                    @keyframes logout-rotate {
-                        100% { transform: rotate(360deg); }
-                    }
-                </style>
-                <div class="logout-spinner-container">
-                    <div class="logout-spinner-orb"></div>
-                    <p class="logout-spinner-text">Logging out securely...</p>
-                </div>
-            `;
-            
-            document.body.appendChild(overlay);
-            
-            // Trigger transition
-            setTimeout(() => { overlay.style.opacity = '1'; }, 50);
-            
-            // Clear custom application cookies
-            const clearCookies = () => {
-                const cookieNames = ['hutta_user', 'hutta_groups', 'hutta_auth', 'hutta_name', 'hutta_email'];
-                cookieNames.forEach(name => {
-                    document.cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; Secure; SameSite=Lax`;
-                    document.cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC;`;
-                });
-            };
-            clearCookies();
-
-            // Perform logout sequentially via APIs in the background
-            const performLogout = async () => {
-                // 1. POST to Authelia API logout endpoint
-                try {
-                    await fetch('/authelia/api/logout', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({})
-                    });
-                } catch (e) {
-                    console.warn("Authelia API logout (POST) failed:", e);
-                }
-
-                // 2. GET to Authelia HTML logout endpoint
-                try {
-                    await fetch('/authelia/logout', {
-                        method: 'GET',
-                        credentials: 'same-origin'
-                    });
-                } catch (e) {
-                    console.warn("Authelia page logout (GET) failed:", e);
-                }
-
-                // 3. GET to Apache OIDC logout endpoint
-                try {
-                    await fetch('/redirect_uri?logout=https%3A%2F%2Fhutta.in%2F', {
-                        method: 'GET',
-                        credentials: 'same-origin'
-                    });
-                } catch (e) {
-                    console.warn("Apache OIDC logout failed:", e);
-                }
-
-                // Double check cookies are cleared
-                clearCookies();
-
-                // Redirect to homepage
-                setTimeout(() => {
-                    window.location.replace('index.html');
-                }, 1000);
-            };
-            
-            performLogout();
-        }
-    });
-}
 
 // -------------------------------------------------------------
 // LOCAL DEVICE eSIM CRUD MANAGEMENT

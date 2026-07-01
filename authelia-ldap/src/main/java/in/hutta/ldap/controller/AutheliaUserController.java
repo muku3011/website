@@ -25,12 +25,19 @@ public class AutheliaUserController {
     private String displayname;
     private String email;
     private List<String> groups;
+    private Integer inactivityTimeout;
 
-    public UserResponse(String username, String displayname, String email, List<String> groups) {
+    public UserResponse(
+        String username,
+        String displayname,
+        String email,
+        List<String> groups,
+        Integer inactivityTimeout) {
       this.username = username;
       this.displayname = displayname;
       this.email = email;
       this.groups = groups;
+      this.inactivityTimeout = inactivityTimeout;
     }
 
     public String getUsername() {
@@ -48,6 +55,10 @@ public class AutheliaUserController {
     public List<String> getGroups() {
       return groups;
     }
+
+    public Integer getInactivityTimeout() {
+      return inactivityTimeout;
+    }
   }
 
   // DTO for creating/updating a user
@@ -56,6 +67,7 @@ public class AutheliaUserController {
     private String email;
     private List<String> groups;
     private String password;
+    private Integer inactivityTimeout;
 
     public String getDisplayname() {
       return displayname;
@@ -88,6 +100,14 @@ public class AutheliaUserController {
     public void setPassword(String password) {
       this.password = password;
     }
+
+    public Integer getInactivityTimeout() {
+      return inactivityTimeout;
+    }
+
+    public void setInactivityTimeout(Integer inactivityTimeout) {
+      this.inactivityTimeout = inactivityTimeout;
+    }
   }
 
   @GetMapping
@@ -101,9 +121,27 @@ public class AutheliaUserController {
                         u.getUsername(),
                         u.getDisplayName(),
                         u.getEmail(),
-                        new ArrayList<>(u.getGroups())))
+                        new ArrayList<>(u.getGroups()),
+                        u.getInactivityTimeout()))
             .collect(Collectors.toList());
     return ResponseEntity.ok(responses);
+  }
+
+  @GetMapping("/{username}")
+  public ResponseEntity<?> getUserByUsername(@PathVariable("username") String username) {
+    Optional<AutheliaUser> userOpt = userService.getUserByUsername(username);
+    if (userOpt.isEmpty()) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
+    }
+    AutheliaUser u = userOpt.get();
+    UserResponse response =
+        new UserResponse(
+            u.getUsername(),
+            u.getDisplayName(),
+            u.getEmail(),
+            new ArrayList<>(u.getGroups()),
+            u.getInactivityTimeout());
+    return ResponseEntity.ok(response);
   }
 
   @PostMapping
@@ -124,7 +162,8 @@ public class AutheliaUserController {
           request.getPassword(),
           request.getGroups() != null
               ? new LinkedHashSet<>(request.getGroups())
-              : new LinkedHashSet<>());
+              : new LinkedHashSet<>(),
+          request.getInactivityTimeout());
       return ResponseEntity.status(HttpStatus.CREATED)
           .body(Map.of("message", "User created successfully"));
     } catch (IllegalArgumentException e) {
@@ -141,7 +180,8 @@ public class AutheliaUserController {
           request.getDisplayname(),
           request.getEmail(),
           request.getPassword(),
-          request.getGroups() != null ? new LinkedHashSet<>(request.getGroups()) : null);
+          request.getGroups() != null ? new LinkedHashSet<>(request.getGroups()) : null,
+          request.getInactivityTimeout());
       return ResponseEntity.ok(Map.of("message", "User updated successfully"));
     } catch (NoSuchElementException e) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));

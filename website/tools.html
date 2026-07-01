@@ -31,10 +31,11 @@
             <nav class="nav-menu">
                 <a href="index.html" class="nav-link">Home</a>
                 <a href="tools.html" class="nav-link active" id="nav-tools">Tools</a>
-                <a href="profiles.html" class="nav-link">Profiles</a>
+                <a href="profiles.html" class="nav-link" id="nav-profiles">Profiles</a>
                 <a href="admin.html" class="nav-link" id="nav-admin">Admin</a>
             </nav>
             <div class="header-actions">
+                <div id="auth-header-container" style="display: flex; align-items: center;"></div>
                 <button id="theme-toggle" class="btn-icon" aria-label="Toggle light and dark theme" title="Toggle Theme">
                     <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
                     <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
@@ -546,6 +547,7 @@
 
     <script src="libs/js-yaml.min.js"></script>
     <script src="libs/redoc.standalone.js"></script>
+    <script src="auth-nav.js?v=2"></script>
     <script src="tools.js?v=2"></script>
 </body>
 </html>

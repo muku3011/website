@@ -27,4 +27,7 @@ public class AutheliaUser {
   @CollectionTable(name = "authelia_user_group", joinColumns = @JoinColumn(name = "username"))
   @Column(name = "group_name")
   private Set<String> groups;
+
+  @Column(name = "inactivity_timeout", nullable = true)
+  private Integer inactivityTimeout;
 }

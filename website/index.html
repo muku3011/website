@@ -35,11 +35,12 @@
             <nav class="nav-menu">
                 <a href="index.html" class="nav-link active">Home</a>
                 <a href="tools.html" class="nav-link" id="nav-tools">Tools</a>
-                <a href="profiles.html" class="nav-link">Profiles</a>
+                <a href="profiles.html" class="nav-link" id="nav-profiles">Profiles</a>
                 <a href="admin.html" class="nav-link" id="nav-admin">Admin</a>
             </nav>
 
             <div class="header-actions">
+                <div id="auth-header-container" style="display: flex; align-items: center;"></div>
                 <button id="theme-toggle" class="btn-icon" aria-label="Toggle light and dark theme"
                     title="Toggle Theme">
                     <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
@@ -747,6 +748,7 @@
             Raspberry Pi, GCP, Authelia & Certbot.</p>
     </footer>
 
+    <script src="auth-nav.js?v=2"></script>
     <script src="portfolio.js"></script>
 </body>
 

@@ -31,21 +31,36 @@ public class AutheliaUserService {
 
   @Transactional
   public void createUser(
-      String username, String displayName, String email, String password, Set<String> groups) {
+      String username,
+      String displayName,
+      String email,
+      String password,
+      Set<String> groups,
+      Integer inactivityTimeout) {
     String cleanedUsername = username.trim().toLowerCase();
     if (userRepository.existsById(cleanedUsername)) {
       throw new IllegalArgumentException("User already exists");
     }
     AutheliaUser user =
         new AutheliaUser(
-            cleanedUsername, displayName, email, Argon2idVerifier.hash(password), groups);
+            cleanedUsername,
+            displayName,
+            email,
+            Argon2idVerifier.hash(password),
+            groups,
+            inactivityTimeout != null ? inactivityTimeout : 15);
     userRepository.save(user);
     ldapServerManager.addOrUpdateUser(user);
   }
 
   @Transactional
   public void updateUser(
-      String username, String displayName, String email, String password, Set<String> groups) {
+      String username,
+      String displayName,
+      String email,
+      String password,
+      Set<String> groups,
+      Integer inactivityTimeout) {
     String cleanedUsername = username.trim().toLowerCase();
     AutheliaUser user =
         userRepository
@@ -54,6 +69,7 @@ public class AutheliaUserService {
     if (displayName != null) user.setDisplayName(displayName);
     if (email != null) user.setEmail(email);
     if (groups != null) user.setGroups(groups);
+    if (inactivityTimeout != null) user.setInactivityTimeout(inactivityTimeout);
     if (password != null && !password.trim().isEmpty()) {
       user.setPasswordHash(Argon2idVerifier.hash(password));
     }
