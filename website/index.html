@@ -19,6 +19,15 @@
 </head>
 
 <body class="dark-theme">
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme && savedTheme !== 'dark') {
+                document.body.classList.remove('dark-theme');
+                document.body.classList.add(savedTheme + '-theme');
+            }
+        })();
+    </script>
     <!-- Scroll Progress Indicator -->
     <div id="scroll-progress" aria-hidden="true"></div>
 
