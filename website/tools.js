@@ -58,11 +58,6 @@ document.addEventListener('DOMContentLoaded', () => {
         window.userRole = isAdmin ? 'admin' : 'viewer';
     }
 
-    const adminNav = document.getElementById('nav-admin');
-    if (adminNav && window.userRole !== 'admin') {
-        adminNav.style.display = 'none';
-    }
-
     // Initialize all tools
     initTabController();
     initJsonFormatter();
