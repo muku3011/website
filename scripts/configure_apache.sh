@@ -64,10 +64,10 @@ cat << 'EOF' > /etc/apache2/sites-available/000-default-le-ssl.conf
 		AddOutputFilterByType SUBSTITUTE text/html
 		
 		# Inject custom stylesheet link in the head to comply with Authelia CSP (which allows same-origin 'self' stylesheets)
-		Substitute "s~</head>~<link rel=\"stylesheet\" href=\"/custom-authelia.css\"></head>~n"
+		Substitute "s~</head>~<link rel=\"stylesheet\" href=\"/css/custom-authelia.css\"></head>~n"
 		
 		# Inject \"Back to hutta.in\" button container and same-origin custom JS loader right after the React root container
-		Substitute "s~<div id=\"root\"></div>~<div id=\"root\"></div><div class=\"back-to-hutta-container\"><a href=\"https://hutta.in/\" class=\"back-to-hutta-btn\"><svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"2.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18\" /></svg>Back to hutta.in</a></div><script src=\"/custom-authelia.js\"></script>~n"
+		Substitute "s~<div id=\"root\"></div>~<div id=\"root\"></div><div class=\"back-to-hutta-container\"><a href=\"https://hutta.in/\" class=\"back-to-hutta-btn\"><svg xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"2.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18\" /></svg>Back to hutta.in</a></div><script src=\"/js/custom-authelia.js\"></script>~n"
 	</Location>
 
 	# OpenID Connect settings

@@ -1535,7 +1535,7 @@ function initOpenApiTools() {
         }
 
         if (typeof Redoc === 'undefined') {
-            return showError('Redoc library failed to load. Check that libs/redoc.standalone.js is accessible.');
+            return showError('Redoc library failed to load. Check that js/libs/redoc.standalone.js is accessible.');
         }
 
         currentSpecObj = specObj;
@@ -1589,7 +1589,7 @@ function initOpenApiTools() {
     safeAddListener('btn-openapi-fullscreen', 'click', () => {
         if (!currentSpecObj) return;
 
-        const redocSrc = window.location.origin + '/libs/redoc.standalone.js';
+        const redocSrc = window.location.origin + '/js/libs/redoc.standalone.js';
         const apiTitle = (currentSpecObj.info && currentSpecObj.info.title) ? currentSpecObj.info.title : 'API Documentation';
 
         let specJson;

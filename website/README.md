@@ -39,10 +39,18 @@ flowchart TD
 
 ## Repository Contents
 - **`index.html`**: The main landing page.
+- **`tools.html`**: The developer toolbox (calculators, encoders, API explorer).
 - **`profiles.html`**: The eSIM profiles management registry and LPA download simulator.
 - **`admin.html`**: The Authelia SSO user directory management interface.
-- **`index.css` / `portfolio.css`**: Styling sheets.
-- **`app.js` / `admin.js` / `portfolio.js`**: Frontend interactivity and API communication logic.
+- **`css/index.css`**: Global design system + home page layouts (consolidates portfolio styles).
+- **`css/custom-authelia.css`**: Custom overrides injected into the Authelia SSO portal by Apache.
+- **`js/auth-nav.js`**: Shared core — authentication state, dynamic nav menus, idle timer, and theme switching.
+- **`js/index.js`**: Home page scroll transitions and timeline animations.
+- **`js/tools.js`**: Developer toolbox calculators, encoders, and API explorer logic.
+- **`js/profiles.js`**: eSIM Profiles page — API integrations and LPA simulator.
+- **`js/admin.js`**: Admin panel — Authelia user management backend calls.
+- **`js/custom-authelia.js`**: Custom helper hooks injected into the Authelia SSO portal by Apache.
+- **`js/libs/`**: Vendor libraries (js-yaml, ReDoc).
 
 ---
 
@@ -93,8 +101,10 @@ Move the files to Apache's default serving directory, clear any placeholders, an
 # Remove default index.html
 sudo rm -f /var/www/html/index.html
 
-# Copy your website assets to the web root
-sudo cp /home/rbpi/website/index.html /home/rbpi/website/index.css /home/rbpi/website/portfolio.js /home/rbpi/website/app.js /home/rbpi/website/profiles.html /home/rbpi/website/admin.html /home/rbpi/website/admin.js /home/rbpi/website/custom-authelia.css /home/rbpi/website/custom-authelia.js /var/www/html/
+# Copy your website assets to the web root (mirrors the full css/ and js/ directory structure)
+sudo cp /home/rbpi/website/index.html /home/rbpi/website/profiles.html /home/rbpi/website/admin.html /home/rbpi/website/tools.html /home/rbpi/website/favicon.png /var/www/html/
+sudo cp -r /home/rbpi/website/css /var/www/html/
+sudo cp -r /home/rbpi/website/js /var/www/html/
 
 # Assign proper ownership and permissions
 sudo chown -R www-data:www-data /var/www/html/
@@ -122,7 +132,7 @@ To populate the dashboard with actual, real-time Raspberry Pi hardware statistic
    ```cron
    * * * * * /usr/bin/python3 /home/rbpi/website/generate_stats.py > /dev/null 2>&1
    ```
-   *(The script runs in the background and writes statistics to `/var/www/html/stats.json`, which `app.js` fetches dynamically every 15 seconds).*
+   *(The script runs in the background and writes statistics to `/var/www/html/stats.json`, which `js/profiles.js` fetches dynamically every 15 seconds).*
 
 ---
 
