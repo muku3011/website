@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # This script installs/verifies PostgreSQL and sets up the smdpdb and lpadb databases and roles on macOS.
+# Usage:
+#   ./setup_postgres_mac.sh                        # generates random passwords
+#   ./setup_postgres_mac.sh --smdp-password <p> --lpa-password <p>   # use specific passwords
 set -e
 
 # Formatting colors
@@ -7,6 +10,17 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
+
+# ── Parse arguments ──────────────────────────────────────────────────────────
+SMDP_DB_PASS_ARG=""
+LPA_DB_PASS_ARG=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --smdp-password) SMDP_DB_PASS_ARG="$2"; shift 2 ;;
+        --lpa-password)  LPA_DB_PASS_ARG="$2";  shift 2 ;;
+        *) echo -e "${RED}Unknown argument: $1${NC}"; exit 1 ;;
+    esac
+done
 
 echo -e "${YELLOW}[*] Starting macOS PostgreSQL Setup and Verification Script...${NC}"
 
@@ -54,14 +68,24 @@ run_pg_cmd() {
 echo -e "${YELLOW}[*] Verifying roles and databases...${NC}"
 
 # 4. Setup SM-DP+ User & Database
+# Resolve password
+if [ -n "$SMDP_DB_PASS_ARG" ]; then
+    SMDP_DB_PASS="$SMDP_DB_PASS_ARG"
+else
+    SMDP_DB_PASS=$(openssl rand -hex 24)
+    echo -e "${GREEN}[+] Generated new SM-DP+ DB password${NC}"
+fi
+
 # Check SM-DP+ Role
 SMDP_ROLE_EXISTS=$(run_pg_query "SELECT 1 FROM pg_roles WHERE rolname = 'smdp';")
 if [ "$SMDP_ROLE_EXISTS" != "1" ]; then
     echo -e "${YELLOW}[*] Creating role 'smdp'...${NC}"
-    run_pg_cmd "CREATE USER smdp WITH PASSWORD 'smdp_password';"
+    psql -d postgres -c "CREATE USER smdp WITH PASSWORD '${SMDP_DB_PASS}';"
     echo -e "${GREEN}[+] Role 'smdp' created successfully!${NC}"
 else
-    echo -e "${GREEN}[+] Role 'smdp' already exists.${NC}"
+    echo -e "${YELLOW}[*] Role 'smdp' exists - updating password...${NC}"
+    psql -d postgres -c "ALTER USER smdp WITH PASSWORD '${SMDP_DB_PASS}';"
+    echo -e "${GREEN}[+] Role 'smdp' password updated.${NC}"
 fi
 
 # Check SM-DP+ Database
@@ -76,14 +100,24 @@ else
 fi
 
 # 5. Setup LPA Simulator User & Database
+# Resolve password
+if [ -n "$LPA_DB_PASS_ARG" ]; then
+    LPA_DB_PASS="$LPA_DB_PASS_ARG"
+else
+    LPA_DB_PASS=$(openssl rand -hex 24)
+    echo -e "${GREEN}[+] Generated new LPA DB password${NC}"
+fi
+
 # Check LPA Role
 LPA_ROLE_EXISTS=$(run_pg_query "SELECT 1 FROM pg_roles WHERE rolname = 'lpa';")
 if [ "$LPA_ROLE_EXISTS" != "1" ]; then
     echo -e "${YELLOW}[*] Creating role 'lpa'...${NC}"
-    run_pg_cmd "CREATE USER lpa WITH PASSWORD 'lpa_password';"
+    psql -d postgres -c "CREATE USER lpa WITH PASSWORD '${LPA_DB_PASS}';"
     echo -e "${GREEN}[+] Role 'lpa' created successfully!${NC}"
 else
-    echo -e "${GREEN}[+] Role 'lpa' already exists.${NC}"
+    echo -e "${YELLOW}[*] Role 'lpa' exists - updating password...${NC}"
+    psql -d postgres -c "ALTER USER lpa WITH PASSWORD '${LPA_DB_PASS}';"
+    echo -e "${GREEN}[+] Role 'lpa' password updated.${NC}"
 fi
 
 # Check LPA Database
@@ -97,26 +131,10 @@ else
     echo -e "${GREEN}[+] Database 'lpadb' already exists.${NC}"
 fi
 
-# 6. Setup Authelia User & Database
-# Check Authelia Role
-AUTHELIA_ROLE_EXISTS=$(run_pg_query "SELECT 1 FROM pg_roles WHERE rolname = 'authelia';")
-if [ "$AUTHELIA_ROLE_EXISTS" != "1" ]; then
-    echo -e "${YELLOW}[*] Creating role 'authelia'...${NC}"
-    run_pg_cmd "CREATE USER authelia WITH PASSWORD 'authelia_password';"
-    echo -e "${GREEN}[+] Role 'authelia' created successfully!${NC}"
-else
-    echo -e "${GREEN}[+] Role 'authelia' already exists.${NC}"
-fi
-
-# Check Authelia Database
-AUTHELIA_DB_EXISTS=$(run_pg_query "SELECT 1 FROM pg_database WHERE datname = 'autheliadb';")
-if [ "$AUTHELIA_DB_EXISTS" != "1" ]; then
-    echo -e "${YELLOW}[*] Creating database 'autheliadb'...${NC}"
-    run_pg_cmd "CREATE DATABASE autheliadb OWNER authelia;"
-    run_pg_cmd "GRANT ALL PRIVILEGES ON DATABASE autheliadb TO authelia;"
-    echo -e "${GREEN}[+] Database 'autheliadb' created successfully!${NC}"
-else
-    echo -e "${GREEN}[+] Database 'autheliadb' already exists.${NC}"
-fi
-
 echo -e "${GREEN}[+] PostgreSQL setup and verification completed successfully!${NC}"
+echo ""
+echo -e "${YELLOW}============================================================${NC}"
+echo -e "${YELLOW}Generated Credentials (record these now):${NC}"
+echo -e "${YELLOW}============================================================${NC}"
+echo -e "SMDP_DB_PASSWORD=${SMDP_DB_PASS}"
+echo -e "LPA_DB_PASSWORD=${LPA_DB_PASS}"

@@ -1,6 +1,6 @@
 # hutta.in Portfolio & Platform: Consumer eSIM SM-DP+ & Secure Server Gateway
 
-This repository contains the Infrastructure as Code (IaC), secure web portal assets, Authelia SSO authentication configurations, Certbot SSL/TLS certificate automation, and eSIM Remote SIM Provisioning (RSP) services needed to run a secure server gateway, status dashboard, and a local SM-DP+ eSIM provisioning environment on a home-hosted Raspberry Pi.
+This repository contains the Infrastructure as Code (IaC), secure web portal assets, Keycloak SSO authentication configurations, Certbot SSL/TLS certificate automation, and eSIM Remote SIM Provisioning (RSP) services needed to run a secure server gateway, status dashboard, and a local SM-DP+ eSIM provisioning environment on a home-hosted Raspberry Pi.
 
 ---
 
@@ -67,7 +67,7 @@ flowchart TD
 
 ## 3. Web Portal & eSIM Services System Architecture
 
-This diagram shows how user devices, reverse proxy, authentication directories, and persistent database tiers interface on the Raspberry Pi.
+This diagram shows how user devices, reverse proxy, Keycloak authentication, and persistent database tiers interface on the Raspberry Pi.
 
 ```mermaid
 flowchart TD
@@ -79,13 +79,12 @@ flowchart TD
     subgraph RPi ["Raspberry Pi Gateway"]
         direction TB
         subgraph Proxy ["Apache Reverse Proxy (Port 443)"]
-            Static["Static Web Assets (profiles.html, admin.html)"]
-            OIDC["mod_auth_openidc"]
+            Static["Static Web Assets (index, tools, profiles)"]
+            OIDC["mod_auth_openidc (/profiles.html only)"]
         end
 
         subgraph Auth ["Auth System"]
-            Authelia["Authelia SSO (Port 9091)"]
-            AutheliaLDAP["Authelia LDAP / IdP Service (Port 8094 / 10389)"]
+            Keycloak["Keycloak SSO — auth.hutta.in (loopback :8080)"]
         end
 
         subgraph Backend ["eSIM Backend Services"]
@@ -97,25 +96,23 @@ flowchart TD
             PostgreSQL[(PostgreSQL Server: Port 5432)]
             smdpdb[(Database: smdpdb)]
             lpadb[(Database: lpadb)]
-            autheliadb[(Database: autheliadb)]
+            keycloakdb[(Database: keycloakdb)]
         end
     end
 
     %% Client Access
-    Browser -->|HTTPS /| Static
+    Browser -->|HTTPS hutta.in| Static
+    Browser -->|HTTPS auth.hutta.in| Keycloak
     Browser -->|Authenticate| OIDC
     LPA_Client -->|Download Handshake /es9plus| SMDP
 
     %% Proxy Routing
-    OIDC -->|Authenticate| Authelia
-    Proxy -->|Proxy /authelia| Authelia
-    Proxy -->|Proxy /gsma/rsp/v2/authelia/| AutheliaLDAP
-    Proxy -->|Proxy /lpa/| LPA_Sim
+    OIDC -->|OIDC flow| Keycloak
     Proxy -->|Proxy /gsma/rsp/v2/| SMDP
+    Proxy -->|Proxy /lpa/| LPA_Sim
 
-    %% Authentication Directory
-    Authelia <-->|LDAP Auth / Port 10389| AutheliaLDAP
-    AutheliaLDAP <-->|JPA / Flyway| autheliadb
+    %% Authentication
+    Keycloak <-->|JPA / Flyway| keycloakdb
 
     %% eSIM provisioning & database
     LPA_Sim -->|Trigger ES9+ Provisioning| SMDP
@@ -123,12 +120,11 @@ flowchart TD
     LPA_Sim <-->|JPA / Flyway| lpadb
     smdpdb -.->|Part of| PostgreSQL
     lpadb -.->|Part of| PostgreSQL
-    autheliadb -.->|Part of| PostgreSQL
+    keycloakdb -.->|Part of| PostgreSQL
 ```
 
 * **Apache HTTP Server**: Serves the website frontend assets and acts as a secure reverse proxy with OIDC integration (`mod_auth_openidc`) for private routes.
-* **Authelia**: Authenticates users via Single Sign-On (SSO) by querying the local LDAP directory.
-* **Authelia LDAP & User Management (authelia-ldap)**: A custom Spring Boot service that runs an embedded LDAP server (Port 10389) and exposes a user management API (Port 8094). It persists data in PostgreSQL (`autheliadb`).
+* **Keycloak**: Identity provider running on `auth.hutta.in` (bare metal, HTTP on loopback, Apache terminates TLS). Manages users natively and provides OIDC/OAuth2 for the site. Admin console is restricted to home network; Account console is public.
 * **SM-DP+ eSIM Server**: Implements the standard GSMA SGP.22 endpoints (ES2+ and ES9+), backed by a persistent PostgreSQL database (`smdpdb`) and Flyway database migration controller.
 * **LPA Simulator**: Simulates eUICC operations and triggers remote SIM provisioning downloads, storing downloaded profiles in a persistent PostgreSQL database (`lpadb`).
 
@@ -147,17 +143,19 @@ Contains all GCP infrastructure provisioning and backend Dynamic DNS setup:
 
 ### 2. [Website Frontend (website/)](website/README.md)
 Contains the server dashboard and portfolio site assets deployed on the Raspberry Pi:
-- Frontend code (`index.html`, `index.css`, `app.js`, `profiles.html`, `admin.html`) for serving the portfolio site, eSIM profiles registry, LPA download simulator, and Authelia user management panel.
+- Frontend code (`index.html`, `index.css`, `profiles.html`) for serving the portfolio site, eSIM profiles registry, and LPA download simulator.
 - Deployment configuration for Apache HTTP Server and HTTPS (SSL/TLS) via Let's Encrypt.
 - GitHub Actions CI/CD setup via self-hosted runners.
 - **Go to [website/README.md](website/README.md) for frontend deployment and automation setup instructions.**
 
-### 3. [Authelia Identity & LDAP Service (authelia-ldap/)](authelia-ldap/README.md)
-Contains bare-metal installation scripts, Apache integration configurations, and the custom User/LDAP directory service:
-- Custom Spring Boot application (`authelia-ldap`) running an embedded LDAP server on port 10389 and REST management APIs on port 8094.
-- Automated installation script (`install_authelia.sh`) for Raspberry Pi 5 / Debian systems to set up the Authelia SSO binary.
-- Apache web server OIDC configuration script (`configure_apache.sh`) to protect routes and reverse-proxy the auth endpoints.
-- **Go to [authelia-ldap/README.md](authelia-ldap/README.md) for detailed deployment and setup instructions.**
+### 3. [Keycloak Identity Provider (scripts/)](scripts/)
+Contains the Keycloak bare-metal installer, realm setup, Apache integration, and the custom hutta theme:
+- `setup_all.sh` — **recommended entry point**: orchestrates all four scripts below in order, passing secrets via shell variables (no temp files).
+- `install_keycloak.sh` — installs Keycloak on Pi 5, configures PostgreSQL, deploys the hutta theme, and creates the systemd service.
+- `setup_keycloak_realm.sh` — creates the `hutta` realm, `apache-portal` OIDC client, `users` group, and group-membership mapper via the Keycloak Admin REST API.
+- `configure_apache.sh` — configures Apache with `mod_auth_openidc` pointing at Keycloak, adds the `auth.hutta.in` reverse-proxy VirtualHost, and restricts the admin console to the home network.
+- `keycloak/hutta/` — custom Keycloak theme (login, account, email) matching the hutta.in dark design system.
+- **Go to [scripts/setup_all.sh](scripts/setup_all.sh) for the full one-command deployment.**
 
 ### 4. [SM-DP+ eSIM Server (smdp-plus/)](smdp-plus/README.md)
 Contains a reference implementation of a GSMA SGP.22 v3.1 compliant Subscription Manager Data Preparation+ (SM-DP+) server:

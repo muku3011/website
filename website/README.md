@@ -1,6 +1,6 @@
 # Website Frontend & Raspberry Pi Deployment
 
-This directory contains the frontend website assets (HTML/CSS/JS) for the `hutta.in` server, featuring the eSIM Profiles Management dashboard and the Authelia User Administration panel.
+This directory contains the frontend website assets (HTML/CSS/JS) for the `hutta.in` server, featuring the eSIM Profiles Management dashboard.
 
 ## Deployment & Architecture
 
@@ -11,50 +11,54 @@ flowchart TD
     end
 
     subgraph Raspberry Pi (Home Server)
-        subgraph Reverse Proxy & Web Server (Apache)
-            Apache["Apache HTTP Server"]
-            OIDC["mod_auth_openidc"]
+        subgraph Apache HTTP Server
+            Static["Static Files (index.html, tools.html)"]
+            OIDC["mod_auth_openidc (profiles.html only)"]
+            Proxy["Reverse Proxy (API routes)"]
         end
 
         subgraph Authentication Service
-            Authelia["Authelia Service (Port 9091)"]
-            AutheliaLDAP["Authelia LDAP Service (Port 8094)"]
+            Keycloak["Keycloak SSO (loopback :8080)"]
         end
 
-        subgraph Web Apps
-            Dashboard["Static Dashboard Files (Port 80/443)"]
-            LPA["LPA Simulator (Port 8093)"]
-            SMDP["SM-DP+ Server (Port 8092)"]
+        subgraph Backend Services
+            LPA["LPA Simulator (:8093)"]
+            SMDP["SM-DP+ Server (:8092)"]
         end
     end
 
-    Browser -->|HTTPS request| Apache
-    Apache --> OIDC
-    OIDC -->|Authenticate if needed| Authelia
-    OIDC -->|Authorized | Dashboard
-    OIDC -->|Forward API request| LPA
-    OIDC -->|Forward API request| SMDP
-    OIDC -->|Forward User API request| AutheliaLDAP
+    Browser -->|HTTPS: /| Static
+    Browser -->|HTTPS: /tools.html| Static
+    Browser -->|HTTPS: /profiles.html| OIDC
+    OIDC -->|"Not authenticated → redirect"| Keycloak
+    Keycloak -->|"SSO session + hutta_* cookies set"| OIDC
+    OIDC -->|Authenticated: serve page + set cookies| Browser
+    Browser -->|HTTPS: /gsma/rsp/v2/*| Proxy
+    Browser -->|HTTPS: /lpa/*| Proxy
+    Proxy --> SMDP
+    Proxy --> LPA
 ```
 
 ## Repository Contents
 - **`index.html`**: The main landing page.
 - **`tools.html`**: The developer toolbox (calculators, encoders, API explorer).
 - **`profiles.html`**: The eSIM profiles management registry and LPA download simulator.
-- **`admin.html`**: The Authelia SSO user directory management interface.
 - **`css/index.css`**: Global design system + home page layouts (consolidates portfolio styles).
-- **`css/custom-authelia.css`**: Custom overrides injected into the Authelia SSO portal by Apache.
-- **`js/auth-nav.js`**: Shared core — authentication state, dynamic nav menus, idle timer, and theme switching.
+- **`js/auth-nav.js`**: Shared core — reads the `hutta_*` cookies set by Apache `mod_auth_openidc` on authenticated routes, drives dynamic nav menus (Profiles tab visibility, user dropdown), manages the idle session timer, and handles the theme toggle. Authentication state is fully server-driven via cookies; no client-side session storage is used.
 - **`js/index.js`**: Home page scroll transitions and timeline animations.
 - **`js/tools.js`**: Developer toolbox calculators, encoders, and API explorer logic.
 - **`js/profiles.js`**: eSIM Profiles page — API integrations and LPA simulator.
-- **`js/admin.js`**: Admin panel — Authelia user management backend calls.
-- **`js/custom-authelia.js`**: Custom helper hooks injected into the Authelia SSO portal by Apache.
 - **`js/libs/`**: Vendor libraries (js-yaml, ReDoc).
+- **`keycloak/hutta/`**: Custom Keycloak login theme matching the hutta.in dark design system.
 
 ---
 
 ## Setup & Deployment Instructions
+
+> [!NOTE]
+> **First-time vs. repeat deployments**: Steps 1–4 below are **first-time setup only**.
+> After that, all deployments are fully automated via GitHub Actions (Step 5).
+> Only re-run individual scripts if you are rebuilding or re-provisioning the server.
 
 ### Step 1: Router Configuration (Port Forwarding & Static IP)
 
@@ -64,7 +68,7 @@ For the public to access your website hosted on the Raspberry Pi from outside yo
 By default, your home router dynamically assigns IP addresses to devices. If your Raspberry Pi restarts, its local IP might change, breaking port forwarding.
 1. Log in to your home router's admin panel (typically at `192.168.1.1` or `192.168.0.1`).
 2. Navigate to the **DHCP Server settings** or **LAN settings**.
-3. Bind your Raspberry Pi’s MAC address to a fixed local IP address (e.g., `192.168.1.100`).
+3. Bind your Raspberry Pi's MAC address to a fixed local IP address (e.g., `192.168.1.100`).
 
 #### 2. Configure Port Forwarding
 This tells your router to send incoming web traffic from the internet to your Raspberry Pi.
@@ -74,12 +78,15 @@ This tells your router to send incoming web traffic from the internet to your Ra
    * **Rule 2 (HTTPS)**: External Port `443` -> Internal Port `443` (TCP) -> Raspberry Pi IP.
 
 > [!NOTE]
-> **NAT Loopback (Hairpin NAT)**: 
+> **NAT Loopback (Hairpin NAT)**:
 > Some home routers do not support accessing your public domain name (`hutta.in`) while you are connected to your *home Wi-Fi*. Test by disabling Wi-Fi on a mobile phone to see if it loads successfully over mobile data.
 
 ---
 
 ### Step 2: Deploy Frontend Website (Apache HTTP Server)
+
+> [!NOTE]
+> This step is for **first-time setup only**. Subsequent deploys are automated by the GitHub Actions workflow (Step 5).
 
 To serve the dashboard website assets from your Raspberry Pi, install and configure the Apache HTTP server.
 
@@ -96,13 +103,13 @@ sudo apt update && sudo apt install -y apache2
 ```
 
 #### 3. Move Assets to Web Root & Configure Permissions
-Move the files to Apache's default serving directory, clear any placeholders, and assign read/execute permissions:
 ```bash
 # Remove default index.html
 sudo rm -f /var/www/html/index.html
 
-# Copy your website assets to the web root (mirrors the full css/ and js/ directory structure)
-sudo cp /home/rbpi/website/index.html /home/rbpi/website/profiles.html /home/rbpi/website/admin.html /home/rbpi/website/tools.html /home/rbpi/website/favicon.png /var/www/html/
+# Copy your website assets to the web root
+sudo cp /home/rbpi/website/index.html /home/rbpi/website/profiles.html \
+        /home/rbpi/website/tools.html /home/rbpi/website/favicon.png /var/www/html/
 sudo cp -r /home/rbpi/website/css /var/www/html/
 sudo cp -r /home/rbpi/website/js /var/www/html/
 
@@ -114,79 +121,52 @@ sudo chmod -R 755 /var/www/html/
 sudo systemctl restart apache2
 ```
 
-#### 4. Configure Live Server Metrics
-To populate the dashboard with actual, real-time Raspberry Pi hardware statistics:
-1. Make sure `generate_stats.py` (located in the [website-iac/](../website-iac/generate_stats.py) folder) is executable:
-   ```bash
-   chmod +x /home/rbpi/website/generate_stats.py
-   ```
-2. Run the script once manually to verify it successfully writes metrics to `/var/www/html/stats.json`:
-   ```bash
-   sudo python3 /home/rbpi/website/generate_stats.py
-   ```
-3. Add a cron job to run the script automatically every minute. Open the crontab editor:
-   ```bash
-   crontab -e
-   ```
-   Add the following line:
-   ```cron
-   * * * * * /usr/bin/python3 /home/rbpi/website/generate_stats.py > /dev/null 2>&1
-   ```
-   *(The script runs in the background and writes statistics to `/var/www/html/stats.json`, which `js/profiles.js` fetches dynamically every 15 seconds).*
-
 ---
 
 ### Step 3: Configure HTTPS (SSL/TLS) via Let's Encrypt
 
-Secure your website with an SSL/TLS certificate to enable HTTPS access.
-
-#### 1. Install Certbot
-On the Raspberry Pi, install the Certbot client and its Apache integration plugin:
 ```bash
 sudo apt update && sudo apt install -y certbot python3-certbot-apache
-```
-
-#### 2. Obtain Certificate & Automate Redirections
-Run the interactive Certbot setup. Choose option to redirect HTTP traffic to HTTPS:
-```bash
 sudo certbot --apache -d hutta.in
 ```
 
-#### 3. Automatic Renewals
-Certbot automatically configures a systemd timer to renew your certificates twice daily:
+Certbot automatically configures a systemd timer to renew certificates twice daily:
 ```bash
 sudo systemctl status certbot.timer
 ```
 
 ---
 
-### Step 4: Automate Deployments via GitHub Actions (CI/CD)
+### Step 4: Set Up Keycloak Authentication (OIDC)
 
-To automatically deploy changes to your Raspberry Pi Apache server when you push to the `main` branch:
+Keycloak provides SSO for `profiles.html`. Apache acts as the OIDC Relying Party via `mod_auth_openidc`. On successful authentication, Apache sets the `hutta_*` cookies that `auth-nav.js` reads.
 
-#### 1. Register the Self-Hosted Runner on the Pi
-1. Go to your GitHub repository > **Settings** > **Actions** > **Runners**.
-2. Click **New self-hosted runner** and select **Linux** and **ARM64**.
-3. SSH into your Raspberry Pi and run the setup commands:
-   ```bash
-   mkdir actions-runner && cd actions-runner
-   # (Execute the curl and config commands shown in your GitHub instructions)
-   ```
+#### Prerequisites
+- PostgreSQL must be installed and running (needed by Keycloak).
 
-#### 2. Configure the Runner as a Background Service
-To run it permanently in the background and auto-start it on boot:
+#### One-command setup (recommended)
+Run the `setup_all.sh` orchestrator — it chains all four scripts in order, passing the OIDC client secret via a shell variable (never via `/tmp`):
 ```bash
-# Register the runner as a systemd service
-sudo ./svc.sh install
-
-# Start the service
-sudo ./svc.sh start
+sudo KC_ADMIN_PASS='<your-keycloak-admin-password>' ./scripts/setup_all.sh
 ```
 
-Useful management commands:
-* **Check status:** `sudo ./svc.sh status`
-* **Stop service:** `sudo ./svc.sh stop`
-* **Start service:** `sudo ./svc.sh start`
+#### What it runs
+| Script | Purpose |
+|--------|---------|
+| `setup_postgres.sh` | Creates the `keycloakdb`, `smdpdb`, `lpadb` databases and roles with generated passwords |
+| `install_keycloak.sh` | Downloads Keycloak, configures systemd service, deploys the hutta theme |
+| `setup_keycloak_realm.sh` | Creates the `hutta` realm, `apache-portal` OIDC client, `users` group via Keycloak Admin API |
+| `configure_apache.sh` | Writes the `mod_auth_openidc` Apache config; adds `Header` directives to atomically expire `hutta_*` cookies on logout |
 
-#### 3. Pipeline Execution
-The workflow is defined at [deploy.yml](../.github/workflows/deploy.yml). When you push changes to the `main` branch under the `website/` folder, the pipeline automatically checks out your repository on the Pi and copies the files directly to Apache's web root (`/var/www/html/`).
+> [!IMPORTANT]
+> After running `setup_all.sh`, note the printed credentials (DB passwords + OIDC client secret).
+> Store them in a secrets manager — they are **not** saved to any file.
+
+#### Logout cookie behaviour
+Apache's `<Location /redirect_uri>` block expires all `hutta_*` cookies server-side on the logout response. No `sessionStorage` flag or client-side workaround is needed.
+
+---
+
+### Step 5: Automate Deployments via GitHub Actions (CI/CD)
+
+The workflow is defined at [website-deploy.yml](../.github/workflows/website-deploy.yml). When you push changes to the `main` branch under the `website/` folder, the pipeline automatically copies files to Apache's web root and redeploys the Keycloak theme.

@@ -1,21 +1,5 @@
 // Unified Authentication, Navigation and Idle Session Tracker
 (function() {
-    // Theme Management
-    function setTheme(theme) {
-        const body = document.body;
-        if (theme === 'dark') {
-            body.classList.remove('light-theme');
-            body.classList.add('dark-theme');
-        } else {
-            body.classList.remove('dark-theme');
-            body.classList.add('light-theme');
-        }
-        localStorage.setItem('theme', theme);
-    }
-
-    // Set theme immediately to prevent visual flash on load
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    setTheme(savedTheme);
 
     // Utility: Parse cookies
     function getCookie(name) {
@@ -31,40 +15,34 @@
         return null;
     }
 
-    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const AUTHELIA_BACKEND_BASE = isLocal ? 'http://localhost:8094' : '';
+    // mod_auth_openidc logout endpoint — clears BOTH the Apache session cookie
+    // AND the Keycloak SSO session in one flow. Never call Keycloak directly or
+    // the Apache mod_auth_openidc_session cookie will keep the user logged in.
+    //
+    // The post-logout redirect must EXACTLY match a URI registered in the
+    // Keycloak apache-portal client (Clients → apache-portal → Valid post-logout
+    // redirect URIs). Apache's <Location /redirect_uri> block expires all
+    // hutta_* cookies server-side on this response, so no client-side flag is needed.
+    const LOGOUT_URL = 'https://hutta.in/redirect_uri?logout=' + encodeURIComponent('https://hutta.in/');
 
-    // Initialize Global Auth Properties
-    if (isLocal) {
-        window.userNameVal = 'localadmin';
-        window.displayNameVal = 'Local Developer';
-        window.userEmailVal = 'developer@hutta.local';
-        window.userGroups = ['admins', 'users'];
-        window.userRole = 'admin';
-    } else {
-        window.userNameVal = getCookie('hutta_user');
-        window.displayNameVal = getCookie('hutta_name') || window.userNameVal;
-        window.userEmailVal = getCookie('hutta_email') || 'no-email@hutta.in';
-        const groupsRaw = getCookie('hutta_groups') || '';
-        window.userGroups = groupsRaw.split(',').map(g => g.trim()).filter(Boolean);
-        window.userRole = window.userGroups.includes('admins') ? 'admin' : 'viewer';
-    }
+    // Initialize Global Auth Properties from cookies set by Apache mod_auth_openidc
+    window.userNameVal = getCookie('hutta_user');
+    window.displayNameVal = getCookie('hutta_name') || window.userNameVal;
+    window.userEmailVal = getCookie('hutta_email') || 'no-email@hutta.in';
+    const groupsRaw = getCookie('hutta_groups') || '';
+    window.userGroups = groupsRaw.split(',').map(g => g.trim()).filter(Boolean);
+    window.userRole = 'viewer'; // role concept simplified — all authenticated users are viewers
 
     // Dynamic Navigation Tab Visibility Rules
     function initNavigation() {
         const navProfiles = document.getElementById('nav-profiles');
-        const navAdmin = document.getElementById('nav-admin');
         const isLoggedIn = !!window.userNameVal;
 
+        // Profiles tab: visible to any authenticated user
         if (navProfiles) {
-            const hasProfileAccess = isLoggedIn && (window.userGroups.includes('users') || isLocal);
-            navProfiles.style.display = hasProfileAccess ? 'inline-block' : 'none';
+            navProfiles.style.display = isLoggedIn ? 'inline-block' : 'none';
         }
-
-        if (navAdmin) {
-            const hasAdminAccess = isLoggedIn && (window.userGroups.includes('admins') || isLocal);
-            navAdmin.style.display = hasAdminAccess ? 'inline-block' : 'none';
-        }
+        // Admin tab has been removed — user management is done in Keycloak console
     }
 
     // Dynamic Header Controls Injection
@@ -150,147 +128,97 @@
 
     // Secure Full Logout Flow
     window.logoutUser = function() {
-        if (isLocal) {
-            // Clear custom mock cookie values
-            document.cookie = "hutta_user=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-            window.location.replace('index.html');
-        } else {
-            // Show themed full-screen logout overlay
-            const overlay = document.createElement('div');
-            overlay.id = 'logout-loading-overlay';
-            overlay.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
-                background: var(--card-bg);
-                backdrop-filter: blur(8px);
-                -webkit-backdrop-filter: blur(8px);
-                z-index: 99999;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                opacity: 0;
-                transition: opacity 0.3s ease;
-                font-family: var(--font-primary), system-ui, -apple-system, sans-serif;
-            `;
-            
-            overlay.innerHTML = `
-                <style>
-                    .logout-spinner-container {
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        gap: 1.5rem;
-                        text-align: center;
-                    }
-                    .logout-spinner-orb {
-                        width: 60px;
-                        height: 60px;
-                        border-radius: 50%;
-                        background: linear-gradient(135deg, var(--primary-glow, #0070f3), var(--secondary-glow, #ff0070));
-                        box-shadow: 0 0 30px var(--primary-glow, #0070f3);
-                        animation: logout-pulse 2s infinite ease-in-out, logout-rotate 4s infinite linear;
-                    }
-                    .logout-spinner-text {
-                        color: var(--text-primary, #ffffff);
-                        font-size: 1.1rem;
-                        font-weight: 500;
-                        letter-spacing: 0.5px;
-                        margin: 0;
-                        font-family: var(--font-heading), system-ui;
-                    }
-                    @keyframes logout-pulse {
-                        0%, 100% { transform: scale(0.9); opacity: 0.8; box-shadow: 0 0 20px var(--primary-glow, #0070f3); }
-                        50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 45px var(--secondary-glow, #ff0070); }
-                    }
-                    @keyframes logout-rotate {
-                        100% { transform: rotate(360deg); }
-                    }
-                </style>
-                <div class="logout-spinner-container">
-                    <div class="logout-spinner-orb"></div>
-                    <p class="logout-spinner-text">Logging out securely...</p>
-                </div>
-            `;
-            
-            document.body.appendChild(overlay);
-            
-            // Trigger transition
-            setTimeout(() => { overlay.style.opacity = '1'; }, 50);
-            
-            // Clear custom application cookies
-            const clearCookies = () => {
-                const cookieNames = ['hutta_user', 'hutta_groups', 'hutta_auth', 'hutta_name', 'hutta_email'];
-                cookieNames.forEach(name => {
-                    document.cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; Secure; SameSite=Lax`;
-                    document.cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC;`;
-                });
-            };
-            clearCookies();
+        // Belt-and-suspenders: expire hutta_* cookies client-side using the same
+        // attributes Apache used to set them (Secure; SameSite=Lax; Path=/).
+        // The authoritative clear happens server-side via Apache's Header directive
+        // on the /redirect_uri location (see configure_apache.sh).
+        const cookieNames = ['hutta_user', 'hutta_groups', 'hutta_auth', 'hutta_name', 'hutta_email'];
+        cookieNames.forEach(name => {
+            document.cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; Secure; SameSite=Lax`;
+        });
 
-            // Perform logout sequentially via APIs in the background
-            const performLogout = async () => {
-                try {
-                    await fetch('/authelia/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
-                } catch (e) { console.warn("Authelia API logout failed:", e); }
+        // Show themed full-screen logout overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'logout-loading-overlay';
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            font-family: var(--font-primary), system-ui, -apple-system, sans-serif;
+        `;
 
-                try {
-                    await fetch('/authelia/logout', { method: 'GET', credentials: 'same-origin' });
-                } catch (e) { console.warn("Authelia page logout failed:", e); }
+        overlay.innerHTML = `
+            <style>
+                .logout-spinner-container {
+                    display: flex; flex-direction: column;
+                    align-items: center; gap: 1.5rem; text-align: center;
+                }
+                .logout-spinner-orb {
+                    width: 60px; height: 60px; border-radius: 50%;
+                    background: linear-gradient(135deg, var(--primary-glow, #0070f3), var(--secondary-glow, #ff0070));
+                    box-shadow: 0 0 30px var(--primary-glow, #0070f3);
+                    animation: logout-pulse 2s infinite ease-in-out;
+                }
+                .logout-spinner-text {
+                    color: var(--text-primary, #ffffff); font-size: 1.1rem;
+                    font-weight: 500; letter-spacing: 0.5px; margin: 0;
+                    font-family: var(--font-heading), system-ui;
+                }
+                @keyframes logout-pulse {
+                    0%, 100% { transform: scale(0.9); opacity: 0.8; }
+                    50% { transform: scale(1.1); opacity: 1; }
+                }
+            </style>
+            <div class="logout-spinner-container">
+                <div class="logout-spinner-orb"></div>
+                <p class="logout-spinner-text">Logging out securely...</p>
+            </div>
+        `;
 
-                try {
-                    await fetch('/redirect_uri?logout=https%3A%2F%2Fhutta.in%2F', { method: 'GET', credentials: 'same-origin' });
-                } catch (e) { console.warn("Apache OIDC logout failed:", e); }
+        document.body.appendChild(overlay);
+        setTimeout(() => { overlay.style.opacity = '1'; }, 50);
 
-                clearCookies();
-                setTimeout(() => {
-                    window.location.replace('index.html');
-                }, 1000);
-            };
-            
-            performLogout();
-        }
+        // Redirect to mod_auth_openidc logout endpoint.
+        // This clears the Apache OIDC session cookie first, then calls Keycloak's
+        // end_session_endpoint — ensuring the user must re-enter credentials next time.
+        setTimeout(() => {
+            window.location.replace(LOGOUT_URL);
+        }, 600);
     };
 
     // Activity Session Timer
+    // Keycloak enforces server-side SSO session idle timeout (Realm → Sessions → SSO Session Idle).
+    // This client-side timer provides a UI-level safety net for the same duration.
     let idleTimer = null;
-    let currentTimeoutMinutes = 15;
+    const IDLE_TIMEOUT_MINUTES = 15; // Keep in sync with Keycloak Realm → Sessions → SSO Session Idle
 
-    async function initIdleTimer() {
+    function initIdleTimer() {
         if (!window.userNameVal) return;
 
-        // Fetch user timeout from API
-        try {
-            const response = await fetch(`${AUTHELIA_BACKEND_BASE}/gsma/rsp/v2/authelia/users/${encodeURIComponent(window.userNameVal)}`);
-            if (response.ok) {
-                const userObj = await response.json();
-                if (userObj && userObj.inactivityTimeout) {
-                    currentTimeoutMinutes = parseInt(userObj.inactivityTimeout);
-                }
-            }
-        } catch (err) {
-            console.warn("Could not retrieve custom inactivity timeout, using default 15m.", err);
-        }
-
-        const timeoutMs = currentTimeoutMinutes * 60 * 1000;
-        console.log(`Inactivity auto-logout initialized for user: ${window.userNameVal} with duration: ${currentTimeoutMinutes} minutes (${timeoutMs} ms)`);
+        const timeoutMs = IDLE_TIMEOUT_MINUTES * 60 * 1000;
+        console.log(`Inactivity timer: ${IDLE_TIMEOUT_MINUTES} min for user: ${window.userNameVal}`);
 
         function resetIdleTimer() {
             if (idleTimer) clearTimeout(idleTimer);
             idleTimer = setTimeout(() => {
-                console.log(`Idle session timeout of ${currentTimeoutMinutes} minutes reached. Initiating logout.`);
+                console.log(`Idle timeout of ${IDLE_TIMEOUT_MINUTES} min reached — logging out.`);
                 window.logoutUser();
             }, timeoutMs);
         }
 
-        // Event listeners for user interactions
         ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(evt => {
             document.addEventListener(evt, resetIdleTimer, { passive: true });
         });
 
-        // Initialize first timer
         resetIdleTimer();
     }
 
@@ -299,7 +227,10 @@
         if (themeToggle) {
             themeToggle.addEventListener('click', () => {
                 const currentTheme = document.body.classList.contains('light-theme') ? 'light' : 'dark';
-                setTheme(currentTheme === 'light' ? 'dark' : 'light');
+                const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
+                document.body.classList.remove('light-theme', 'dark-theme');
+                document.body.classList.add(nextTheme + '-theme');
+                localStorage.setItem('theme', nextTheme);
             });
         }
     }

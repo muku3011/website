@@ -1,0 +1,699 @@
+/* =============================================================================
+   hutta.in — Keycloak Login Theme
+   Design tokens ported from website/css/index.css
+   Dark glassmorphism style matching the main site
+   ============================================================================= */
+
+/* ── Fonts ──────────────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+/* ── CSS Variables (dark theme matching index.css body.dark-theme) ─────────── */
+:root {
+    --hue-primary: 212;
+    --hue-secondary: 275;
+
+    --bg-start:       hsl(222, 24%, 7%);
+    --bg-end:         hsl(222, 24%, 12%);
+    --card-bg:        hsla(222, 24%, 15%, 0.65);
+    --card-border:    hsla(222, 20%, 25%, 0.45);
+    --input-bg:       hsla(222, 24%, 10%, 0.85);
+
+    --text-primary:   hsl(210, 40%, 98%);
+    --text-secondary: hsl(210, 20%, 72%);
+    --text-muted:     hsl(210, 10%, 52%);
+
+    --primary:        hsl(var(--hue-primary), 100%, 60%);
+    --secondary:      hsl(var(--hue-secondary), 90%, 65%);
+    --primary-dim:    hsla(var(--hue-primary), 100%, 60%, 0.15);
+    --primary-glow:   hsla(var(--hue-primary), 100%, 60%, 0.35);
+    --secondary-glow: hsla(var(--hue-secondary), 90%, 65%, 0.45);
+
+    --border-radius-sm: 8px;
+    --border-radius-md: 16px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --backdrop: blur(20px) saturate(1.4);
+
+    /* ── PatternFly v5 overrides — force dark theme on all PF components ──── */
+    /* Form control */
+    --pf-v5-c-form-control--BackgroundColor: hsla(222, 24%, 10%, 0.85);
+    --pf-v5-c-form-control--Color: hsl(210, 40%, 98%);
+    --pf-v5-c-form-control--BorderTopColor: hsla(222, 20%, 25%, 0.45);
+    --pf-v5-c-form-control--BorderRightColor: hsla(222, 20%, 25%, 0.45);
+    --pf-v5-c-form-control--BorderBottomColor: hsla(222, 20%, 25%, 0.45);
+    --pf-v5-c-form-control--BorderLeftColor: hsla(222, 20%, 25%, 0.45);
+    --pf-v5-c-form-control--BorderRadius: 8px;
+    --pf-v5-c-form-control--hover--BorderBottomColor: hsl(212, 100%, 60%);
+    --pf-v5-c-form-control--focus--BorderBottomColor: hsl(212, 100%, 60%);
+    --pf-v5-c-form-control--m-expanded--BorderBottomColor: hsl(212, 100%, 60%);
+    --pf-v5-c-form-control--success--BorderBottomColor: hsl(145, 70%, 55%);
+    --pf-v5-c-form-control--warning--BorderBottomColor: hsl(35, 90%, 55%);
+    --pf-v5-c-form-control--danger--BorderBottomColor: hsl(0, 80%, 60%);
+    /* Input group */
+    --pf-v5-c-input-group--BackgroundColor: transparent;
+    --pf-v5-c-input-group__item--BorderColor: hsla(222, 20%, 25%, 0.45);
+    /* Button control (eye icon toggle) */
+    --pf-v5-c-button--m-control--BackgroundColor: transparent;
+    --pf-v5-c-button--m-control--Color: hsl(210, 10%, 52%);
+    --pf-v5-c-button--m-control--BorderTopColor: transparent;
+    --pf-v5-c-button--m-control--BorderRightColor: transparent;
+    --pf-v5-c-button--m-control--BorderBottomColor: transparent;
+    --pf-v5-c-button--m-control--BorderLeftColor: hsla(222, 20%, 25%, 0.45);
+    --pf-v5-c-button--m-control--hover--BackgroundColor: hsla(212, 100%, 60%, 0.08);
+    --pf-v5-c-button--m-control--hover--Color: hsl(212, 100%, 60%);
+    --pf-v5-c-button--m-control--active--BackgroundColor: hsla(212, 100%, 60%, 0.12);
+    /* General text */
+    --pf-v5-global--Color--100: hsl(210, 40%, 98%);
+    --pf-v5-global--Color--200: hsl(210, 20%, 72%);
+    --pf-v5-global--BackgroundColor--100: hsla(222, 24%, 10%, 0.85);
+    --pf-v5-global--BorderColor--100: hsla(222, 20%, 25%, 0.45);
+    --pf-v5-global--BorderColor--200: hsla(222, 20%, 30%, 0.6);
+    --pf-v5-global--primary-color--100: hsl(212, 100%, 60%);
+    --pf-v5-global--link--Color: hsl(212, 100%, 70%);
+    --pf-v5-global--link--Color--hover: hsl(275, 90%, 65%);
+    /* Alert / notification */
+    --pf-v5-c-alert--m-danger--BackgroundColor: hsla(0, 80%, 50%, 0.12);
+    --pf-v5-c-alert--m-success--BackgroundColor: hsla(145, 80%, 40%, 0.12);
+    --pf-v5-c-alert--m-warning--BackgroundColor: hsla(35, 90%, 55%, 0.12);
+}
+
+
+/* ── Reset & base ────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    overflow-y: scroll;
+}
+
+body,
+.login-pf body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(135deg, var(--bg-start), var(--bg-end));
+    background-attachment: fixed;
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ── Background particle glow (subtle ambient effect) ──────────────────────── */
+body::before {
+    content: '';
+    position: fixed;
+    top: -20%;
+    left: -20%;
+    width: 60%;
+    height: 60%;
+    background: radial-gradient(ellipse, hsla(var(--hue-primary), 100%, 60%, 0.06), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+    animation: ambient-shift 12s ease-in-out infinite alternate;
+}
+body::after {
+    content: '';
+    position: fixed;
+    bottom: -20%;
+    right: -20%;
+    width: 60%;
+    height: 60%;
+    background: radial-gradient(ellipse, hsla(var(--hue-secondary), 90%, 65%, 0.06), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+    animation: ambient-shift 15s ease-in-out infinite alternate-reverse;
+}
+@keyframes ambient-shift {
+    0%   { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(5%, 5%) scale(1.1); }
+}
+
+/* ── Page layout ─────────────────────────────────────────────────────────────── */
+
+/* Make the header visible — we style it to match the hutta.in homepage brand */
+.login-pf #kc-header,
+#kc-header {
+    display: block;
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto 1.25rem;
+    padding: 0 1.5rem;
+    box-sizing: border-box;
+}
+
+.login-pf-page,
+#kc-container {
+    width: 100%;
+    max-width: 440px;
+    padding: 1.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+/* ── Glassmorphism login card ────────────────────────────────────────────────── */
+.card-pf,
+.login-pf-page .card-pf {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--border-radius-md);
+    backdrop-filter: var(--backdrop);
+    -webkit-backdrop-filter: var(--backdrop);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5),
+                0 1px 0 rgba(255, 255, 255, 0.06) inset;
+    padding: 2.5rem 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Subtle top edge shimmer on card */
+.card-pf::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+        135deg,
+        hsla(var(--hue-primary), 100%, 60%, 0.04) 0%,
+        transparent 50%,
+        hsla(var(--hue-secondary), 90%, 65%, 0.04) 100%
+    );
+    pointer-events: none;
+}
+
+/* ── Logo orb + brand header ─────────────────────────────────────────────────── */
+
+/* Banner row — mirrors .brand-link from the homepage header */
+#kc-header-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    text-align: left;
+    margin-bottom: 0;
+    padding: 1rem 0.5rem;
+    border-bottom: 1px solid var(--card-border);
+    background: var(--card-bg);
+    backdrop-filter: var(--backdrop);
+    -webkit-backdrop-filter: var(--backdrop);
+    border-radius: var(--border-radius-md);
+}
+
+/* Animated logo orb — matches .logo-orb from index.css (16×16 in nav, larger here) */
+#kc-header-wrapper::before {
+    content: '';
+    display: block;
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    box-shadow: 0 0 14px var(--primary-glow), 0 0 28px var(--secondary-glow);
+    animation: orb-pulse 3s ease-in-out infinite;
+}
+
+@keyframes orb-pulse {
+    0%, 100% {
+        box-shadow: 0 0 12px var(--primary-glow), 0 0 24px var(--secondary-glow);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 22px var(--primary-glow), 0 0 44px var(--secondary-glow);
+        transform: scale(1.08);
+    }
+}
+
+/* The <h2> inside the wrapper — styled like .brand h1 from the homepage */
+#kc-header-wrapper .kc-header {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, hsl(212, 100%, 65%), hsl(275, 90%, 70%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+    line-height: 1.2;
+}
+
+/* Keycloak renders the realm display name in an <h2> — target it directly too */
+#kc-header-wrapper h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, hsl(212, 100%, 65%), hsl(275, 90%, 70%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+    line-height: 1.2;
+}
+
+/* ── Form elements ───────────────────────────────────────────────────────────── */
+.form-group {
+    margin-bottom: 1.1rem;
+}
+
+.form-group label,
+label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 0.4rem;
+}
+
+/* ── Standalone inputs (username, email, etc.) ───────────────────────────── */
+input[type="text"],
+input[type="email"],
+.pf-v5-c-form-control,
+.pf-c-form-control,
+.form-control {
+    width: 100%;
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    padding: 0.65rem 0.9rem;
+    transition: var(--transition);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    line-height: 1.5;
+}
+
+/* Password standalone — only when NOT inside an input-group */
+input[type="password"]:not(.pf-c-input-group input):not(.pf-v5-c-input-group input) {
+    width: 100%;
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    padding: 0.65rem 0.9rem;
+    transition: var(--transition);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    line-height: 1.5;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+.pf-v5-c-form-control:focus,
+.pf-c-form-control:focus,
+.form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-dim);
+    background: hsla(222, 24%, 12%, 0.9);
+}
+
+/* Password focus — only when standalone */
+input[type="password"]:not(.pf-c-input-group input):focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-dim);
+    background: hsla(222, 24%, 12%, 0.9);
+}
+
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+.pf-v5-c-form-control::placeholder,
+.pf-c-form-control::placeholder {
+    color: var(--text-muted);
+}
+
+/* Autofill override — prevent browser from painting white over dark inputs */
+input[type="text"]:-webkit-autofill,
+input[type="password"]:-webkit-autofill,
+input[type="email"]:-webkit-autofill,
+input[type="text"]:-webkit-autofill:focus,
+input[type="password"]:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px hsla(222, 24%, 10%, 0.85) inset !important;
+    -webkit-text-fill-color: hsl(210, 40%, 98%) !important;
+    caret-color: hsl(212, 100%, 60%);
+}
+
+/* ── Password input group (KC password field + eye-icon toggle) ─────────────
+   Keycloak renders:
+     <div class="pf-c-input-group">
+       <input id="password" class="pf-c-form-control" type="password" />
+       <button class="pf-c-button pf-m-control">
+         <i class="fa fa-eye"></i>
+       </button>
+     </div>
+   ─────────────────────────────────────────────────────────────────────────── */
+.pf-v5-c-input-group,
+.pf-c-input-group {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--border-radius-sm);
+    transition: var(--transition);
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+/* Focus ring on the group — triggered when the password input inside is focused */
+.pf-v5-c-input-group:focus-within,
+.pf-c-input-group:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-dim);
+    background: hsla(222, 24%, 12%, 0.9);
+}
+
+/* Password input inside the group — strip all decoration; group provides the border */
+.pf-v5-c-input-group input[type="password"],
+.pf-v5-c-input-group input[type="text"],
+.pf-v5-c-input-group .pf-v5-c-form-control,
+.pf-c-input-group input[type="password"],
+.pf-c-input-group input[type="text"],
+.pf-c-input-group .pf-c-form-control {
+    flex: 1 1 auto;
+    align-self: stretch;
+    width: 100%;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    padding: 0.65rem 0.9rem;
+    line-height: 1.5;
+    -webkit-appearance: none;
+    appearance: none;
+    box-sizing: border-box;
+    caret-color: var(--primary);
+    /* Prevent PatternFly's own bundled stylesheet from re-adding borders */
+    min-width: 0;
+}
+
+.pf-c-input-group input[type="password"]::placeholder,
+.pf-v5-c-input-group input[type="password"]::placeholder {
+    color: var(--text-muted);
+}
+
+/* Keep input transparent on focus — the group border handles the ring */
+.pf-v5-c-input-group input:focus,
+.pf-v5-c-input-group .pf-v5-c-form-control:focus,
+.pf-c-input-group input:focus,
+.pf-c-input-group .pf-c-form-control:focus {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* Autofill override inside the group */
+.pf-v5-c-input-group input:-webkit-autofill,
+.pf-v5-c-input-group input:-webkit-autofill:focus,
+.pf-c-input-group input:-webkit-autofill,
+.pf-c-input-group input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px hsla(222, 24%, 10%, 0.85) inset !important;
+    -webkit-text-fill-color: hsl(210, 40%, 98%) !important;
+    caret-color: var(--primary);
+}
+
+/* Eye-icon toggle button */
+.pf-v5-c-input-group .pf-v5-c-button,
+.pf-v5-c-input-group button,
+.pf-c-input-group .pf-c-button,
+.pf-c-input-group button {
+    flex-shrink: 0;
+    align-self: stretch;
+    background: transparent !important;
+    border: none !important;
+    border-left: 1px solid var(--card-border) !important;
+    border-radius: 0 !important;
+    color: var(--text-muted);
+    padding: 0 0.9rem;
+    cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: none !important;
+    outline: none !important;
+    min-width: 2.75rem;
+}
+
+.pf-v5-c-input-group .pf-v5-c-button:hover,
+.pf-v5-c-input-group button:hover,
+.pf-c-input-group .pf-c-button:hover,
+.pf-c-input-group button:hover {
+    color: var(--primary);
+    background: hsla(var(--hue-primary), 100%, 60%, 0.08) !important;
+}
+
+.pf-v5-c-input-group .pf-v5-c-button:focus,
+.pf-v5-c-input-group button:focus,
+.pf-c-input-group .pf-c-button:focus,
+.pf-c-input-group button:focus {
+    color: var(--primary);
+    background: hsla(var(--hue-primary), 100%, 60%, 0.08) !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* FontAwesome eye icon inside the button */
+.pf-v5-c-input-group button i,
+.pf-v5-c-input-group .pf-v5-c-button i,
+.pf-c-input-group button i,
+.pf-c-input-group .pf-c-button i {
+    font-size: 0.9rem;
+    color: inherit;
+    line-height: 1;
+    pointer-events: none;
+}
+
+/* SVG icon fallback (some KC versions use SVG instead of FontAwesome) */
+.pf-v5-c-input-group button svg,
+.pf-v5-c-input-group .pf-v5-c-button svg,
+.pf-c-input-group button svg,
+.pf-c-input-group .pf-c-button svg {
+    width: 1rem;
+    height: 1rem;
+    color: inherit;
+    fill: currentColor;
+    pointer-events: none;
+}
+
+
+/* ── Primary action button ───────────────────────────────────────────────────── */
+.btn-primary,
+input[type="submit"],
+#kc-login,
+.pf-c-button.pf-m-primary {
+    width: 100%;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border: none;
+    border-radius: var(--border-radius-sm);
+    color: #fff;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    padding: 0.7rem 1.5rem;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 4px 15px var(--primary-glow);
+    letter-spacing: 0.01em;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary::after,
+#kc-login::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(rgba(255,255,255,0.12), transparent);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.btn-primary:hover::after,
+#kc-login:hover::after {
+    opacity: 1;
+}
+
+.btn-primary:hover,
+#kc-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px var(--secondary-glow), 0 4px 15px var(--primary-glow);
+}
+
+.btn-primary:active,
+#kc-login:active {
+    transform: translateY(0);
+}
+
+/* ── Secondary / ghost buttons ───────────────────────────────────────────────── */
+.btn-default,
+.pf-c-button.pf-m-secondary {
+    background: transparent;
+    border: 1px solid var(--card-border);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-secondary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.55rem 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-default:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-dim);
+}
+
+/* ── Checkbox (Remember me) ──────────────────────────────────────────────────── */
+#rememberMe {
+    accent-color: var(--primary);
+    width: 1rem;
+    height: 1rem;
+    margin-right: 0.5rem;
+    cursor: pointer;
+}
+
+#kc-form-options label {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+}
+
+/* ── Links ───────────────────────────────────────────────────────────────────── */
+a,
+.kc-link {
+    color: hsl(var(--hue-primary), 100%, 70%);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover,
+.kc-link:hover {
+    color: var(--secondary);
+    text-decoration: underline;
+}
+
+/* ── Alert / error messages ──────────────────────────────────────────────────── */
+.alert-error,
+.pf-c-alert.pf-m-danger {
+    background: hsla(0, 80%, 50%, 0.12);
+    border: 1px solid hsla(0, 80%, 50%, 0.3);
+    border-radius: var(--border-radius-sm);
+    color: hsl(0, 80%, 75%);
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+}
+
+.alert-success,
+.pf-c-alert.pf-m-success {
+    background: hsla(145, 80%, 40%, 0.12);
+    border: 1px solid hsla(145, 80%, 40%, 0.3);
+    border-radius: var(--border-radius-sm);
+    color: hsl(145, 70%, 65%);
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+}
+
+.alert-warning {
+    background: hsla(14, 90%, 55%, 0.12);
+    border: 1px solid hsla(14, 90%, 55%, 0.3);
+    border-radius: var(--border-radius-sm);
+    color: hsl(14, 90%, 72%);
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+}
+
+/* ── Divider ─────────────────────────────────────────────────────────────────── */
+hr, .kc-login-separator {
+    border: none;
+    border-top: 1px solid var(--card-border);
+    margin: 1.25rem 0;
+}
+
+/* ── Footer info text ────────────────────────────────────────────────────────── */
+#kc-info,
+.kc-info-message,
+.login-pf-page .kc-info {
+    text-align: center;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    margin-top: 1.25rem;
+}
+
+/* ── Page title / subtitle ───────────────────────────────────────────────────── */
+#kc-page-title,
+.pf-c-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1.25rem;
+}
+
+/* ── Social / identity provider buttons ─────────────────────────────────────── */
+.social-section .zocial,
+.kc-social-provider-logo {
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--border-radius-sm);
+    color: var(--text-primary);
+    padding: 0.6rem 1rem;
+    margin-bottom: 0.5rem;
+    transition: var(--transition);
+}
+
+.social-section .zocial:hover {
+    border-color: var(--primary);
+    background: var(--primary-dim);
+}
+
+/* ── Custom scrollbar (matching index.css) ───────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-start); }
+::-webkit-scrollbar-thumb {
+    background: hsla(222, 20%, 35%, 0.6);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: hsla(var(--hue-primary), 60%, 50%, 0.5);
+}
+
+/* ── Back to website link (injected by back-link.js) ────────────────────────── */
+#kc-back-to-site {
+    text-align: center;
+    margin-top: 1.25rem;
+}
+
+#kc-back-to-site a {
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    font-family: 'Inter', sans-serif;
+    text-decoration: none;
+    transition: color 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    letter-spacing: 0.01em;
+}
+
+#kc-back-to-site a:hover {
+    color: var(--primary);
+    text-decoration: none;
+}

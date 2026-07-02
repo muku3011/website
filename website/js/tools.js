@@ -2,9 +2,6 @@
 // THEME & PROFILE NAVIGATION MANAGER
 // -------------------------------------------------------------
 
-// Local Dev Helper
-const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
 function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
@@ -21,15 +18,10 @@ function getCookie(name) {
 // Global UI Setup on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
 
-    // Set User Role from Cookie (for nav visibility)
-    let userGroupsVal = '';
-    if (isLocal) {
-        window.userRole = 'admin';
-    } else {
-        userGroupsVal = getCookie('hutta_groups') || 'users';
-        const isAdmin = userGroupsVal.split(',').map(g => g.trim()).includes('admins');
-        window.userRole = isAdmin ? 'admin' : 'viewer';
-    }
+    // Set User Role from Cookie (set by Apache mod_auth_openidc on /profiles.html)
+    const userGroupsVal = getCookie('hutta_groups') || '';
+    const isAdmin = userGroupsVal.split(',').map(g => g.trim()).includes('admins');
+    window.userRole = isAdmin ? 'admin' : 'viewer';
 
     // Initialize all tools
     initTabController();

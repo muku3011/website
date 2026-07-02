@@ -23,3 +23,13 @@ resource "google_dns_record_set" "cname_record" {
   ttl          = 300
   rrdatas      = [google_dns_managed_zone.hutta_zone.dns_name]
 }
+
+# auth.hutta.in — Keycloak subdomain
+# CNAME to hutta.in so the existing DDNS script keeps both in sync automatically
+resource "google_dns_record_set" "auth_cname" {
+  name         = "auth.${google_dns_managed_zone.hutta_zone.dns_name}"
+  managed_zone = google_dns_managed_zone.hutta_zone.name
+  type         = "CNAME"
+  ttl          = 300
+  rrdatas      = [google_dns_managed_zone.hutta_zone.dns_name]
+}
