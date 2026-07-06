@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-set -e
-
 # ==============================================================================
 # Apache Configuration for hutta.in with Keycloak OIDC
 # - Adds auth.hutta.in VirtualHost (reverse proxy to Keycloak on :8080)
@@ -8,6 +6,7 @@ set -e
 # - Restricts Keycloak Admin Console to home network only
 # Run with: sudo ./scripts/configure_apache.sh
 # ==============================================================================
+set -e
 
 if [ "$EUID" -ne 0 ]; then
     echo "Error: Please run as root (use sudo)."
@@ -26,8 +25,9 @@ echo "[*] Enabling Apache modules..."
 a2enmod proxy proxy_http auth_openidc ssl headers substitute || true
 
 # ── Read Keycloak client secret ───────────────────────────────────────────────
-# Accept via --oidc-client-secret <secret> flag or KC_CLIENT_SECRET env var,
-# with an interactive prompt as a fallback.
+SSL_CONF="/etc/apache2/sites-available/000-default-le-ssl.conf"
+SECRETS_FILE="/etc/hutta/secrets.env"
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --oidc-client-secret)
@@ -41,12 +41,27 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+if [ -z "$KC_CLIENT_SECRET" ] && [ -f "$SECRETS_FILE" ]; then
+    # shellcheck disable=SC1090
+    source "$SECRETS_FILE"
+    KC_CLIENT_SECRET="${KC_CLIENT_SECRET:-${OIDC_CLIENT_SECRET:-}}"
+fi
+
+if [ -z "$KC_CLIENT_SECRET" ] && [ -f "$SSL_CONF" ]; then
+    KC_CLIENT_SECRET=$(grep -E '^[[:space:]]*OIDCClientSecret[[:space:]]+' "$SSL_CONF" | head -n 1 | sed -E 's/.*OIDCClientSecret[[:space:]]+"?([^\"]+)"?.*/\1/' | tr -d '"')
+fi
+
 if [ -z "$KC_CLIENT_SECRET" ]; then
-    echo ""
-    echo "Paste the OIDC client secret for 'apache-portal' from Keycloak Admin Console"
-    echo "(Clients \u2192 apache-portal \u2192 Credentials \u2192 Client secret):"
-    read -rsp "Client Secret: " KC_CLIENT_SECRET
-    echo ""
+    if [ -t 0 ]; then
+        echo ""
+        echo "Paste the OIDC client secret for 'apache-portal' from Keycloak Admin Console"
+        echo "(Clients → apache-portal → Credentials → Client secret):"
+        read -rsp "Client Secret: " KC_CLIENT_SECRET
+        echo ""
+    else
+        echo "Error: Client secret cannot be empty."
+        exit 1
+    fi
 fi
 
 if [ -z "$KC_CLIENT_SECRET" ]; then
@@ -54,20 +69,25 @@ if [ -z "$KC_CLIENT_SECRET" ]; then
     exit 1
 fi
 
-# Generate a random OIDC crypto passphrase
-OIDC_PASSPHRASE=$(openssl rand -hex 32)
-
-# ── Backup existing SSL config ────────────────────────────────────────────────
-SSL_CONF="/etc/apache2/sites-available/000-default-le-ssl.conf"
+# Extract existing passphrase from Apache config (keeps session cookies active!)
+OIDC_PASSPHRASE=""
 if [ -f "$SSL_CONF" ]; then
-    BACKUP="${SSL_CONF}.bak.$(date +%Y%m%d%H%M%S)"
-    echo "[*] Backing up ${SSL_CONF} to ${BACKUP}..."
-    cp "$SSL_CONF" "$BACKUP"
+    OIDC_PASSPHRASE=$(grep -E '^\s*OIDCCryptoPassphrase\s+' "$SSL_CONF" | awk '{print $2}' | tr -d '"' | tr -d "'")
+fi
+
+if [ -z "$OIDC_PASSPHRASE" ]; then
+    OIDC_PASSPHRASE=$(openssl rand -hex 32)
+    echo "[*] Generated new OIDC crypto passphrase"
+else
+    echo "[*] Reusing existing OIDC crypto passphrase"
 fi
 
 # ── Write hutta.in VirtualHost ────────────────────────────────────────────────
-echo "[*] Writing ${SSL_CONF}..."
-cat > "$SSL_CONF" <<'APACHEEOF'
+APACHE_RELOAD_REQUIRED=false
+
+SSL_TMP=$(mktemp)
+echo "[*] Ensuring ${SSL_CONF}..."
+cat > "$SSL_TMP" <<'APACHEEOF'
 <IfModule mod_ssl.c>
 <VirtualHost *:443>
     ServerAdmin webmaster@localhost
@@ -99,8 +119,8 @@ cat > "$SSL_CONF" <<'APACHEEOF'
     # -- OpenID Connect provider (Keycloak hutta realm) --
 APACHEEOF
 
-# Append the secrets (cannot use single-quote heredoc for variable expansion)
-cat >> "$SSL_CONF" <<APACHEVARS
+# Append variables safely
+cat >> "$SSL_TMP" <<APACHEVARS
     OIDCProviderMetadataURL https://auth.hutta.in/realms/hutta/.well-known/openid-configuration
     OIDCClientID apache-portal
     OIDCClientSecret "${KC_CLIENT_SECRET}"
@@ -108,22 +128,17 @@ cat >> "$SSL_CONF" <<APACHEVARS
     OIDCCryptoPassphrase "${OIDC_PASSPHRASE}"
     OIDCScope "openid profile email"
     OIDCRemoteUserClaim preferred_username
-    # Store the id_token so mod_auth_openidc can pass id_token_hint to Keycloak on logout
-    # This ensures Keycloak actually kills the SSO session (not just the Apache session)
     OIDCSessionType server-cache:persistent
-    OIDCTokenEndpointParams "client_id=apache-portal"
 
 APACHEVARS
 
-cat >> "$SSL_CONF" <<'APACHEEOF'
+cat >> "$SSL_TMP" <<'APACHEEOF'
     # -- Required: OIDC callback endpoint --
     <Location /redirect_uri>
         AuthType openid-connect
         Require valid-user
 
-        # Server-side logout cookie clear: Apache expires all hutta_* cookies
-        # atomically on the logout redirect response, so the browser never sees
-        # stale auth state. This eliminates the need for any client-side flag.
+        # Clear login-state cookies atomically on redirect response
         Header always unset Set-Cookie
         Header always set Set-Cookie "hutta_auth=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; Secure; SameSite=Lax"
         Header always add Set-Cookie "hutta_user=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; Secure; SameSite=Lax"
@@ -151,7 +166,7 @@ cat >> "$SSL_CONF" <<'APACHEEOF'
     </Location>
 
     # ==========================================================================
-    # Let's Encrypt SSL (covers hutta.in + auth.hutta.in via --expand)
+    # Let's Encrypt SSL
     # ==========================================================================
     SSLCertificateFile /etc/letsencrypt/live/hutta.in/fullchain.pem
     SSLCertificateKeyFile /etc/letsencrypt/live/hutta.in/privkey.pem
@@ -160,12 +175,26 @@ cat >> "$SSL_CONF" <<'APACHEEOF'
 </IfModule>
 APACHEEOF
 
-echo "[+] ${SSL_CONF} written"
+if [ -f "$SSL_CONF" ] && cmp -s "$SSL_TMP" "$SSL_CONF"; then
+    rm -f "$SSL_TMP"
+    echo "[+] ${SSL_CONF} already up to date"
+else
+    if [ -f "$SSL_CONF" ]; then
+        BACKUP="${SSL_CONF}.bak.$(date +%Y%m%d%H%M%S)"
+        echo "[*] Backing up ${SSL_CONF} to ${BACKUP}..."
+        cp "$SSL_CONF" "$BACKUP"
+    fi
+    install -m 644 "$SSL_TMP" "$SSL_CONF"
+    APACHE_RELOAD_REQUIRED=true
+    echo "[+] ${SSL_CONF} written/updated"
+fi
+rm -f "$SSL_TMP"
 
-# ── Write auth.hutta.in VirtualHost (separate file) ──────────────────────────
+# ── Write auth.hutta.in VirtualHost ──────────────────────────────────────────
 AUTH_CONF="/etc/apache2/sites-available/auth.hutta.in.conf"
-echo "[*] Writing ${AUTH_CONF}..."
-cat > "$AUTH_CONF" <<'AUTHEOF'
+echo "[*] Ensuring ${AUTH_CONF}..."
+AUTH_TMP=$(mktemp)
+cat > "$AUTH_TMP" <<'AUTHEOF'
 <IfModule mod_ssl.c>
 <VirtualHost *:443>
     ServerAdmin webmaster@localhost
@@ -174,11 +203,9 @@ cat > "$AUTH_CONF" <<'AUTHEOF'
     ErrorLog ${APACHE_LOG_DIR}/auth-error.log
     CustomLog ${APACHE_LOG_DIR}/auth-access.log combined
 
-    # Tell Keycloak it is behind an HTTPS reverse proxy
     RequestHeader set X-Forwarded-Proto "https"
     RequestHeader set X-Forwarded-Host "auth.hutta.in"
 
-    # Proxy everything to Keycloak running on localhost:8080
     ProxyPreserveHost On
     ProxyPass / http://127.0.0.1:8080/
     ProxyPassReverse / http://127.0.0.1:8080/
@@ -188,32 +215,31 @@ cat > "$AUTH_CONF" <<'AUTHEOF'
     # ==========================================================================
 
     # Admin Console (/admin) — restricted to home/LAN network only
-    # Adjust the IP ranges to match your home network
     <Location /admin>
         Require ip 192.168.0.0/16
         Require ip 10.0.0.0/8
         Require ip 127.0.0.1
     </Location>
 
-    # master realm endpoints — also LAN only
+    # master realm endpoints — LAN only
     <Location /realms/master>
         Require ip 192.168.0.0/16
         Require ip 10.0.0.0/8
         Require ip 127.0.0.1
     </Location>
 
-    # hutta realm account console — publicly accessible (user self-service)
+    # hutta realm account console — publicly accessible
     <Location /realms/hutta/account>
         Require all granted
     </Location>
 
-    # hutta realm OIDC endpoints — public (needed for mod_auth_openidc on hutta.in)
+    # hutta realm OIDC endpoints — public
     <Location /realms/hutta>
         Require all granted
     </Location>
 
     # ==========================================================================
-    # SSL — same expanded cert covers auth.hutta.in
+    # SSL
     # ==========================================================================
     SSLCertificateFile /etc/letsencrypt/live/hutta.in/fullchain.pem
     SSLCertificateKeyFile /etc/letsencrypt/live/hutta.in/privkey.pem
@@ -222,17 +248,41 @@ cat > "$AUTH_CONF" <<'AUTHEOF'
 </IfModule>
 AUTHEOF
 
+if [ -f "$AUTH_CONF" ] && cmp -s "$AUTH_TMP" "$AUTH_CONF"; then
+    rm -f "$AUTH_TMP"
+    echo "[+] ${AUTH_CONF} already up to date"
+else
+    if [ -f "$AUTH_CONF" ]; then
+        BACKUP="${AUTH_CONF}.bak.$(date +%Y%m%d%H%M%S)"
+        echo "[*] Backing up ${AUTH_CONF} to ${BACKUP}..."
+        cp "$AUTH_CONF" "$BACKUP"
+    fi
+    install -m 644 "$AUTH_TMP" "$AUTH_CONF"
+    APACHE_RELOAD_REQUIRED=true
+    echo "[+] ${AUTH_CONF} written/updated"
+fi
+rm -f "$AUTH_TMP"
+
 # ── Enable auth.hutta.in site ─────────────────────────────────────────────────
-a2ensite auth.hutta.in.conf || true
-echo "[+] auth.hutta.in VirtualHost enabled"
+if [ ! -e /etc/apache2/sites-enabled/auth.hutta.in.conf ]; then
+    a2ensite auth.hutta.in.conf >/dev/null || true
+    APACHE_RELOAD_REQUIRED=true
+    echo "[+] auth.hutta.in VirtualHost enabled"
+else
+    echo "[+] auth.hutta.in VirtualHost already enabled"
+fi
 
 # ── Test and reload Apache ─────────────────────────────────────────────────────
-echo "[*] Testing Apache configuration..."
-apache2ctl configtest
+if [ "$APACHE_RELOAD_REQUIRED" = true ]; then
+    echo "[*] Testing Apache configuration..."
+    apache2ctl configtest
 
-echo "[*] Reloading Apache..."
-systemctl reload apache2
-echo "[+] Apache reloaded successfully!"
+    echo "[*] Reloading Apache..."
+    systemctl reload apache2
+    echo "[+] Apache reloaded successfully!"
+else
+    echo "[+] Apache configuration already up to date; skipping reload"
+fi
 
 echo ""
 echo "============================================================"
@@ -240,9 +290,9 @@ echo " Apache configured for Keycloak!"
 echo "============================================================"
 echo " hutta.in         → serves site, protects /profiles.html"
 echo " auth.hutta.in    → proxies Keycloak :8080"
-echo " Admin Console    → LAN only (192.168.x.x / 10.x.x.x)"
+echo " Admin Console    → LAN only"
 echo " Account Console  → https://auth.hutta.in/realms/hutta/account"
 echo "============================================================"
-echo " OIDC Crypto Passphrase (save this):"
+echo " OIDC Crypto Passphrase (saved):"
 echo " OIDC_PASSPHRASE=${OIDC_PASSPHRASE}"
 echo "============================================================"

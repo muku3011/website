@@ -149,12 +149,11 @@ Contains the server dashboard and portfolio site assets deployed on the Raspberr
 - **Go to [website/README.md](website/README.md) for frontend deployment and automation setup instructions.**
 
 ### 3. [Keycloak Identity Provider (scripts/)](scripts/)
-Contains the Keycloak bare-metal installer, realm setup, Apache integration, and the custom hutta theme:
-- `setup_all.sh` — **recommended entry point**: orchestrates all four scripts below in order, passing secrets via shell variables (no temp files).
-- `install_keycloak.sh` — installs Keycloak on Pi 5, configures PostgreSQL, deploys the hutta theme, and creates the systemd service.
-- `setup_keycloak_realm.sh` — creates the `hutta` realm, `apache-portal` OIDC client, `users` group, and group-membership mapper via the Keycloak Admin REST API.
-- `configure_apache.sh` — configures Apache with `mod_auth_openidc` pointing at Keycloak, adds the `auth.hutta.in` reverse-proxy VirtualHost, and restricts the admin console to the home network.
-- `keycloak/hutta/` — custom Keycloak theme (login, account, email) matching the hutta.in dark design system.
+Contains the Keycloak bare-metal installer and related setup assets:
+- `setup_all.sh` — recommended entry point for provisioning the local Keycloak environment.
+- `install_keycloak.sh` — installs Keycloak on Pi 5, configures PostgreSQL, and creates the systemd service.
+- `configure_apache.sh` — configures Apache integration points for Keycloak when needed.
+- `keycloak/` — legacy theme assets retained for reference only.
 - **Go to [scripts/setup_all.sh](scripts/setup_all.sh) for the full one-command deployment.**
 
 ### 4. [SM-DP+ eSIM Server (smdp-plus/)](smdp-plus/README.md)

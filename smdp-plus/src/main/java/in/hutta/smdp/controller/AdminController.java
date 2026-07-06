@@ -85,6 +85,11 @@ public class AdminController {
               "Error: Could not extract ICCID from the profile. Ensure it is a valid GSMA eSIM profile.");
     }
 
+    if (profileRepository.existsById(iccid)) {
+      return ResponseEntity.badRequest()
+          .body("Error: A profile with ICCID " + iccid + " already exists.");
+    }
+
     String payload = Base64.getEncoder().encodeToString(profileBytes);
     String networkType = detectNetworkType(profileBytes, filename);
 

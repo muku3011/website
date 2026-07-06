@@ -34,4 +34,7 @@ public class Profile {
 
   @Column(name = "order_id")
   private String orderId;
+
+  @Column(name = "profile_type")
+  private String profileType;
 }

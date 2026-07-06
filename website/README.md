@@ -49,7 +49,7 @@ flowchart TD
 - **`js/tools.js`**: Developer toolbox calculators, encoders, and API explorer logic.
 - **`js/profiles.js`**: eSIM Profiles page — API integrations and LPA simulator.
 - **`js/libs/`**: Vendor libraries (js-yaml, ReDoc).
-- **`keycloak/hutta/`**: Custom Keycloak login theme matching the hutta.in dark design system.
+- **`keycloak/`**: Legacy Keycloak theme assets retained for reference only.
 
 ---
 
@@ -147,7 +147,7 @@ Keycloak provides SSO for `profiles.html`. Apache acts as the OIDC Relying Party
 #### One-command setup (recommended)
 Run the `setup_all.sh` orchestrator — it chains all four scripts in order, passing the OIDC client secret via a shell variable (never via `/tmp`):
 ```bash
-sudo KC_ADMIN_PASS='<your-keycloak-admin-password>' ./scripts/setup_all.sh
+sudo ./scripts/setup_all.sh
 ```
 
 #### What it runs
@@ -155,7 +155,6 @@ sudo KC_ADMIN_PASS='<your-keycloak-admin-password>' ./scripts/setup_all.sh
 |--------|---------|
 | `setup_postgres.sh` | Creates the `keycloakdb`, `smdpdb`, `lpadb` databases and roles with generated passwords |
 | `install_keycloak.sh` | Downloads Keycloak, configures systemd service, deploys the hutta theme |
-| `setup_keycloak_realm.sh` | Creates the `hutta` realm, `apache-portal` OIDC client, `users` group via Keycloak Admin API |
 | `configure_apache.sh` | Writes the `mod_auth_openidc` Apache config; adds `Header` directives to atomically expire `hutta_*` cookies on logout |
 
 > [!IMPORTANT]

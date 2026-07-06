@@ -1,11 +1,6 @@
 #!/usr/bin/env bash
 # This script installs/verifies PostgreSQL and sets up the smdpdb, lpadb,
-# and keycloakdb databases and roles.
-#
-# Usage:
-#   sudo ./setup_postgres.sh                        # generates a random Keycloak DB password
-#   sudo ./setup_postgres.sh --kc-password <pass>   # use a specific Keycloak DB password
-#
+# and keycloakdb databases and roles on Debian-based Linux.
 set -e
 
 # Formatting colors
@@ -14,52 +9,73 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# ── Parse arguments ────────────────────────────────────────────────────────────
-KC_DB_PASS_ARG=""
-SMDP_DB_PASS_ARG=""
-LPA_DB_PASS_ARG=""
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --kc-password)
-            KC_DB_PASS_ARG="$2"
-            shift 2
-            ;;
-        --smdp-password)
-            SMDP_DB_PASS_ARG="$2"
-            shift 2
-            ;;
-        --lpa-password)
-            LPA_DB_PASS_ARG="$2"
-            shift 2
-            ;;
-        *)
-            echo -e "${RED}Unknown argument: $1${NC}"
-            exit 1
-            ;;
-    esac
-done
-
 echo -e "${YELLOW}[*] Starting PostgreSQL Setup and Verification Script...${NC}"
 
-# 1. Verify and Install/Update PostgreSQL
+# Ensure root check
+if [ "$EUID" -ne 0 ] && [ "$1" != "--help" ]; then
+    echo -e "${RED}Error: Please run this script as root (use sudo).${NC}"
+    exit 1
+fi
+
+# 1. Load or initialize secure local state file
+SECRETS_DIR="/etc/hutta"
+SECRETS_FILE="${SECRETS_DIR}/secrets.env"
+mkdir -p "$SECRETS_DIR"
+chmod 700 "$SECRETS_DIR"
+
+if [ -f "$SECRETS_FILE" ]; then
+    echo -e "${YELLOW}[*] Loading existing credentials from ${SECRETS_FILE}...${NC}"
+    # Suppress check warnings for sourcing
+    # shellcheck disable=SC1090
+    source "$SECRETS_FILE"
+fi
+
+# 2. Verify and Install/Update PostgreSQL
 if ! command -v psql &> /dev/null; then
-    echo -e "${YELLOW}[*] PostgreSQL not found. Installing PostgreSQL and contrib packages...${NC}"
-    sudo apt-get update
-    sudo apt-get install -y postgresql postgresql-contrib
+    echo -e "${YELLOW}[*] PostgreSQL not found. Installing PostgreSQL and database tools...${NC}"
+    apt-get update
+    apt-get install -y postgresql postgresql-contrib
     echo -e "${GREEN}[+] PostgreSQL installed successfully!${NC}"
 else
     echo -e "${GREEN}[+] PostgreSQL is already installed. Checking status...${NC}"
 fi
 
-# 2. Verify PostgreSQL Service is Running
+# 3. Verify PostgreSQL Service is Running
 if ! systemctl is-active --quiet postgresql; then
     echo -e "${YELLOW}[*] Starting and enabling PostgreSQL service...${NC}"
-    sudo systemctl start postgresql
-    sudo systemctl enable postgresql
+    systemctl start postgresql
+    systemctl enable postgresql
     echo -e "${GREEN}[+] PostgreSQL service started!${NC}"
 else
     echo -e "${GREEN}[+] PostgreSQL service is running and active.${NC}"
 fi
+
+generate_password() {
+    head /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 24
+}
+
+update_secret_value() {
+    local key="$1"
+    local value="$2"
+    python3 - "$SECRETS_FILE" "$key" "$value" <<'PY'
+import os, sys
+path, key, value = sys.argv[1], sys.argv[2], sys.argv[3]
+lines = []
+updated = False
+if os.path.exists(path):
+    with open(path, 'r', encoding='utf-8') as fh:
+        lines = fh.readlines()
+for idx, line in enumerate(lines):
+    if line.startswith(f"{key}="):
+        lines[idx] = f'{key}="{value.replace("\\", "\\\\").replace("\"", "\\\"")}"\n'
+        updated = True
+        break
+if not updated:
+    lines.append(f'{key}="{value.replace("\\", "\\\\").replace("\"", "\\\"")}"\n')
+with open(path, 'w', encoding='utf-8') as fh:
+    fh.writelines(lines)
+PY
+}
 
 # Helper function to run psql queries as postgres superuser
 run_pg_query() {
@@ -71,120 +87,97 @@ run_pg_cmd() {
     sudo -u postgres psql -c "$1"
 }
 
+# Helper function to provision a database role and database consistently for all services
+provision_service_database() {
+    local service_name="$1"
+    local role_name="$2"
+    local db_name="$3"
+    local db_password="$4"
+
+    local role_exists
+    role_exists=$(run_pg_query "SELECT 1 FROM pg_roles WHERE rolname = '${role_name}';")
+
+    if [ "$role_exists" != "1" ]; then
+        if [ -n "$db_password" ]; then
+            echo -e "${YELLOW}[*] Creating role '${role_name}' for ${service_name}...${NC}"
+            sudo -u postgres psql -c "CREATE USER ${role_name} WITH PASSWORD '${db_password}';"
+            echo -e "${GREEN}[+] Role '${role_name}' created successfully for ${service_name}.${NC}"
+        else
+            echo -e "${YELLOW}[*] Creating role '${role_name}' for ${service_name} without a password (will be configured later if needed)...${NC}"
+            sudo -u postgres psql -c "CREATE USER ${role_name};"
+            echo -e "${GREEN}[+] Role '${role_name}' created successfully for ${service_name}.${NC}"
+        fi
+    else
+        if [ -n "$db_password" ]; then
+            echo -e "${YELLOW}[*] Role '${role_name}' exists for ${service_name} — ensuring the configured password is applied...${NC}"
+            sudo -u postgres psql -c "ALTER USER ${role_name} WITH PASSWORD '${db_password}';"
+            echo -e "${GREEN}[+] Role '${role_name}' password checked/updated for ${service_name}.${NC}"
+        else
+            echo -e "${GREEN}[+] Role '${role_name}' already exists for ${service_name}; leaving the existing password unchanged.${NC}"
+        fi
+    fi
+
+    local db_exists
+    db_exists=$(run_pg_query "SELECT 1 FROM pg_database WHERE datname = '${db_name}';")
+
+    if [ "$db_exists" != "1" ]; then
+        echo -e "${YELLOW}[*] Creating database '${db_name}' for ${service_name}...${NC}"
+        run_pg_cmd "CREATE DATABASE ${db_name} OWNER ${role_name};"
+        run_pg_cmd "GRANT ALL PRIVILEGES ON DATABASE ${db_name} TO ${role_name};"
+        echo -e "${GREEN}[+] Database '${db_name}' created successfully for ${service_name}.${NC}"
+    else
+        echo -e "${GREEN}[+] Database '${db_name}' already exists for ${service_name}.${NC}"
+    fi
+}
+
 echo -e "${YELLOW}[*] Verifying roles and databases...${NC}"
 
-# 3. Setup SM-DP+ User & Database
-# Resolve SMDP password: CLI arg > existing pg role > generate new
-if [ -n "$SMDP_DB_PASS_ARG" ]; then
-    SMDP_DB_PASS="$SMDP_DB_PASS_ARG"
+# 4. Setup SM-DP+ User & Database
+if [ -n "${SMDP_DB_PASSWORD:-}" ]; then
+    SMDP_DB_PASS="$SMDP_DB_PASSWORD"
 else
-    SMDP_DB_PASS=$(openssl rand -hex 24)
-    echo -e "${GREEN}[+] Generated new SM-DP+ DB password${NC}"
+    SMDP_DB_PASS=$(generate_password)
+    echo -e "${YELLOW}[*] Generated a new SM-DP+ database password and stored it in ${SECRETS_FILE}.${NC}"
 fi
 
-# Check SM-DP+ Role
-SMDP_ROLE_EXISTS=$(run_pg_query "SELECT 1 FROM pg_roles WHERE rolname = 'smdp';")
-if [ "$SMDP_ROLE_EXISTS" != "1" ]; then
-    echo -e "${YELLOW}[*] Creating role 'smdp'...${NC}"
-    sudo -u postgres psql -c "CREATE USER smdp WITH PASSWORD '${SMDP_DB_PASS}';"
-    echo -e "${GREEN}[+] Role 'smdp' created successfully!${NC}"
+provision_service_database "SM-DP+" "smdp" "smdpdb" "$SMDP_DB_PASS"
+
+# 5. Setup LPA Simulator User & Database
+if [ -n "${LPA_DB_PASSWORD:-}" ]; then
+    LPA_DB_PASS="$LPA_DB_PASSWORD"
 else
-    echo -e "${YELLOW}[*] Role 'smdp' exists — updating password...${NC}"
-    sudo -u postgres psql -c "ALTER USER smdp WITH PASSWORD '${SMDP_DB_PASS}';"
-    echo -e "${GREEN}[+] Role 'smdp' password updated.${NC}"
+    LPA_DB_PASS=$(generate_password)
+    echo -e "${YELLOW}[*] Generated a new LPA database password and stored it in ${SECRETS_FILE}.${NC}"
 fi
 
-# Check SM-DP+ Database
-SMDP_DB_EXISTS=$(run_pg_query "SELECT 1 FROM pg_database WHERE datname = 'smdpdb';")
-if [ "$SMDP_DB_EXISTS" != "1" ]; then
-    echo -e "${YELLOW}[*] Creating database 'smdpdb'...${NC}"
-    run_pg_cmd "CREATE DATABASE smdpdb OWNER smdp;"
-    run_pg_cmd "GRANT ALL PRIVILEGES ON DATABASE smdpdb TO smdp;"
-    echo -e "${GREEN}[+] Database 'smdpdb' created successfully!${NC}"
-else
-    echo -e "${GREEN}[+] Database 'smdpdb' already exists.${NC}"
-fi
+provision_service_database "LPA simulator" "lpa" "lpadb" "$LPA_DB_PASS"
 
-# 4. Setup LPA Simulator User & Database
-# Resolve LPA password: CLI arg > generate new
-if [ -n "$LPA_DB_PASS_ARG" ]; then
-    LPA_DB_PASS="$LPA_DB_PASS_ARG"
-else
-    LPA_DB_PASS=$(openssl rand -hex 24)
-    echo -e "${GREEN}[+] Generated new LPA DB password${NC}"
-fi
-
-# Check LPA Role
-LPA_ROLE_EXISTS=$(run_pg_query "SELECT 1 FROM pg_roles WHERE rolname = 'lpa';")
-if [ "$LPA_ROLE_EXISTS" != "1" ]; then
-    echo -e "${YELLOW}[*] Creating role 'lpa'...${NC}"
-    sudo -u postgres psql -c "CREATE USER lpa WITH PASSWORD '${LPA_DB_PASS}';"
-    echo -e "${GREEN}[+] Role 'lpa' created successfully!${NC}"
-else
-    echo -e "${YELLOW}[*] Role 'lpa' exists - updating password...${NC}"
-    sudo -u postgres psql -c "ALTER USER lpa WITH PASSWORD '${LPA_DB_PASS}';"
-    echo -e "${GREEN}[+] Role 'lpa' password updated.${NC}"
-fi
-
-# Check LPA Database
-LPA_DB_EXISTS=$(run_pg_query "SELECT 1 FROM pg_database WHERE datname = 'lpadb';")
-if [ "$LPA_DB_EXISTS" != "1" ]; then
-    echo -e "${YELLOW}[*] Creating database 'lpadb'...${NC}"
-    run_pg_cmd "CREATE DATABASE lpadb OWNER lpa;"
-    run_pg_cmd "GRANT ALL PRIVILEGES ON DATABASE lpadb TO lpa;"
-    echo -e "${GREEN}[+] Database 'lpadb' created successfully!${NC}"
-else
-    echo -e "${GREEN}[+] Database 'lpadb' already exists.${NC}"
-fi
-
-# 5. Setup Keycloak User & Database
+# 6. Setup Keycloak User & Database
 KC_DB_NAME="keycloakdb"
 KC_DB_USER="keycloak"
 
-# Resolve password: CLI arg > existing keycloak.conf > generate new
-if [ -n "$KC_DB_PASS_ARG" ]; then
-    KC_DB_PASS="$KC_DB_PASS_ARG"
-    echo -e "${YELLOW}[*] Using provided Keycloak DB password${NC}"
+if [ -n "${KC_DB_PASSWORD:-}" ]; then
+    KC_DB_PASS="$KC_DB_PASSWORD"
 elif [ -f "/opt/keycloak/conf/keycloak.conf" ] && grep -q "db-password=" "/opt/keycloak/conf/keycloak.conf"; then
     KC_DB_PASS=$(grep "^db-password=" "/opt/keycloak/conf/keycloak.conf" | cut -d'=' -f2-)
-    echo -e "${YELLOW}[*] Reusing existing Keycloak DB password from keycloak.conf${NC}"
 else
-    KC_DB_PASS=$(openssl rand -hex 32)
-    echo -e "${GREEN}[+] Generated new Keycloak DB password${NC}"
+    KC_DB_PASS=$(generate_password)
+    echo -e "${YELLOW}[*] Generated a new Keycloak database password and stored it in ${SECRETS_FILE}.${NC}"
 fi
 
-# Check Keycloak Role
-KC_ROLE_EXISTS=$(run_pg_query "SELECT 1 FROM pg_roles WHERE rolname = '${KC_DB_USER}';")
-if [ "$KC_ROLE_EXISTS" != "1" ]; then
-    echo -e "${YELLOW}[*] Creating role '${KC_DB_USER}'...${NC}"
-    sudo -u postgres psql -c "CREATE USER ${KC_DB_USER} WITH PASSWORD '${KC_DB_PASS}';"
-    echo -e "${GREEN}[+] Role '${KC_DB_USER}' created successfully!${NC}"
-else
-    echo -e "${YELLOW}[*] Role '${KC_DB_USER}' exists — updating password...${NC}"
-    sudo -u postgres psql -c "ALTER USER ${KC_DB_USER} WITH PASSWORD '${KC_DB_PASS}';"
-    echo -e "${GREEN}[+] Role '${KC_DB_USER}' password updated.${NC}"
-fi
+provision_service_database "Keycloak" "$KC_DB_USER" "$KC_DB_NAME" "$KC_DB_PASS"
 
-# Check Keycloak Database
-KC_DB_EXISTS=$(run_pg_query "SELECT 1 FROM pg_database WHERE datname = '${KC_DB_NAME}';")
-if [ "$KC_DB_EXISTS" != "1" ]; then
-    echo -e "${YELLOW}[*] Creating database '${KC_DB_NAME}'...${NC}"
-    run_pg_cmd "CREATE DATABASE ${KC_DB_NAME} OWNER ${KC_DB_USER};"
-    run_pg_cmd "GRANT ALL PRIVILEGES ON DATABASE ${KC_DB_NAME} TO ${KC_DB_USER};"
-    echo -e "${GREEN}[+] Database '${KC_DB_NAME}' created successfully!${NC}"
-else
-    echo -e "${GREEN}[+] Database '${KC_DB_NAME}' already exists.${NC}"
-fi
-
-# Export so callers (e.g. install_keycloak.sh) can read the resolved password
-export KC_DB_PASS
+# 7. Persist consolidated secrets without overwriting unrelated values
+chmod 600 "$SECRETS_FILE"
+update_secret_value "SMDP_DB_PASSWORD" "$SMDP_DB_PASS"
+update_secret_value "LPA_DB_PASSWORD" "$LPA_DB_PASS"
+update_secret_value "KC_DB_PASSWORD" "$KC_DB_PASS"
 
 echo -e "${GREEN}[+] PostgreSQL setup and verification completed successfully!${NC}"
 echo ""
 echo -e "${YELLOW}============================================================${NC}"
-echo -e "${YELLOW}Generated Credentials (record these now):${NC}"
+echo -e "${YELLOW}Credentials (stored in ${SECRETS_FILE}):${NC}"
 echo -e "${YELLOW}============================================================${NC}"
-echo -e "SM-DP+ DB password:  SMDP_DB_PASSWORD=${SMDP_DB_PASS}"
-echo -e "LPA DB password:     LPA_DB_PASSWORD=${LPA_DB_PASS}"
-echo -e "Keycloak DB password (pass to install_keycloak.sh via --kc-db-password):"
+echo -e "SMDP_DB_PASSWORD=${SMDP_DB_PASS}"
+echo -e "LPA_DB_PASSWORD=${LPA_DB_PASS}"
 echo -e "KC_DB_PASSWORD=${KC_DB_PASS}"

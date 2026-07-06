@@ -1,0 +1,1 @@
+ALTER TABLE profile ADD COLUMN profile_type VARCHAR(255);

@@ -188,6 +188,46 @@ const BACKEND_BASE = window.location.hostname === 'localhost' || window.location
     : '';
 
 // -------------------------------------------------------------
+// ACCESS CONTEXT
+// -------------------------------------------------------------
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) {
+        return decodeURIComponent(parts.pop().split(';').shift());
+    }
+    return '';
+}
+
+function renderAccessContext() {
+    const summaryEl = document.getElementById('access-user-summary');
+    const badgesEl = document.getElementById('access-group-badges');
+    if (!summaryEl || !badgesEl) return;
+
+    const userName = getCookie('hutta_name') || getCookie('hutta_user') || 'Authenticated user';
+    const userId = getCookie('hutta_user') || 'unknown';
+    const groupsRaw = getCookie('hutta_groups') || '';
+    const groups = groupsRaw.split(',').map(g => g.trim()).filter(Boolean);
+
+    const roleLabel = groups.includes('hutta-admins')
+        ? 'CRUD admin'
+        : groups.includes('hutta-operators')
+            ? 'CRUD operator'
+            : groups.includes('hutta-users')
+                ? 'CRUD user'
+                : 'Authenticated user';
+
+    summaryEl.innerHTML = `Signed in as <strong>${escapeHtml(userName)}</strong> <span style="color: var(--text-muted);">(${escapeHtml(userId)})</span><br><span style="color: var(--primary-glow);">Current role: ${escapeHtml(roleLabel)}</span>`;
+
+    if (groups.length === 0) {
+        badgesEl.innerHTML = '<span class="badge" style="background: rgba(255,255,255,0.08); color: var(--text-muted);">No groups reported</span>';
+        return;
+    }
+
+    badgesEl.innerHTML = groups.map(group => `<span class="badge" style="background: rgba(110, 160, 255, 0.16); color: var(--primary-glow); border: 1px solid rgba(110,160,255,0.25);">${escapeHtml(group)}</span>`).join('');
+}
+
+// -------------------------------------------------------------
 // RSP CONSOLE LOGGING
 // -------------------------------------------------------------
 const rspConsole = document.getElementById('rsp-console');
@@ -331,7 +371,7 @@ function renderProfiles() {
                 </span>`;
         }
 
-        const deleteDisabled = (window.userRole === 'viewer') ? 'disabled' : '';
+        const deleteDisabled = (window.userRole !== 'admin') ? 'disabled' : '';
 
         return `
             <tr onclick="selectProfileForActivation('${profile.iccid}')" style="cursor: pointer;">
@@ -834,13 +874,38 @@ dialogs.forEach(dialog => {
 // AUTHORIZATION & PERMISSIONS
 // -------------------------------------------------------------
 function enforceRolePermissions() {
-    if (window.userRole !== 'admin') {
-        // Disable all admin-only buttons & dropzones
+    if (window.userRole === 'viewer') {
+        // Disable EVERYTHING except viewing
         document.querySelectorAll('.btn-delete, .btn-primary-action, .btn-secondary-action, .btn-success-action, #btn-import-profile').forEach(btn => {
             btn.disabled = true;
             btn.style.opacity = '0.4';
             btn.style.cursor = 'not-allowed';
-            btn.title = 'Actions restricted to Administrator';
+            btn.title = 'Actions restricted to Administrator or Operator';
+        });
+
+        // Also disable LPA Simulator controls in the UI
+        document.querySelectorAll('.btn-profile-action, #lpa-sim-btn-download').forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.4';
+            btn.style.cursor = 'not-allowed';
+            btn.title = 'LPA Simulator controls restricted to Administrator or Operator';
+        });
+
+        if (typeof dropzone !== 'undefined' && dropzone) {
+            dropzone.style.opacity = '0.4';
+            dropzone.style.cursor = 'not-allowed';
+            dropzone.title = 'Imports restricted to Administrator';
+            // Remove click listener
+            const clone = dropzone.cloneNode(true);
+            dropzone.parentNode.replaceChild(clone, dropzone);
+        }
+    } else if (window.userRole === 'operator') {
+        // Operators can perform actions but NOT delete or import profiles
+        document.querySelectorAll('.btn-delete, #btn-import-profile').forEach(btn => {
+            btn.disabled = true;
+            btn.style.opacity = '0.4';
+            btn.style.cursor = 'not-allowed';
+            btn.title = 'Destructive actions/imports restricted to Administrator';
         });
 
         if (typeof dropzone !== 'undefined' && dropzone) {

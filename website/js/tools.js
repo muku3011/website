@@ -18,10 +18,7 @@ function getCookie(name) {
 // Global UI Setup on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
 
-    // Set User Role from Cookie (set by Apache mod_auth_openidc on /profiles.html)
-    const userGroupsVal = getCookie('hutta_groups') || '';
-    const isAdmin = userGroupsVal.split(',').map(g => g.trim()).includes('admins');
-    window.userRole = isAdmin ? 'admin' : 'viewer';
+
 
     // Initialize all tools
     initTabController();
@@ -36,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initOpenApiTools();
     initIpCidrCalculator();
     initCharEncoding();
+    initBerTlvParser();
 });
 
 function getInitials(name) {
@@ -2119,4 +2117,345 @@ function initCharEncoding() {
 
     // Initial calculation on load
     handleTextInput();
+}
+
+// -------------------------------------------------------------
+// BER-TLV PARSER UTILITY
+// -------------------------------------------------------------
+function initBerTlvParser() {
+    const hexInput = document.getElementById('ber-hex-input');
+    const parseBtn = document.getElementById('btn-ber-parse');
+    const clearBtn = document.getElementById('btn-ber-clear');
+    const example1Btn = document.getElementById('btn-ber-example-1');
+    const example2Btn = document.getElementById('btn-ber-example-2');
+    const treeOutput = document.getElementById('ber-tree-output');
+    const errorDiv = document.getElementById('ber-validation-error');
+    const analysisPanel = document.getElementById('ber-node-analysis');
+
+    const ESIM_TAG_DESCRIPTIONS = {
+        "A0": "initiateAuthenticationRequest",
+        "A1": "initiateAuthenticationResponse / authenticateClientRequest",
+        "A2": "authenticateClientResponse",
+        "A3": "getBoundProfilePackageRequest",
+        "A4": "getBoundProfilePackageResponse",
+        "B0": "cancelSessionRequest",
+        "B1": "cancelSessionResponse",
+        "BF30": "getBoundProfilePackageResponse (Constructed)",
+        "BF3C": "profileInfo (Constructed)",
+        "E3": "PE Header / Profile Info Container",
+        "E0": "profileHeader (Constructed)",
+        "E1": "PE-GenericFile",
+        "E2": "PE-PinCodes",
+        "E4": "PE-PukCodes",
+        "E5": "PE-AkaParameter",
+        "E6": "PE-CdmaParameter",
+        "E7": "PE-SecurityDomain",
+        "E8": "PE-RfFileStructure",
+        "E9": "PE-Application",
+        "EA": "PE-NonStandard",
+        "BF20": "euiccConfiguredAddressesRequest",
+        "BF21": "euiccConfiguredAddressesResponse",
+        "BF22": "downloadOrderRequest",
+        "BF23": "downloadOrderResponse",
+        "BF24": "initializeSecureChannelRequest",
+        "BF25": "initializeSecureChannelResponse / Notification List",
+        "BF28": "retrieveNotificationsListResponse",
+        "BF2F": "cancelSessionRequest / eUICC Response",
+        "BF40": "cancelSessionResponse",
+        "BF4B": "prepareDownloadRequest",
+        "BF4C": "prepareDownloadResponse",
+        "80": "matchingId / profileType / challenge",
+        "81": "iccid / matchingId / serverAddress",
+        "82": "serverAddress / confirmationCode",
+        "83": "serverSignature / euiccChallenge",
+        "84": "transactionId / euiccInfo",
+        "85": "serverChallenge / serverOtp",
+        "86": "smdpAddress / euiccChallenge",
+        "87": "deviceInfo / hash",
+        "88": "cryptoToken / signingType",
+        "89": "signature / serverToken",
+        "8A": "notificationId",
+        "8B": "notificationType / profileState",
+        "8C": "profileManagementOperation",
+        "8D": "notificationAddress",
+        "90": "eUICC Status / Address / Result",
+        "91": "serverAddress / isSimulated",
+        "30": "Sequence (Universal Constructed)",
+        "31": "Set (Universal Constructed)",
+        "01": "Boolean (Universal Primitive)",
+        "02": "Integer (Universal Primitive)",
+        "03": "Bit String (Universal Primitive)",
+        "04": "Octet String (Universal Primitive)",
+        "05": "Null (Universal Primitive)",
+        "06": "Object Identifier / OID (Universal Primitive)",
+        "0A": "Enumerated (Universal Primitive)",
+        "0C": "UTF8String (Universal Primitive)",
+        "12": "NumericString (Universal Primitive)",
+        "13": "PrintableString (Universal Primitive)",
+        "16": "IA5String (Universal Primitive)",
+        "18": "GeneralizedTime (Universal Primitive)"
+    };
+
+    function parseHex(hexStr) {
+        const cleaned = hexStr.replace(/[^0-9a-fA-F]/g, '');
+        if (cleaned.length % 2 !== 0) {
+            throw new Error('Hex string must have an even number of characters');
+        }
+        const bytes = new Uint8Array(cleaned.length / 2);
+        for (let i = 0; i < cleaned.length; i += 2) {
+            bytes[i / 2] = parseInt(cleaned.substring(i, i + 2), 16);
+        }
+        return bytes;
+    }
+
+    function parseBerTlv(bytes, offset = 0, end = bytes.length) {
+        const results = [];
+        while (offset < end) {
+            if (bytes[offset] === 0x00 || bytes[offset] === 0xFF) {
+                offset++;
+                continue;
+            }
+
+            const startOffset = offset;
+            
+            if (offset >= end) break;
+            let tagStart = offset;
+            let tagByte1 = bytes[offset++];
+            
+            let tagClass = (tagByte1 & 0xC0) >> 6;
+            let isConstructed = (tagByte1 & 0x20) !== 0;
+            let tagNo = tagByte1 & 0x1F;
+            
+            let tagHex = tagByte1.toString(16).toUpperCase().padStart(2, '0');
+            if (tagNo === 0x1F) {
+                while (offset < end) {
+                    let nextByte = bytes[offset++];
+                    tagHex += nextByte.toString(16).toUpperCase().padStart(2, '0');
+                    if ((nextByte & 0x80) === 0) {
+                        break;
+                    }
+                }
+            }
+            
+            if (offset >= end) {
+                throw new Error(`Incomplete TLV structure: missing length after tag ${tagHex}`);
+            }
+            let lenByte = bytes[offset++];
+            let length = 0;
+            let lengthHex = lenByte.toString(16).toUpperCase().padStart(2, '0');
+            
+            if ((lenByte & 0x80) === 0) {
+                length = lenByte;
+            } else {
+                let numBytes = lenByte & 0x7F;
+                if (numBytes === 0) {
+                    throw new Error(`Indefinite length form (0x80) is not supported for tag ${tagHex}`);
+                }
+                if (offset + numBytes > end) {
+                    throw new Error(`Incomplete TLV structure: expected ${numBytes} bytes of length value for tag ${tagHex}`);
+                }
+                let lenValHex = "";
+                for (let i = 0; i < numBytes; i++) {
+                    let b = bytes[offset++];
+                    length = (length << 8) | b;
+                    lenValHex += b.toString(16).toUpperCase().padStart(2, '0');
+                }
+                lengthHex += lenValHex;
+            }
+            
+            if (offset + length > end) {
+                throw new Error(`Value field truncated: tag ${tagHex} needs ${length} bytes, but only ${end - offset} bytes remain`);
+            }
+            
+            const valueBytes = bytes.slice(offset, offset + length);
+            const valueHex = Array.from(valueBytes).map(b => b.toString(16).toUpperCase().padStart(2, '0')).join(' ');
+            
+            offset += length;
+            const endOffset = offset;
+            
+            const node = {
+                tag: tagHex,
+                class: ["Universal", "Application", "Context-Specific", "Private"][tagClass],
+                type: isConstructed ? "Constructed" : "Primitive",
+                length: length,
+                lengthHex: lengthHex,
+                valueHex: valueHex,
+                valueBytes: valueBytes,
+                start: startOffset,
+                end: endOffset,
+                children: []
+            };
+            
+            if (isConstructed && length > 0) {
+                try {
+                    node.children = parseBerTlv(valueBytes, 0, valueBytes.length);
+                } catch (err) {
+                    node.parseError = err.message;
+                }
+            }
+            
+            results.push(node);
+        }
+        return results;
+    }
+
+    function renderTlvTree(nodes, parentElement) {
+        parentElement.innerHTML = "";
+        if (nodes.length === 0) {
+            parentElement.innerHTML = `<span style="color: var(--text-muted);">Empty or padding bytes skipped.</span>`;
+            return;
+        }
+        
+        function createNodeHtml(node) {
+            const desc = ESIM_TAG_DESCRIPTIONS[node.tag] || "";
+            const descStr = desc ? ` <span style="color: var(--success-glow); font-size: 0.8rem;">(${desc})</span>` : "";
+            const classColor = {
+                "Universal": "#3b82f6",
+                "Application": "#10b981",
+                "Context-Specific": "#f59e0b",
+                "Private": "#ec4899"
+            }[node.class] || "var(--text-primary)";
+            
+            const li = document.createElement('div');
+            li.className = 'tlv-tree-node';
+            li.style.marginLeft = '1rem';
+            li.style.borderLeft = '1px dashed var(--card-border)';
+            li.style.paddingLeft = '0.75rem';
+            li.style.marginTop = '0.4rem';
+            li.style.marginBottom = '0.4rem';
+            
+            const header = document.createElement('div');
+            header.className = 'tlv-node-header';
+            header.style.cursor = 'pointer';
+            header.style.padding = '0.2rem 0.4rem';
+            header.style.borderRadius = '4px';
+            header.style.transition = 'background 0.2s';
+            header.style.display = 'flex';
+            header.style.alignItems = 'center';
+            header.style.gap = '0.5rem';
+            
+            header.addEventListener('mouseenter', () => header.style.background = 'rgba(255, 255, 255, 0.05)');
+            header.addEventListener('mouseleave', () => header.style.background = 'none');
+            
+            const toggleIcon = node.type === 'Constructed' ? '📂' : '📄';
+            header.innerHTML = `
+                <span style="font-size: 0.85rem;">${toggleIcon}</span>
+                <strong style="color: ${classColor};">[${node.tag}]</strong>
+                <span style="color: var(--text-secondary); font-size: 0.85rem;">L: ${node.length}</span>
+                ${descStr}
+            `;
+            
+            header.addEventListener('click', (e) => {
+                e.stopPropagation();
+                displayNodeAnalysis(node);
+            });
+            
+            li.appendChild(header);
+            
+            if (node.type === 'Constructed' && node.children.length > 0) {
+                const childContainer = document.createElement('div');
+                childContainer.className = 'tlv-child-container';
+                node.children.forEach(child => {
+                    childContainer.appendChild(createNodeHtml(child));
+                });
+                li.appendChild(childContainer);
+            } else if (node.type === 'Primitive') {
+                const preview = document.createElement('div');
+                preview.style.fontSize = '0.8rem';
+                preview.style.color = 'var(--text-muted)';
+                preview.style.marginLeft = '1.3rem';
+                preview.style.wordBreak = 'break-all';
+                const valuePreview = node.valueHex.length > 60 ? node.valueHex.substring(0, 60) + '...' : node.valueHex;
+                preview.textContent = `V: ${valuePreview}`;
+                li.appendChild(preview);
+            }
+            
+            return li;
+        }
+        
+        nodes.forEach(node => {
+            parentElement.appendChild(createNodeHtml(node));
+        });
+    }
+
+    function displayNodeAnalysis(node) {
+        if (!analysisPanel) return;
+        analysisPanel.style.display = 'block';
+        
+        document.getElementById('analysis-tag-hex').textContent = node.tag;
+        document.getElementById('analysis-tag-class').textContent = node.class;
+        document.getElementById('analysis-tag-type').textContent = node.type;
+        
+        const desc = ESIM_TAG_DESCRIPTIONS[node.tag] || "Unknown Tag Description";
+        document.getElementById('analysis-tag-desc').textContent = desc;
+        
+        document.getElementById('analysis-length-info').textContent = `${node.length} bytes (Length encoded as: 0x${node.lengthHex})`;
+        document.getElementById('analysis-val-hex').value = node.valueHex;
+        
+        let ascii = "";
+        for (let i = 0; i < node.valueBytes.length; i++) {
+            let code = node.valueBytes[i];
+            if (code >= 32 && code <= 126) {
+                ascii += String.fromCharCode(code);
+            } else {
+                ascii += ".";
+            }
+        }
+        document.getElementById('analysis-val-ascii').textContent = ascii || "--";
+    }
+
+    function handleParse() {
+        if (!hexInput) return;
+        errorDiv.style.display = 'none';
+        analysisPanel.style.display = 'none';
+        
+        const hexStr = hexInput.value.trim();
+        if (!hexStr) {
+            treeOutput.innerHTML = `<span style="color: var(--text-muted);">Please enter hex data.</span>`;
+            return;
+        }
+
+        try {
+            const bytes = parseHex(hexStr);
+            const parsed = parseBerTlv(bytes);
+            renderTlvTree(parsed, treeOutput);
+        } catch (err) {
+            errorDiv.textContent = `Parse Error: ${err.message}`;
+            errorDiv.style.display = 'block';
+            treeOutput.innerHTML = `<span style="color: var(--error-glow);">Parsing failed. See validation error details.</span>`;
+        }
+    }
+
+    if (parseBtn) {
+        parseBtn.addEventListener('click', handleParse);
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            if (hexInput) hexInput.value = '';
+            if (errorDiv) errorDiv.style.display = 'none';
+            if (analysisPanel) analysisPanel.style.display = 'none';
+            if (treeOutput) {
+                treeOutput.innerHTML = `<span style="color: var(--text-muted);">No parsed tree yet. Enter hex bytes and click "Parse BER-TLV".</span>`;
+            }
+        });
+    }
+
+    if (example1Btn) {
+        example1Btn.addEventListener('click', () => {
+            if (hexInput) {
+                hexInput.value = 'A1 18 80 08 30 31 32 33 34 35 36 37 81 0C 65 73 69 6D 2E 6C 6F 63 61 6C 68 6F';
+                handleParse();
+            }
+        });
+    }
+
+    if (example2Btn) {
+        example2Btn.addEventListener('click', () => {
+            if (hexInput) {
+                hexInput.value = 'BF 30 2B A0 29 86 08 89 00 01 23 45 67 89 01 87 01 02 A2 14 30 12 04 10 56 D4 07 08 24 9D CB 7B 64 B2 E3 2D 6A DE CC CF';
+                handleParse();
+            }
+        });
+    }
 }

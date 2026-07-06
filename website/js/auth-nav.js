@@ -31,7 +31,15 @@
     window.userEmailVal = getCookie('hutta_email') || 'no-email@hutta.in';
     const groupsRaw = getCookie('hutta_groups') || '';
     window.userGroups = groupsRaw.split(',').map(g => g.trim()).filter(Boolean);
-    window.userRole = 'viewer'; // role concept simplified — all authenticated users are viewers
+    
+    // Determine userRole from OIDC groups
+    if (window.userGroups.includes('admins')) {
+        window.userRole = 'admin';
+    } else if (window.userGroups.includes('operators')) {
+        window.userRole = 'operator';
+    } else {
+        window.userRole = 'viewer';
+    }
 
     // Dynamic Navigation Tab Visibility Rules
     function initNavigation() {
@@ -55,8 +63,16 @@
         if (isLoggedIn) {
             // Render Profile Dropdown
             const initials = (window.displayNameVal || 'U').substring(0, 1).toUpperCase();
-            const roleText = window.userRole === 'admin' ? 'Administrator' : 'Viewer';
-            const roleBadgeClass = window.userRole === 'admin' ? 'badge-success' : 'badge-secondary';
+            const roleText = window.userRole === 'admin' 
+                ? 'Administrator' 
+                : window.userRole === 'operator' 
+                    ? 'Operator' 
+                    : 'Viewer';
+            const roleBadgeClass = window.userRole === 'admin' 
+                ? 'badge-success' 
+                : window.userRole === 'operator' 
+                    ? 'badge-info' 
+                    : 'badge-secondary';
 
             container.innerHTML = `
                 <div class="user-profile-section" id="user-profile-menu">

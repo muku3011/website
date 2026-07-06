@@ -37,6 +37,7 @@ public class ProfileService {
       if ("AVAILABLE".equals(profile.getState())) {
         profile.setEid(eid);
         profile.setState("ORDERED");
+        profile.setProfileType(profileType);
         profile.setOrderId("order_" + java.util.UUID.randomUUID().toString().substring(0, 8));
         profileRepository.save(profile);
         log.info(

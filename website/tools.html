@@ -101,6 +101,10 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><polyline points="9 22 9 7 15 7 15 22"/><line x1="17" y1="9" x2="21" y2="9"/><line x1="3" y1="9" x2="7" y2="9"/></svg>
                     <span>Character Encodings</span>
                 </li>
+                <li class="tools-menu-item" data-target="ber-tlv-parser">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h6v6H3zM15 3h6v6h-6zM9 6h6M12 6v8M3 15h6v6H3zM12 14v4M15 15h6v6h-6z"/></svg>
+                    <span>BER-TLV Parser</span>
+                </li>
             </ul>
         </aside>
 
@@ -755,6 +759,107 @@
                             </li>
                             <li><strong>GSM 8-Bit Data:</strong> Primarily used for binary payloads (like smart card updates, port-directed SMS, or WAP pushes). It treats characters as standard 8-bit bytes (usually matching ISO-8859-1).</li>
                         </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL: BER-TLV Parser -->
+            <div id="ber-tlv-parser" class="tool-panel">
+                <div class="panel-header">
+                    <h2>BER-TLV Parser</h2>
+                    <p>Parse and analyze ASN.1 Basic Encoding Rules Tag-Length-Value (BER-TLV) hex data commonly used in smart cards, SIMs, and eSIM (eUICC) profiles.</p>
+                </div>
+
+                <div class="tool-io-grid">
+                    <div class="input-pane" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <div class="pane-header">
+                            <span>HEX Data Input</span>
+                            <div class="action-buttons-group">
+                                <button class="btn btn-secondary btn-small" id="btn-ber-example-1">eSIM Initiate Response (A0)</button>
+                                <button class="btn btn-secondary btn-small" id="btn-ber-example-2">eSIM BPP Response (BF30)</button>
+                                <button class="btn btn-secondary btn-small" id="btn-ber-clear">Clear</button>
+                            </div>
+                        </div>
+                        <textarea class="code-editor" id="ber-hex-input" placeholder="Enter hex bytes (e.g. BF 30 1E A0 1C 86 08 89 00 01 23 45 67 89 01...)" spellcheck="false" style="flex: 1; min-height: 250px; font-family: monospace;"></textarea>
+                        <div id="ber-validation-error" class="validation-msg error" style="display: none; margin-top: 0.5rem; line-height: 1.4;"></div>
+                        <button class="btn btn-primary" id="btn-ber-parse" style="margin-top: 0.5rem;">Parse BER-TLV</button>
+                    </div>
+
+                    <div class="output-pane" style="display: flex; flex-direction: column; gap: 0.75rem; background: var(--console-bg); border-radius: var(--border-radius-sm); border: 1px solid var(--card-border); overflow: hidden;">
+                        <div class="pane-header" style="border-bottom: 1px solid var(--card-border); padding: 0.5rem 1rem;">
+                            <span>Decoded TLV Tree View</span>
+                        </div>
+                        <div id="ber-tree-output" style="flex: 1; padding: 1.2rem; overflow-y: auto; font-family: monospace; font-size: 0.9rem; line-height: 1.5; color: var(--text-primary); min-height: 300px;">
+                            <span style="color: var(--text-muted);">No parsed tree yet. Enter hex bytes and click "Parse BER-TLV".</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Node Analysis -->
+                <div id="ber-node-analysis" style="margin-top: 1.5rem; border-top: 1px solid var(--card-border); padding-top: 1.5rem; display: none;">
+                    <h3 style="font-family: var(--font-heading); font-size: 1.1rem; color: var(--primary-glow); margin-bottom: 0.75rem;">Selected Node Analysis</h3>
+                    <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--border-radius-sm); padding: 1.2rem;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <div>
+                                <span style="color: var(--text-muted); font-size: 0.85rem;">Tag Hex:</span>
+                                <div id="analysis-tag-hex" style="font-size: 1.2rem; font-weight: 700; color: var(--primary-glow); margin-top: 0.25rem;">--</div>
+                            </div>
+                            <div>
+                                <span style="color: var(--text-muted); font-size: 0.85rem;">Tag Class:</span>
+                                <div id="analysis-tag-class" style="font-size: 1rem; font-weight: 600; margin-top: 0.25rem;">--</div>
+                            </div>
+                            <div>
+                                <span style="color: var(--text-muted); font-size: 0.85rem;">Type (P/C):</span>
+                                <div id="analysis-tag-type" style="font-size: 1rem; font-weight: 600; margin-top: 0.25rem;">--</div>
+                            </div>
+                            <div>
+                                <span style="color: var(--text-muted); font-size: 0.85rem;">Tag Description:</span>
+                                <div id="analysis-tag-desc" style="font-size: 1rem; font-weight: 500; color: var(--success-glow); margin-top: 0.25rem;">--</div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 1.2rem; border-top: 1px dashed var(--card-border); padding-top: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <span style="color: var(--text-muted); font-size: 0.85rem;">Length:</span>
+                                <div id="analysis-length-info" style="font-family: monospace; font-size: 0.95rem; margin-top: 0.25rem;">--</div>
+                            </div>
+                            <div>
+                                <span style="color: var(--text-muted); font-size: 0.85rem;">Value (Hex):</span>
+                                <textarea id="analysis-val-hex" readonly style="width: 100%; height: 80px; background: var(--console-bg); border: 1px solid var(--card-border); border-radius: var(--border-radius-sm); font-family: monospace; font-size: 0.85rem; padding: 0.5rem; margin-top: 0.25rem; color: var(--text-primary); resize: none;"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 1rem; display: grid; grid-template-columns: 1fr; gap: 1rem;">
+                            <div>
+                                <span style="color: var(--text-muted); font-size: 0.85rem;">Value (ASCII/Text representation):</span>
+                                <div id="analysis-val-ascii" style="background: var(--console-bg); border: 1px solid var(--card-border); border-radius: var(--border-radius-sm); font-family: monospace; font-size: 0.85rem; padding: 0.8rem; margin-top: 0.25rem; color: var(--text-secondary); word-break: break-all; min-height: 40px;">--</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Educational Info -->
+                <div style="margin-top: 1.5rem; border-top: 1px solid var(--card-border); padding-top: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem;">
+                    <div style="background: hsla(210, 20%, 15%, 0.3); border: 1px solid var(--card-border); border-radius: var(--border-radius-sm); padding: 1.2rem; font-size: 0.85rem; line-height: 1.5;">
+                        <h4 style="font-family: var(--font-heading); font-size: 0.95rem; color: var(--primary-glow); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="9" x2="12.01" y2="9"/></svg>
+                            BER-TLV Structure Reference
+                        </h4>
+                        <div style="color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.6rem;">
+                            <p><strong>BER-TLV (Basic Encoding Rules - Tag-Length-Value)</strong> is a key format specified in ISO/IEC 7816-4 for smart cards and GSMA SGP.22 for eSIM. Each data element is encoded as follows:</p>
+                            <ul style="margin-left: 1.2rem; display: flex; flex-direction: column; gap: 0.4rem; list-style-type: disc;">
+                                <li><strong>Tag Field:</strong> Identifies the data element class and type.
+                                    <br>• <strong>Class (Bits 8-7 of first byte):</strong> <code>00</code> Universal, <code>01</code> Application, <code>10</code> Context-Specific (very common in eSIM), <code>11</code> Private.
+                                    <br>• <strong>P/C Flag (Bit 6 of first byte):</strong> <code>0</code> Primitive (leaf node with data), <code>1</code> Constructed (contains nested TLV nodes).
+                                    <br>• <strong>Tag Number (Bits 5-1 of first byte):</strong> If bits 5-1 are all <code>1</code> (value <code>0x1F</code>), the tag is multi-byte. Subsequent bytes specify the tag number, where Bit 8 of each subsequent byte acts as a continuation flag (1 = more bytes follow, 0 = final byte).
+                                </li>
+                                <li><strong>Length Field:</strong> Defines the size of the Value field.
+                                    <br>• <strong>Short Form:</strong> One byte (Bit 8 is <code>0</code>). Value range: <code>0</code> to <code>127</code> (<code>0x00</code> to <code>0x7F</code>).
+                                    <br>• <strong>Long Form:</strong> Multiple bytes. The first byte has Bit 8 set to <code>1</code>, and bits 7-1 specify the number of subsequent bytes carrying the actual length value (e.g. <code>0x81 0x2A</code> indicates a length of 42).
+                                </li>
+                                <li><strong>Value Field:</strong> Contains the payload bytes. If the tag is Constructed, the value contains nested TLV objects recursively.</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
