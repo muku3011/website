@@ -15,10 +15,12 @@ REMOTE_SCRIPTS_PATH="${REMOTE_PATH}/scripts"
 LOCAL_WEBSITE_DIR="website"
 LOCAL_SMDP_JAR="smdp-plus/target/smdp-plus-1.0.0.jar"
 LOCAL_LPA_JAR="lpa-simulator/target/lpa-simulator-1.0.0.jar"
+LOCAL_BLOG_JAR="blog-service/target/blog-service-1.0.0.jar"
 
 # Remote Paths for Jars
 REMOTE_SMDP_DIR="/home/rbpi/smdp-plus"
 REMOTE_LPA_DIR="/home/rbpi/lpa-simulator"
+REMOTE_BLOG_DIR="/home/rbpi/blog-service"
 
 # Formatting Colors (Local macOS terminal)
 GREEN='\033[0;32m'
@@ -133,6 +135,30 @@ if ask_yes_no "Do you want to deploy the LPA Simulator Jar file ($(basename "$LO
     fi
 fi
 
+# --- 4. Blog Service Jar Deployment ---
+if ask_yes_no "Do you want to deploy the Blog Service Jar file ($(basename "$LOCAL_BLOG_JAR"))?"; then
+    if [ -f "$LOCAL_BLOG_JAR" ]; then
+        echo -e "${YELLOW}[*] Syncing Blog Service backend jar and setup script...${NC}"
+        ssh "${TARGET_USER}@${TARGET_IP}" "mkdir -p '${REMOTE_BLOG_DIR}'"
+        rsync -avz "$LOCAL_BLOG_JAR" "${TARGET_USER}@${TARGET_IP}:${REMOTE_BLOG_DIR}/blog-service.jar"
+        
+        # Copy and run systemd setup script
+        if [ -f "blog-service/setup_pi_service.sh" ]; then
+            rsync -avz "blog-service/setup_pi_service.sh" "${TARGET_USER}@${TARGET_IP}:${REMOTE_BLOG_DIR}/setup_pi_service.sh"
+            ssh "${TARGET_USER}@${TARGET_IP}" "chmod +x '${REMOTE_BLOG_DIR}/setup_pi_service.sh'"
+            echo -e "${YELLOW}[*] Registering systemd service on remote target...${NC}"
+            ssh -t "${TARGET_USER}@${TARGET_IP}" "sudo '${REMOTE_BLOG_DIR}/setup_pi_service.sh'"
+        fi
+
+        echo -e "${GREEN}[+] Blog service jar and setup script deployed successfully.${NC}"
+        
+        # Restart blog-service systemd service
+        ssh -t "${TARGET_USER}@${TARGET_IP}" "sudo systemctl restart blog-service 2>/dev/null || echo -e '${YELLOW}Note: Failed to restart blog-service.${NC}'"
+    else
+        echo -e "${RED}Warning: Local file '${LOCAL_BLOG_JAR}' not found. Skipping Blog Service deployment.${NC}"
+    fi
+fi
+
 # ── Step 5: Remote Verification & Diagnostics ────────────────────────────────
 echo -e "\n${BLUE}============================================================${NC}"
 echo -e "${BLUE}   Post-Deployment Verification & Diagnostics               ${NC}"
@@ -179,10 +205,14 @@ ssh "${TARGET_USER}@${TARGET_IP}" bash << 'EOF'
     if [ -f "/etc/systemd/system/lpa-simulator.service" ]; then
         check_service "lpa-simulator"
     fi
+    if [ -f "/etc/systemd/system/blog-service.service" ]; then
+        check_service "blog-service"
+    fi
     echo ""
     check_db "keycloakdb"
     check_db "smdpdb"
     check_db "lpadb"
+    check_db "blogdb"
     echo ""
 
     # 3. Keycloak HTTP Health-Check Endpoint Check

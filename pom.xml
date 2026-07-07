@@ -21,6 +21,7 @@
     <modules>
         <module>smdp-plus</module>
         <module>lpa-simulator</module>
+        <module>blog-service</module>
     </modules>
 
     <properties>

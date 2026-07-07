@@ -30,7 +30,7 @@ echo -e "${BLUE}   hutta.in Full Stack Setup                                ${NC
 echo -e "${BLUE}============================================================${NC}"
 
 # ── Step 1: PostgreSQL setup ──────────────────────────────────────────────────
-echo -e "${YELLOW}[*] Step 1/2: Setting up PostgreSQL...${NC}"
+echo -e "${YELLOW}[*] Step 1/4: Setting up PostgreSQL...${NC}"
 bash "$SCRIPT_DIR/setup_postgres.sh"
 
 # Load the latest secrets from disk so later steps can read the database passwords securely.
@@ -40,11 +40,12 @@ source "$SECRETS_FILE"
 KC_DB_PASS="$KC_DB_PASSWORD"
 SMDP_DB_PASS="$SMDP_DB_PASSWORD"
 LPA_DB_PASS="$LPA_DB_PASSWORD"
+BLOG_DB_PASS="${BLOG_DB_PASSWORD:-}"
 
 echo -e "${GREEN}[+] Step 1 complete${NC}"
 
 # ── Step 2: Keycloak installation ─────────────────────────────────────────────
-echo -e "${YELLOW}[*] Step 2/3: Installing Keycloak...${NC}"
+echo -e "${YELLOW}[*] Step 2/4: Installing Keycloak...${NC}"
 bash "$SCRIPT_DIR/install_keycloak.sh"
 echo -e "${GREEN}[+] Step 2 complete${NC}"
 
@@ -75,4 +76,5 @@ echo -e "${YELLOW}Credentials (stored inside ${SECRETS_FILE}):${NC}"
 echo -e "KC_DB_PASSWORD=${KC_DB_PASS}"
 echo -e "SMDP_DB_PASSWORD=${SMDP_DB_PASS}"
 echo -e "LPA_DB_PASSWORD=${LPA_DB_PASS}"
+echo -e "BLOG_DB_PASSWORD=${BLOG_DB_PASS}"
 echo -e "${BLUE}============================================================${NC}"

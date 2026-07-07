@@ -167,11 +167,22 @@ fi
 
 provision_service_database "Keycloak" "$KC_DB_USER" "$KC_DB_NAME" "$KC_DB_PASS"
 
+# 6.5. Setup Blog User & Database
+if [ -n "${BLOG_DB_PASSWORD:-}" ]; then
+    BLOG_DB_PASS="$BLOG_DB_PASSWORD"
+else
+    BLOG_DB_PASS=$(generate_password)
+    echo -e "${YELLOW}[*] Generated a new Blog database password and stored it in ${SECRETS_FILE}.${NC}"
+fi
+
+provision_service_database "Blog" "blog" "blogdb" "$BLOG_DB_PASS"
+
 # 7. Persist consolidated secrets without overwriting unrelated values
 chmod 600 "$SECRETS_FILE"
 update_secret_value "SMDP_DB_PASSWORD" "$SMDP_DB_PASS"
 update_secret_value "LPA_DB_PASSWORD" "$LPA_DB_PASS"
 update_secret_value "KC_DB_PASSWORD" "$KC_DB_PASS"
+update_secret_value "BLOG_DB_PASSWORD" "$BLOG_DB_PASS"
 
 echo -e "${GREEN}[+] PostgreSQL setup and verification completed successfully!${NC}"
 echo ""
@@ -181,3 +192,4 @@ echo -e "${YELLOW}============================================================${
 echo -e "SMDP_DB_PASSWORD=${SMDP_DB_PASS}"
 echo -e "LPA_DB_PASSWORD=${LPA_DB_PASS}"
 echo -e "KC_DB_PASSWORD=${KC_DB_PASS}"
+echo -e "BLOG_DB_PASSWORD=${BLOG_DB_PASS}"

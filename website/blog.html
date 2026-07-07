@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hutta.in | Technology Blog</title>
+    <meta name="description" content="Thoughts, tutorials, and deep-dives on software engineering, system design, and modern technologies.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/index.css?v=6">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <style>
+        /* Blog-specific Layout Extensions */
+        .blog-header-section {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 3rem 1.5rem;
+            position: relative;
+            overflow: hidden;
+            border-radius: var(--border-radius-md);
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, hsla(var(--hue-primary), 100%, 60%, 0.05) 0%, hsla(var(--hue-secondary), 90%, 65%, 0.05) 100%);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .blog-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 2rem;
+            grid-column: 1 / -1;
+            margin-bottom: 3rem;
+        }
+
+        .blog-card {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            transition: var(--transition-smooth);
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+            padding: 0 !important; /* Go edge-to-edge for banners */
+        }
+
+        .blog-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary-glow);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .blog-card-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--card-border);
+            background: var(--console-bg);
+            border-top-left-radius: var(--border-radius-md);
+            border-top-right-radius: var(--border-radius-md);
+        }
+
+        .blog-card-placeholder {
+            width: 100%;
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(45deg, hsla(var(--hue-primary), 100%, 60%, 0.1), hsla(var(--hue-secondary), 90%, 65%, 0.1));
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--card-border);
+            border-top-left-radius: var(--border-radius-md);
+            border-top-right-radius: var(--border-radius-md);
+            font-size: 3rem;
+        }
+
+        .read-link {
+            color: var(--primary-glow);
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            transition: var(--transition-smooth);
+            cursor: pointer;
+        }
+
+        .blog-card:hover .read-link {
+            color: var(--secondary-glow);
+        }
+
+        .blog-card:hover .read-link svg {
+            transform: translateX(4px);
+        }
+
+        .blog-card-content {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .blog-meta {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .blog-title {
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+        }
+
+        .blog-summary {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+        }
+
+        .blog-tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-bottom: 1rem;
+        }
+
+        .blog-tag {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 50px;
+            background: hsla(var(--hue-primary), 100%, 60%, 0.08);
+            color: var(--primary-glow);
+            border: 1px solid hsla(var(--hue-primary), 100%, 60%, 0.15);
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .blog-tag:hover, .blog-tag.active {
+            background: var(--primary-glow);
+            color: hsl(222, 24%, 7%);
+            border-color: var(--primary-glow);
+        }
+
+        .blog-tag-filter-list {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .blog-controls-widget {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            padding: 1.2rem;
+            border: 1px solid var(--card-border);
+        }
+
+        .blog-search-box {
+            display: flex;
+            align-items: center;
+            background: var(--console-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius-sm);
+            padding: 0.5rem 1rem;
+            flex-grow: 1;
+            max-width: 450px;
+            position: relative;
+        }
+
+        .blog-search-box input {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            width: 100%;
+            margin-left: 0.5rem;
+            outline: none;
+        }
+
+        .blog-search-box input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .blog-search-box svg {
+            color: var(--text-muted);
+        }
+
+        /* Post Reader styling */
+        .post-reader-header {
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .post-reader-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .post-reader-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: var(--border-radius-sm);
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--card-border);
+        }
+
+        .post-reader-body {
+            line-height: 1.7;
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+
+        .post-reader-body p {
+            margin-bottom: 1.25rem;
+        }
+
+        .post-reader-body h2 {
+            font-family: var(--font-heading);
+            font-size: 1.5rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            color: var(--primary-glow);
+        }
+
+        .post-reader-body h3 {
+            font-family: var(--font-heading);
+            font-size: 1.25rem;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .post-reader-body code {
+            font-family: monospace;
+            background: var(--console-bg);
+            padding: 0.15rem 0.35rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: var(--secondary-glow);
+            border: 1px solid var(--card-border);
+        }
+
+        .post-reader-body ul, .post-reader-body ol {
+            margin-bottom: 1.25rem;
+            padding-left: 1.5rem;
+        }
+
+        .post-reader-body li {
+            margin-bottom: 0.5rem;
+        }
+
+        .admin-controls-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: auto;
+            border-top: 1px dashed var(--card-border);
+            padding-top: 1rem;
+        }
+
+        /* Image upload preview */
+        .image-upload-preview-container {
+            width: 100%;
+            height: 150px;
+            border-radius: var(--border-radius-sm);
+            border: 1px dashed var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 0.5rem;
+            overflow: hidden;
+            background: var(--console-bg);
+        }
+
+        .image-upload-preview-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme && savedTheme !== 'dark') {
+                document.body.classList.remove('dark-theme');
+                document.body.classList.add(savedTheme + '-theme');
+            }
+        })();
+    </script>
+
+    <!-- Navigation Header -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <a href="index.html" class="brand-link">
+                    <div class="logo-orb"></div>
+                    <h1>hutta.in</h1>
+                </a>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="blog.html" class="nav-link active" id="nav-blog">Blog</a>
+                <a href="tools.html" class="nav-link" id="nav-tools">Tools</a>
+                <a href="profiles.html" class="nav-link" id="nav-profiles" style="display: none;">Profiles</a>
+            </nav>
+            <div class="header-actions">
+                <div id="auth-header-container" style="display: flex; align-items: center;"></div>
+                <button id="theme-toggle" class="btn-icon" aria-label="Toggle light and dark theme" title="Toggle Theme">
+                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-grid" style="grid-template-columns: 1fr; max-width: 1200px; margin: 0 auto; padding: 1.5rem;">
+        
+        <!-- Blog Hero Header -->
+        <section class="blog-header-section">
+            <h2 style="font-family: var(--font-heading); font-size: 2.5rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.5rem; letter-spacing: -0.5px;">Technology Blog</h2>
+            <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto; line-height: 1.6; font-size: 1rem;">
+                Deep dives, tutorials, and architectural notes on software engineering, system design, and modern technologies.
+            </p>
+        </section>
+
+        <!-- Controls (Search, Tags, Create button) -->
+        <section class="widget-card blog-controls-widget">
+            <div class="blog-search-box">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="blog-search-input" placeholder="Search by title, description, content or tags...">
+            </div>
+            
+            <button id="btn-create-post" class="btn btn-primary" style="display: none; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; padding: 0.55rem 1.1rem; border-radius: var(--border-radius-sm);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Write Article
+            </button>
+
+            <!-- Dynamically populated tags list -->
+            <div style="width: 100%; border-top: 1px solid var(--card-border); padding-top: 1rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Filter by tag</span>
+                <div id="blog-tag-filters" class="blog-tag-filter-list">
+                    <!-- Dynamic tag buttons -->
+                    <span class="blog-tag active" data-tag="ALL">All Posts</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Blog Posts Grid -->
+        <section class="blog-grid" id="blog-posts-container">
+            <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 1rem; color: var(--text-muted);">
+                <p style="font-size: 1.1rem;">Loading technology articles...</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Dialog: View Blog Post (Full Text Reader) -->
+    <dialog class="modal-dialog" id="dialog-view-post" style="max-width: 800px; width: 90%;">
+        <div class="dialog-header">
+            <h3 id="view-post-title-header" style="font-family: var(--font-heading); font-size: 1.4rem;">Blog Post Title</h3>
+            <button class="btn-icon close-dialog-btn" aria-label="Close reader" data-close="dialog-view-post">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="dialog-body" style="padding-top: 1rem;">
+            <div class="post-reader-header">
+                <div class="post-reader-meta">
+                    <span id="view-post-author" style="font-weight: 600; color: var(--primary-glow);">Mukesh Joshi</span>
+                    <span style="color: var(--text-muted);">•</span>
+                    <span id="view-post-date">July 7, 2026</span>
+                </div>
+                <div id="view-post-tags" style="display: flex; gap: 0.4rem; margin-top: 0.75rem; flex-wrap: wrap;"></div>
+            </div>
+            
+            <img id="view-post-banner" src="" alt="Post Banner" class="post-reader-image" style="display: none;">
+            
+            <div id="view-post-body" class="post-reader-body">
+                <!-- Dynamic post markdown content rendered here -->
+            </div>
+            
+            <div class="dialog-footer" style="display: flex; justify-content: flex-end; margin-top: 2rem; border-top: 1px solid var(--card-border); padding-top: 1rem;">
+                <button type="button" class="btn btn-secondary close-dialog-btn" data-close="dialog-view-post">Close Reader</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Dialog: Create / Edit Blog Post -->
+    <dialog class="modal-dialog" id="dialog-edit-post" style="max-width: 800px; width: 95%;">
+        <div class="dialog-header">
+            <h3 id="edit-dialog-title">Write New Technology Article</h3>
+            <button class="btn-icon close-dialog-btn" aria-label="Close form" data-close="dialog-edit-post">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="dialog-body" style="padding-top: 1rem;">
+            <form id="blog-edit-form" class="dialog-form">
+                <input type="hidden" id="edit-post-id">
+                
+                <div class="form-group">
+                    <label for="edit-title">Article Title</label>
+                    <input type="text" id="edit-title" required placeholder="e.g. Architecting a High-Performance REST API" class="form-input">
+                </div>
+
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label for="edit-summary">Short Summary / Snippet (appears on cards)</label>
+                    <input type="text" id="edit-summary" placeholder="A brief introduction to the article content..." class="form-input">
+                </div>
+
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label for="edit-tags">Tags (comma-separated, e.g. Java, Spring Boot, DevOps)</label>
+                    <input type="text" id="edit-tags" placeholder="e.g. Java, Spring Boot, DevOps" class="form-input">
+                </div>
+
+                <div class="form-row-group" style="margin-top: 1rem;">
+                    <div class="form-group" style="flex: 2;">
+                        <label for="edit-image-file">Image Banner (Optional)</label>
+                        <input type="file" id="edit-image-file" accept="image/*" class="form-input" style="padding: 0.4rem;">
+                        <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">Images are stored securely as binary assets directly in the database.</span>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Image Preview</label>
+                        <div class="image-upload-preview-container">
+                            <img id="image-upload-preview" src="" alt="No file selected" style="display: none;">
+                            <span id="image-upload-preview-placeholder" style="color: var(--text-muted); font-size: 0.8rem;">No image</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 1.25rem;">
+                    <label for="edit-content">Content (Supports simple Markdown like #, ##, **, *, `code` and - lists)</label>
+                    <textarea id="edit-content" required placeholder="Write your article here..." class="form-input" style="height: 300px; font-family: monospace; font-size: 0.9rem; line-height: 1.5; resize: vertical;"></textarea>
+                </div>
+
+                <div class="form-actions" style="margin-top: 1.5rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
+                    <button type="submit" class="btn btn-primary" id="btn-save-blog">Publish Article</button>
+                    <button type="button" class="btn btn-secondary close-dialog-btn" data-close="dialog-edit-post">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
+    <footer class="app-footer">
+        <p>&copy; 2026 hutta.in. Created by Mukesh Joshi. Built with HTML5, CSS Grid, and vanilla JS. Powered by Raspberry Pi, GCP &amp; Certbot.</p>
+    </footer>
+
+    <!-- Dialog confirm script and other actions use auth-nav.js resources -->
+    <script src="js/auth-nav.js?v=2"></script>
+    <script src="js/blog.js"></script>
+</body>
+</html>

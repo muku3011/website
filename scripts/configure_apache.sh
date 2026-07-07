@@ -113,6 +113,10 @@ cat > "$SSL_TMP" <<'APACHEEOF'
     ProxyPass /lpa http://127.0.0.1:8093/lpa
     ProxyPassReverse /lpa http://127.0.0.1:8093/lpa
 
+    # -- Reverse Proxy: Blog Backend --
+    ProxyPass /api/blog/ http://127.0.0.1:8094/api/blog/
+    ProxyPassReverse /api/blog/ http://127.0.0.1:8094/api/blog/
+
     # -- OIDC: exclude redirect_uri callback from proxying --
     ProxyPass /redirect_uri !
 
@@ -164,6 +168,19 @@ cat >> "$SSL_TMP" <<'APACHEEOF'
         Header set Pragma "no-cache"
         Header set Expires "0"
     </Location>
+
+    # -- protect write operations to technology blog service --
+    <LocationMatch "^/api/blog/(posts(/.*)?|images)$">
+        <LimitExcept GET>
+            AuthType openid-connect
+            Require valid-user
+        </LimitExcept>
+    </LocationMatch>
+
+    # -- Prevent caching of static HTML files to ensure updates are immediately visible --
+    <FilesMatch "\.html$">
+        Header set Cache-Control "no-cache, must-revalidate"
+    </FilesMatch>
 
     # ==========================================================================
     # Let's Encrypt SSL
