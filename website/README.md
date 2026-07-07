@@ -159,9 +159,9 @@ sudo ./scripts/setup_all.sh
 #### What it runs
 | Script | Purpose |
 |--------|---------|
-| `setup_postgres.sh` | Creates the `keycloakdb`, `smdpdb`, `lpadb` databases and roles with generated passwords |
+| `setup_postgres.sh` | Creates the `keycloakdb`, `smdpdb`, `lpadb`, and `blogdb` databases and roles with generated passwords |
 | `install_keycloak.sh` | Downloads Keycloak, configures systemd service, deploys the hutta theme |
-| `configure_apache.sh` | Writes the `mod_auth_openidc` Apache config; adds `Header` directives to atomically expire `hutta_*` cookies on logout |
+| `configure_apache.sh` | Writes the `mod_auth_openidc` Apache config; reverse proxies eSIM and blog API routes; sets HTML cache control; adds `Header` directives to atomically expire `hutta_*` cookies on logout |
 
 > [!IMPORTANT]
 > After running `setup_all.sh`, note the printed credentials (DB passwords + OIDC client secret).
