@@ -1,6 +1,6 @@
 # Website Frontend & Raspberry Pi Deployment
 
-This directory contains the frontend website assets (HTML/CSS/JS) for the `hutta.in` server, featuring the eSIM Profiles Management dashboard.
+This directory contains the frontend website assets (HTML/CSS/JS) for the `hutta.in` server, featuring the portfolio homepage, developer toolbox, eSIM Profiles dashboard, and the technology blog.
 
 ## Deployment & Architecture
 
@@ -12,8 +12,8 @@ flowchart TD
 
     subgraph Raspberry Pi (Home Server)
         subgraph Apache HTTP Server
-            Static["Static Files (index.html, tools.html)"]
-            OIDC["mod_auth_openidc (profiles.html only)"]
+            Static["Static Files (index.html, tools.html, blog.html)"]
+            OIDC["mod_auth_openidc (profiles.html & /api/blog/ write APIs)"]
             Proxy["Reverse Proxy (API routes)"]
         end
 
@@ -24,30 +24,36 @@ flowchart TD
         subgraph Backend Services
             LPA["LPA Simulator (:8093)"]
             SMDP["SM-DP+ Server (:8092)"]
+            Blog["Blog Service (:8094)"]
         end
     end
 
     Browser -->|HTTPS: /| Static
     Browser -->|HTTPS: /tools.html| Static
+    Browser -->|HTTPS: /blog.html| Static
     Browser -->|HTTPS: /profiles.html| OIDC
     OIDC -->|"Not authenticated → redirect"| Keycloak
     Keycloak -->|"SSO session + hutta_* cookies set"| OIDC
     OIDC -->|Authenticated: serve page + set cookies| Browser
     Browser -->|HTTPS: /gsma/rsp/v2/*| Proxy
     Browser -->|HTTPS: /lpa/*| Proxy
+    Browser -->|HTTPS: /api/blog/*| Proxy
     Proxy --> SMDP
     Proxy --> LPA
+    Proxy --> Blog
 ```
 
 ## Repository Contents
 - **`index.html`**: The main landing page.
 - **`tools.html`**: The developer toolbox (calculators, encoders, API explorer).
 - **`profiles.html`**: The eSIM profiles management registry and LPA download simulator.
+- **`blog.html`**: The technology blog feed page.
 - **`css/index.css`**: Global design system + home page layouts (consolidates portfolio styles).
-- **`js/auth-nav.js`**: Shared core — reads the `hutta_*` cookies set by Apache `mod_auth_openidc` on authenticated routes, drives dynamic nav menus (Profiles tab visibility, user dropdown), manages the idle session timer, and handles the theme toggle. Authentication state is fully server-driven via cookies; no client-side session storage is used.
+- **`js/auth-nav.js`**: Shared core — reads the `hutta_*` cookies set by Apache `mod_auth_openidc` on authenticated routes, drives dynamic nav menus (Profiles and Blog write permissions), manages the idle session timer, and handles the theme toggle. Authentication state is fully server-driven via cookies; no client-side session storage is used.
 - **`js/index.js`**: Home page scroll transitions and timeline animations.
 - **`js/tools.js`**: Developer toolbox calculators, encoders, and API explorer logic.
 - **`js/profiles.js`**: eSIM Profiles page — API integrations and LPA simulator.
+- **`js/blog.js`**: Technology blog feed controller (Markdown compiler, search engine, CRUD overlays).
 - **`js/libs/`**: Vendor libraries (js-yaml, ReDoc).
 - **`keycloak/`**: Legacy Keycloak theme assets retained for reference only.
 

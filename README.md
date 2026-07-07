@@ -79,17 +79,18 @@ flowchart TD
     subgraph RPi ["Raspberry Pi Gateway"]
         direction TB
         subgraph Proxy ["Apache Reverse Proxy (Port 443)"]
-            Static["Static Web Assets (index, tools, profiles)"]
-            OIDC["mod_auth_openidc (/profiles.html only)"]
+            Static["Static Web Assets (index, tools, profiles, blog)"]
+            OIDC["mod_auth_openidc (profiles.html, /api/blog/ write methods)"]
         end
 
         subgraph Auth ["Auth System"]
             Keycloak["Keycloak SSO — auth.hutta.in (loopback :8080)"]
         end
 
-        subgraph Backend ["eSIM Backend Services"]
+        subgraph Backend ["Backend Services"]
             SMDP["SM-DP+ eSIM Server (Port 8092)"]
             LPA_Sim["LPA Simulator (Port 8093)"]
+            BlogService["Blog Service (Port 8094)"]
         end
 
         subgraph DB ["Database Tier"]
@@ -97,6 +98,7 @@ flowchart TD
             smdpdb[(Database: smdpdb)]
             lpadb[(Database: lpadb)]
             keycloakdb[(Database: keycloakdb)]
+            blogdb[(Database: blogdb)]
         end
     end
 
@@ -110,6 +112,7 @@ flowchart TD
     OIDC -->|OIDC flow| Keycloak
     Proxy -->|Proxy /gsma/rsp/v2/| SMDP
     Proxy -->|Proxy /lpa/| LPA_Sim
+    Proxy -->|Proxy /api/blog/| BlogService
 
     %% Authentication
     Keycloak <-->|JPA / Flyway| keycloakdb
@@ -118,13 +121,16 @@ flowchart TD
     LPA_Sim -->|Trigger ES9+ Provisioning| SMDP
     SMDP <-->|JPA / Flyway| smdpdb
     LPA_Sim <-->|JPA / Flyway| lpadb
+    BlogService <-->|JPA / Flyway| blogdb
     smdpdb -.->|Part of| PostgreSQL
     lpadb -.->|Part of| PostgreSQL
     keycloakdb -.->|Part of| PostgreSQL
+    blogdb -.->|Part of| PostgreSQL
 ```
 
-* **Apache HTTP Server**: Serves the website frontend assets and acts as a secure reverse proxy with OIDC integration (`mod_auth_openidc`) for private routes.
+* **Apache HTTP Server**: Serves the website frontend assets and acts as a secure reverse proxy with OIDC integration (`mod_auth_openidc`) for private routes and write methods.
 * **Keycloak**: Identity provider running on `auth.hutta.in` (bare metal, HTTP on loopback, Apache terminates TLS). Manages users natively and provides OIDC/OAuth2 for the site. Admin console is restricted to home network; Account console is public.
+* **Blog Service**: Exposes backend endpoints for publishing, reading, and deleting technology articles, with database-backed image uploads, persisting to the `blogdb` database.
 * **SM-DP+ eSIM Server**: Implements the standard GSMA SGP.22 endpoints (ES2+ and ES9+), backed by a persistent PostgreSQL database (`smdpdb`) and Flyway database migration controller.
 * **LPA Simulator**: Simulates eUICC operations and triggers remote SIM provisioning downloads, storing downloaded profiles in a persistent PostgreSQL database (`lpadb`).
 
@@ -132,7 +138,7 @@ flowchart TD
 
 ## 4. Projects & Repository Layout
 
-This repository is split into five main areas:
+This repository is split into six main areas:
 
 ### 1. [Infrastructure as Code & DDNS Automation (website-iac/)](website-iac/README.md)
 Contains all GCP infrastructure provisioning and backend Dynamic DNS setup:
@@ -143,7 +149,7 @@ Contains all GCP infrastructure provisioning and backend Dynamic DNS setup:
 
 ### 2. [Website Frontend (website/)](website/README.md)
 Contains the server dashboard and portfolio site assets deployed on the Raspberry Pi:
-- Frontend code (`index.html`, `index.css`, `profiles.html`) for serving the portfolio site, eSIM profiles registry, and LPA download simulator.
+- Frontend code (`index.html`, `index.css`, `profiles.html`, `blog.html`) for serving the portfolio site, eSIM profiles registry, LPA download simulator, and technology blog.
 - Deployment configuration for Apache HTTP Server and HTTPS (SSL/TLS) via Let's Encrypt.
 - GitHub Actions CI/CD setup via self-hosted runners.
 - **Go to [website/README.md](website/README.md) for frontend deployment and automation setup instructions.**
@@ -169,3 +175,10 @@ Contains a client-side simulation helper that triggers standard remote SIM provi
 - Persistent PostgreSQL database backend and Flyway schema versioning.
 - Automatic deployment configuration via systemd service on the Raspberry Pi.
 - **Go to [lpa-simulator/README.md](lpa-simulator/README.md) for build, testing, and deployment instructions.**
+
+### 6. [Technology Blog Service (blog-service/)](blog-service/README.md)
+Contains a lightweight, database-backed blogging backend module:
+- REST API controller for public read feeds, OIDC protected write and delete actions, and binary image uploads.
+- Persistent PostgreSQL database backend and Flyway schema versioning.
+- Systemd service daemon and automated deployment setup for Raspberry Pi.
+- **Go to [blog-service/README.md](blog-service/README.md) for build, testing, and deployment instructions.**
