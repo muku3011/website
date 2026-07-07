@@ -1,0 +1,28 @@
+name: Deploy Blog Service (Self-Hosted)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'blog-service/**'
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Spring Boot JAR
+        run: |
+          cd blog-service
+          mvn clean package -DskipTests
+
+      - name: Copy JAR to App Directory
+        run: |
+          cp blog-service/target/blog-service-1.0.0.jar /home/rbpi/blog-service/blog-service.jar
+
+      - name: Restart Blog Service
+        run: |
+          sudo systemctl restart blog-service.service
