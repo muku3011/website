@@ -176,6 +176,84 @@ Contains a client-side simulation helper that triggers standard remote SIM provi
 - Automatic deployment configuration via systemd service on the Raspberry Pi.
 - **Go to [lpa-simulator/README.md](lpa-simulator/README.md) for build, testing, and deployment instructions.**
 
+---
+
+## 5. Detailed Authentication & Authorization Flows (Apache & Keycloak)
+
+The following diagrams illustrate how request pathways, authentication redirects, and role-based header propagations are orchestrated between the user, Apache reverse proxy (`mod_auth_openidc`), Keycloak identity provider, and downstream service daemons.
+
+### 5.1 Gateway Routing & Access Control Decision Tree
+This flowchart shows the decision tree Apache uses for public vs. protected files and APIs.
+
+```mermaid
+flowchart TD
+    Request["Incoming HTTP Request"] --> Path{"Request Path?"}
+
+    %% Public Paths
+    Path -->|"/ (Home), /tools.html, /blog.html"| ServePublic["Apache serves static assets directly"]
+    Path -->|"GET /api/blog/* (Read Posts)"| ProxyBlogRead["Apache proxies directly to Blog Service :8094"]
+    Path -->|"/gsma/rsp/v2/* (ES9+)"| ProxySMDP["Apache proxies directly to SM-DP+ Server :8092"]
+    Path -->|"/lpa/* (LPA Console)"| ProxyLPA["Apache proxies directly to LPA Simulator :8093"]
+
+    %% Protected Paths
+    Path -->|"/profiles.html OR POST/PUT/DELETE /api/blog/*"| Interceptor{"mod_auth_openidc: Valid Session?"}
+
+    %% Session Validation
+    Interceptor -->|Yes| AuthRule{"Path-specific Rule?"}
+    Interceptor -->|No| RedirectKC["Redirect browser to Keycloak Login Page\n(auth.hutta.in)"]
+
+    %% Keycloak Authentication flow
+    RedirectKC --> Login{"User enters credentials?"}
+    Login -->|Valid| AuthCode["Keycloak redirects with Authorization Code\nto /redirect_uri"]
+    Login -->|Invalid| RedirectKC
+    AuthCode --> Exchange["Apache exchanges code for ID/Access tokens\nvia backchannel (loopback :8080)"]
+    Exchange --> SaveSession["Apache saves session, sets mod_auth_openidc_session cookie,\nredirects browser back to original target"]
+    SaveSession --> Interceptor
+
+    %% Authorization rules
+    AuthRule -->|"/profiles.html"| RequireValidUser1["Require valid-user\n(Any authenticated Keycloak user)"]
+    AuthRule -->|"POST/PUT/DELETE /api/blog/*"| RequireValidUser2["LimitExcept GET: Require valid-user\n(Bypass allowed on localhost for local dev)"]
+
+    %% Downstream Forwards
+    RequireValidUser1 --> ServeProfiles["Apache serves profiles.html\n(Sets hutta_* cookies from OIDC claims for auth-nav.js)"]
+    RequireValidUser2 --> ProxyBlogWrite["Apache forwards write request to Blog Service :8094\n(Passes preferred_username in headers)"]
+```
+
+### 5.2 End-to-End OIDC Authentication Sequence
+This diagram details the cryptographic handshake dance that secures stateful write actions.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Browser / User
+    participant Apache as Apache Gateway (mod_auth_openidc)
+    participant KC as Keycloak SSO (:8080)
+    participant Blog as Blog Backend (:8094)
+
+    User->>Apache: POST /api/blog/posts (Create Article)
+    Note over Apache: LocationMatch intercept rule triggers
+    Apache->>Apache: Check mod_auth_openidc_session cookie
+    alt Session is invalid / missing
+        Apache-->>User: HTTP 302 Redirect to Keycloak /auth
+        User->>KC: GET /auth login prompt
+        User->>KC: Enter credentials (username & password)
+        KC-->>User: HTTP 302 Redirect back to /redirect_uri?code=XYZ
+        User->>Apache: GET /redirect_uri?code=XYZ
+        Apache->>KC: Backchannel exchange: code XYZ for tokens
+        KC-->>Apache: Access Token & ID Token (JSON Web Tokens)
+        Apache->>Apache: Create server session & encrypt session cookie
+        Apache-->>User: HTTP 302 Redirect to original target /api/blog/posts
+        User->>Apache: POST /api/blog/posts (with encrypted session cookie)
+    end
+    Note over Apache: Session is valid
+    Apache->>Apache: Extract preferred_username from ID Token
+    Apache->>Blog: Proxy request with Header: OIDC_CLAIM_preferred_username
+    Note over Blog: BlogController reads author header
+    Blog->>Blog: Process write & save to blogdb
+    Blog-->>Apache: HTTP 201 Created (JSON Payload)
+    Apache-->>User: HTTP 201 Created (Article published)
+```
+
 ### 6. [Technology Blog Service (blog-service/)](blog-service/README.md)
 Contains a lightweight, database-backed blogging backend module:
 - REST API controller for public read feeds, OIDC protected write and delete actions, and binary image uploads.
