@@ -255,7 +255,8 @@ public class CryptoService {
     }
   }
 
-  public String generateBoundProfilePackage(String rawPayload, SessionContext session) {
+  public String generateBoundProfilePackage(
+      String rawPayload, SessionContext session, String prepareDownloadResponse) {
     log.info(
         "Generating Bound Profile Package (BPP) for transaction: {}", session.getTransactionId());
 
@@ -290,10 +291,22 @@ public class CryptoService {
       // 3. Encrypt the rawPayload (profile data) using derived key from real ECDH key agreement
       byte[] encPayload;
       try {
-        // Generate a transient client EC KeyPair to simulate client ephemeral public key
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", "BC");
-        kpg.initialize(new ECGenParameterSpec("secp256r1"));
-        PublicKey clientPublicKey = kpg.generateKeyPair().getPublic();
+        // Parse client ephemeral public key from prepareDownloadResponse ASN.1 DER sequence
+        byte[] prepareBytes = Base64.getDecoder().decode(prepareDownloadResponse.trim());
+        PublicKey clientPublicKey;
+        try (ASN1InputStream asn1In = new ASN1InputStream(prepareBytes)) {
+          ASN1Primitive obj = asn1In.readObject();
+          if (obj instanceof ASN1Sequence) {
+            ASN1Sequence seq = (ASN1Sequence) obj;
+            byte[] clientPublicKeyBytes = ((ASN1OctetString) seq.getObjectAt(1)).getOctets();
+            KeyFactory kf = KeyFactory.getInstance("EC", "BC");
+            clientPublicKey =
+                kf.generatePublic(new java.security.spec.X509EncodedKeySpec(clientPublicKeyBytes));
+          } else {
+            throw new Exception(
+                "PrepareDownloadResponse ASN.1 does not conform to expected Sequence");
+          }
+        }
 
         // Perform real ECDH key agreement
         byte[] sharedSecret = performECDH(clientPublicKey);

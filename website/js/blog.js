@@ -74,6 +74,20 @@ function initBlog() {
     if (editForm) {
         editForm.addEventListener('submit', handleFormSubmit);
     }
+
+    // URL Routing event listeners
+    const viewDialog = document.getElementById('dialog-view-post');
+    if (viewDialog) {
+        viewDialog.addEventListener('close', () => {
+            const url = new URL(window.location.href);
+            if (url.searchParams.has('post')) {
+                url.searchParams.delete('post');
+                window.history.pushState({}, '', url.toString());
+            }
+        });
+    }
+
+    window.addEventListener('popstate', handlePopState);
 }
 
 // -------------------------------------------------------------
@@ -94,6 +108,9 @@ async function fetchBlogPosts() {
 
         // Render matching posts
         filterAndRenderPosts();
+
+        // Check initial URL parameters to open a post or filter by tag
+        handleInitialUrlParams();
     } catch (err) {
         console.error(err);
         if (container) {
@@ -140,6 +157,16 @@ function buildTagFilters() {
             tagFiltersContainer.querySelectorAll('.blog-tag').forEach(t => t.classList.remove('active'));
             tagSpan.classList.add('active');
             selectedTag = tagSpan.getAttribute('data-tag');
+
+            // Update URL search parameters
+            const url = new URL(window.location.href);
+            if (selectedTag === 'ALL') {
+                url.searchParams.delete('tag');
+            } else {
+                url.searchParams.set('tag', selectedTag);
+            }
+            window.history.pushState({}, '', url.toString());
+
             filterAndRenderPosts();
         });
     });
@@ -255,7 +282,7 @@ function filterAndRenderPosts() {
 // POST READER MODAL
 // -------------------------------------------------------------
 
-function openPostReader(post) {
+function openPostReader(post, pushState = true) {
     const dialog = document.getElementById('dialog-view-post');
     if (!dialog) return;
 
@@ -289,7 +316,15 @@ function openPostReader(post) {
     // Markdown simple parse
     document.getElementById('view-post-body').innerHTML = convertMarkdownToHtml(post.content);
 
-    dialog.showModal();
+    if (!dialog.open) {
+        dialog.showModal();
+    }
+
+    if (pushState) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('post', post.slug);
+        window.history.pushState({ postSlug: post.slug }, '', url.toString());
+    }
 }
 
 function convertMarkdownToHtml(text) {
@@ -694,4 +729,63 @@ function showConfirm(title, message, onConfirm) {
     });
     
     dialog.showModal();
+}
+
+function handleInitialUrlParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const postSlug = urlParams.get('post');
+    const tag = urlParams.get('tag');
+
+    if (tag) {
+        selectedTag = tag;
+        updateActiveTagUI(tag);
+        filterAndRenderPosts();
+    }
+
+    if (postSlug) {
+        const matched = blogPosts.find(p => p.slug === postSlug);
+        if (matched) {
+            openPostReader(matched, false);
+        }
+    }
+}
+
+function updateActiveTagUI(tag) {
+    const tagFiltersContainer = document.getElementById('blog-tag-filters');
+    if (!tagFiltersContainer) return;
+    tagFiltersContainer.querySelectorAll('.blog-tag').forEach(tagSpan => {
+        if (tagSpan.getAttribute('data-tag') === tag) {
+            tagSpan.classList.add('active');
+        } else {
+            tagSpan.classList.remove('active');
+        }
+    });
+}
+
+function handlePopState(event) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const postSlug = urlParams.get('post');
+    const tag = urlParams.get('tag');
+
+    const dialog = document.getElementById('dialog-view-post');
+    if (postSlug) {
+        const matched = blogPosts.find(p => p.slug === postSlug);
+        if (matched) {
+            openPostReader(matched, false);
+        }
+    } else {
+        if (dialog && dialog.open) {
+            dialog.close();
+        }
+    }
+
+    if (tag) {
+        selectedTag = tag;
+        updateActiveTagUI(tag);
+        filterAndRenderPosts();
+    } else {
+        selectedTag = 'ALL';
+        updateActiveTagUI('ALL');
+        filterAndRenderPosts();
+    }
 }

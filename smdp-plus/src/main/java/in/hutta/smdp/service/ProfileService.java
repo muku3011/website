@@ -179,7 +179,9 @@ public class ProfileService {
     Optional<Profile> profileOpt = profileRepository.findById(iccid);
     if (profileOpt.isPresent()) {
       Profile profile = profileOpt.get();
-      String bpp = cryptoService.generateBoundProfilePackage(profile.getProfilePayload(), session);
+      String bpp =
+          cryptoService.generateBoundProfilePackage(
+              profile.getProfilePayload(), session, prepareDownloadResponse);
 
       // Complete download lifecycle
       profile.setState("DOWNLOADED");

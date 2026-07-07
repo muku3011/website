@@ -18,7 +18,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@SuppressWarnings("null")
 public class LpaProfileControllerTest {
 
   @Autowired private MockMvc mockMvc;

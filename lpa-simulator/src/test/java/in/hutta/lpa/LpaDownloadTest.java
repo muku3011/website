@@ -17,7 +17,6 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
 
 @SpringBootTest
-@SuppressWarnings("null")
 public class LpaDownloadTest {
 
   @Autowired private LpaDownloadService lpaDownloadService;

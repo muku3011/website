@@ -14,18 +14,54 @@
     <link rel="icon" type="image/png" href="favicon.png">
     <style>
         /* Blog-specific Layout Extensions */
-        .blog-header-section {
+        .blog-header-widget {
             grid-column: 1 / -1;
-            text-align: center;
-            padding: 3rem 1.5rem;
-            position: relative;
-            overflow: hidden;
-            border-radius: var(--border-radius-md);
-            margin-bottom: 1.5rem;
-            background: linear-gradient(135deg, hsla(var(--hue-primary), 100%, 60%, 0.05) 0%, hsla(var(--hue-secondary), 90%, 65%, 0.05) 100%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, hsla(var(--hue-primary), 100%, 60%, 0.03) 0%, hsla(var(--hue-secondary), 90%, 65%, 0.03) 100%);
             border: 1px solid var(--card-border);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
+            border-radius: var(--border-radius-md);
+        }
+
+        .blog-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .blog-header-info {
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .blog-header-info h2 {
+            font-family: var(--font-heading);
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        .blog-header-info p {
+            color: var(--text-secondary);
+            margin: 0.35rem 0 0 0;
+            line-height: 1.5;
+            font-size: 0.88rem;
+        }
+
+        .blog-header-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
         }
 
         .blog-grid {
@@ -153,24 +189,27 @@
             border-color: var(--primary-glow);
         }
 
-        .blog-tag-filter-list {
+        .blog-header-tags {
             display: flex;
-            justify-content: center;
+            align-items: center;
+            gap: 0.75rem;
+            border-top: 1px solid var(--card-border);
+            padding-top: 1rem;
             flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 1rem;
         }
 
-        .blog-controls-widget {
-            grid-column: 1 / -1;
+        .blog-tags-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .blog-tag-filter-list {
             display: flex;
             flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-            padding: 1.2rem;
-            border: 1px solid var(--card-border);
+            gap: 0.4rem;
         }
 
         .blog-search-box {
@@ -179,17 +218,22 @@
             background: var(--console-bg);
             border: 1px solid var(--card-border);
             border-radius: var(--border-radius-sm);
-            padding: 0.5rem 1rem;
-            flex-grow: 1;
-            max-width: 450px;
+            padding: 0.4rem 0.8rem;
+            width: 280px;
             position: relative;
+            transition: var(--transition-smooth);
+        }
+
+        .blog-search-box:focus-within {
+            border-color: var(--primary-glow);
+            box-shadow: 0 0 10px hsla(var(--hue-primary), 100%, 60%, 0.1);
         }
 
         .blog-search-box input {
             background: none;
             border: none;
             color: var(--text-primary);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             width: 100%;
             margin-left: 0.5rem;
             outline: none;
@@ -341,29 +385,26 @@
 
     <main class="dashboard-grid" style="grid-template-columns: 1fr; max-width: 1200px; margin: 0 auto; padding: 1.5rem;">
         
-        <!-- Blog Hero Header -->
-        <section class="blog-header-section">
-            <h2 style="font-family: var(--font-heading); font-size: 2.5rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.5rem; letter-spacing: -0.5px;">Technology Blog</h2>
-            <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto; line-height: 1.6; font-size: 1rem;">
-                Deep dives, tutorials, and architectural notes on software engineering, system design, and modern technologies.
-            </p>
-        </section>
-
-        <!-- Controls (Search, Tags, Create button) -->
-        <section class="widget-card blog-controls-widget">
-            <div class="blog-search-box">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="text" id="blog-search-input" placeholder="Search by title, description, content or tags...">
+        <!-- Merged Blog Header & Controls Widget -->
+        <section class="blog-header-widget">
+            <div class="blog-header-top">
+                <div class="blog-header-info">
+                    <h2>Technology Blog</h2>
+                    <p>Deep dives, tutorials, and architectural notes on software engineering, system design, and modern technologies.</p>
+                </div>
+                <div class="blog-header-controls">
+                    <div class="blog-search-box">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="blog-search-input" placeholder="Search articles...">
+                    </div>
+                    <button id="btn-create-post" class="btn btn-primary" style="display: none; align-items: center; gap: 0.5rem; font-size: 0.8rem; font-weight: 600; padding: 0.5rem 1.25rem; border-radius: var(--border-radius-sm); white-space: nowrap;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Write Article
+                    </button>
+                </div>
             </div>
-            
-            <button id="btn-create-post" class="btn btn-primary" style="display: none; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; padding: 0.55rem 1.1rem; border-radius: var(--border-radius-sm);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Write Article
-            </button>
-
-            <!-- Dynamically populated tags list -->
-            <div style="width: 100%; border-top: 1px solid var(--card-border); padding-top: 1rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Filter by tag</span>
+            <div class="blog-header-tags">
+                <span class="blog-tags-label">Tags:</span>
                 <div id="blog-tag-filters" class="blog-tag-filter-list">
                     <!-- Dynamic tag buttons -->
                     <span class="blog-tag active" data-tag="ALL">All Posts</span>
@@ -439,7 +480,7 @@
                 <div class="form-row-group" style="margin-top: 1rem;">
                     <div class="form-group" style="flex: 2;">
                         <label for="edit-image-file">Image Banner (Optional)</label>
-                        <input type="file" id="edit-image-file" accept="image/*" class="form-input" style="padding: 0.4rem;">
+                        <input type="file" id="edit-image-file" accept="image/*" class="form-input">
                         <span style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">Images are stored securely as binary assets directly in the database.</span>
                     </div>
                     <div class="form-group" style="flex: 1;">

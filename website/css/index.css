@@ -1193,6 +1193,33 @@ select:focus-visible {
     box-shadow: 0 0 10px hsla(var(--hue-primary), 100%, 60%, 0.1);
 }
 
+/* Custom styling for file inputs to match the theme */
+input[type="file"].form-input {
+    padding: 0.35rem 0.5rem;
+    cursor: pointer;
+}
+
+input[type="file"].form-input::file-selector-button {
+    background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
+    color: white;
+    border: none;
+    padding: 0.4rem 1rem;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-family: var(--font-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: var(--transition-smooth);
+    margin-right: 0.75rem;
+    box-shadow: 0 2px 8px rgba(var(--hue-primary), 100%, 60%, 0.2);
+}
+
+input[type="file"].form-input::file-selector-button:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(var(--hue-primary), 100%, 60%, 0.35);
+}
+
+
 /* Filters Bar */
 .filters-bar {
     display: flex;

@@ -20,7 +20,6 @@ import org.springframework.util.MultiValueMap;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestRestTemplate
-@SuppressWarnings("null")
 public class SmdpIntegrationTest {
 
   @Autowired private TestRestTemplate restTemplate;

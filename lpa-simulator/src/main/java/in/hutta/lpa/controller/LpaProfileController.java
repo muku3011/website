@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/lpa/profiles")
 @CrossOrigin
 @RequiredArgsConstructor
-@SuppressWarnings("null")
 public class LpaProfileController {
 
   private final LocalProfileRepository localProfileRepository;
@@ -34,7 +33,8 @@ public class LpaProfileController {
       return ResponseEntity.notFound().build();
     }
 
-    // Deactivate all other profiles (simulating single active SIM constraint on eUICC)
+    // Deactivate all other profiles (simulating single active SIM constraint on
+    // eUICC)
     List<LocalProfile> allProfiles = localProfileRepository.findAll();
     for (LocalProfile p : allProfiles) {
       if (p.getIccid().equals(iccid)) {

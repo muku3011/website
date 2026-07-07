@@ -79,8 +79,9 @@ public class CryptoServiceTest {
     // Mock mode (session state is not REAL_CRYPTO_ACTIVE)
     session.setState("INITIATED");
     String rawPayload = "MOCK_PROFILE_PAYLOAD_DER";
-
-    String bpp = cryptoService.generateBoundProfilePackage(rawPayload, session);
+    String bpp =
+        cryptoService.generateBoundProfilePackage(
+            rawPayload, session, "MOCK_PREPARE_DOWNLOAD_RESPONSE");
     byte[] decoded = Base64.getDecoder().decode(bpp);
     String bppString = new String(decoded);
 
@@ -96,7 +97,23 @@ public class CryptoServiceTest {
     session.setState("REAL_CRYPTO_ACTIVE");
     String rawPayload = "REAL_PROFILE_PAYLOAD_BYTES";
 
-    String bpp = cryptoService.generateBoundProfilePackage(rawPayload, session);
+    // Generate ephemeral client key pair for test
+    java.security.KeyPairGenerator kpg = java.security.KeyPairGenerator.getInstance("EC", "BC");
+    kpg.initialize(new java.security.spec.ECGenParameterSpec("secp256r1"));
+    java.security.KeyPair clientKeyPair = kpg.generateKeyPair();
+
+    org.bouncycastle.asn1.ASN1EncodableVector prepareVector =
+        new org.bouncycastle.asn1.ASN1EncodableVector();
+    prepareVector.add(new org.bouncycastle.asn1.DERPrintableString(session.getTransactionId()));
+    prepareVector.add(
+        new org.bouncycastle.asn1.DEROctetString(clientKeyPair.getPublic().getEncoded()));
+    org.bouncycastle.asn1.DERSequence prepareSeq =
+        new org.bouncycastle.asn1.DERSequence(prepareVector);
+    String prepareDownloadResponse =
+        Base64.getEncoder().encodeToString(prepareSeq.getEncoded("DER"));
+
+    String bpp =
+        cryptoService.generateBoundProfilePackage(rawPayload, session, prepareDownloadResponse);
     byte[] decoded = Base64.getDecoder().decode(bpp);
 
     // Parsing the generated BPP as ASN.1 DER sequence should succeed
