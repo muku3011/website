@@ -886,9 +886,29 @@ function openOrderModal(iccid) {
     if (window.userRole === 'viewer') return;
     document.getElementById('order-iccid').value = iccid;
     
+    // Find the profile details from currentProfiles to determine defaults based on metadata
+    let defaultProfileType = 'Standard';
+    let defaultEid = '89049032000008888888888888888801';
+    const profile = currentProfiles.find(p => p.iccid === iccid);
+    if (profile) {
+        if (profile.profileClass) {
+            const cls = profile.profileClass.toUpperCase();
+            if (cls === 'TEST') {
+                defaultProfileType = 'TS48';
+            } else if (cls === 'BOOTSTRAP') {
+                defaultProfileType = 'Bootstrap';
+            } else if (cls === 'OPERATIONAL') {
+                defaultProfileType = 'Standard';
+            }
+        }
+        if (profile.eid) {
+            defaultEid = profile.eid;
+        }
+    }
+    
     // Reset combo boxes and inputs
     if (orderProfileTypeSelect) {
-        orderProfileTypeSelect.value = 'Standard';
+        orderProfileTypeSelect.value = defaultProfileType;
         orderProfileTypeCustom.value = '';
         orderProfileTypeCustom.style.display = 'none';
     }
@@ -899,6 +919,10 @@ function openOrderModal(iccid) {
     }
     if (orderCallIdInput) {
         orderCallIdInput.value = generateCallId();
+    }
+    const orderEidInput = document.getElementById('order-eid');
+    if (orderEidInput) {
+        orderEidInput.value = defaultEid;
     }
 
     if (orderDialog) {
