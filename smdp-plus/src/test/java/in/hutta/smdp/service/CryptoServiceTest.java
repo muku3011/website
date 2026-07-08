@@ -57,10 +57,23 @@ public class CryptoServiceTest {
     ecdsa.update(signedBytes);
     byte[] signatureBytes = ecdsa.sign();
 
+    // Generate mock EUM cert and eUICC cert signed by EUM CA
+    java.security.KeyPair eumKeyPair = cryptoService.getDeterministicKeyPair("EUM_CA_SEED");
+    java.security.cert.X509Certificate eumCert = cryptoService.getEumCertificate();
+    java.security.cert.X509Certificate euiccCert =
+        cryptoService.generateCertificate(
+            "CN=eUICC-Simulated, O=eUICC-Manufacturer, C=US",
+            keyPair,
+            "CN=EUM-CA-01, O=EUM-Manufacturer, C=US",
+            eumKeyPair.getPrivate(),
+            java.math.BigInteger.valueOf(3));
+
     // Assemble the authenticateServerResponse sequence
     ASN1EncodableVector authResponseVector = new ASN1EncodableVector();
     authResponseVector.add(signedData);
     authResponseVector.add(new DEROctetString(signatureBytes));
+    authResponseVector.add(new DEROctetString(euiccCert.getEncoded()));
+    authResponseVector.add(new DEROctetString(eumCert.getEncoded()));
     DERSequence authResponseSequence = new DERSequence(authResponseVector);
 
     String base64Response =

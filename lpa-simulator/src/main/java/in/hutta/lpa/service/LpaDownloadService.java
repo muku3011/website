@@ -152,14 +152,29 @@ public class LpaDownloadService {
         ecdsaSign.update(clientSignedBytes);
         byte[] clientSigBytes = ecdsaSign.sign();
 
+        // Generate EUM CA cert and dynamic eUICC cert
+        java.security.cert.X509Certificate eumCert = getEumCertificate();
+        KeyPair eumKeyPair = getDeterministicKeyPair("EUM_CA_SEED");
+
+        // Generate leaf eUICC cert signed by EUM CA
+        java.security.cert.X509Certificate euiccCert =
+            generateCertificate(
+                "CN=eUICC-Simulated, O=eUICC-Manufacturer, C=US",
+                clientSignKeyPair,
+                "CN=EUM-CA-01, O=EUM-Manufacturer, C=US",
+                eumKeyPair.getPrivate(),
+                java.math.BigInteger.valueOf(3));
+
         // Assemble authenticateServerResponse ASN.1 sequence:
         // [0] clientSignedData (Sequence)
         // [1] clientSigBytes (OctetString)
-        // [2] clientPublicKey (OctetString)
+        // [2] euiccCertificate (OctetString)
+        // [3] eumCertificate (OctetString)
         ASN1EncodableVector authResponseVector = new ASN1EncodableVector();
         authResponseVector.add(clientSignedData);
         authResponseVector.add(new DEROctetString(clientSigBytes));
-        authResponseVector.add(new DEROctetString(clientSignKeyPair.getPublic().getEncoded()));
+        authResponseVector.add(new DEROctetString(euiccCert.getEncoded()));
+        authResponseVector.add(new DEROctetString(eumCert.getEncoded()));
         DERSequence authResponseSeq = new DERSequence(authResponseVector);
         authenticateServerResponseBase64 =
             Base64.getEncoder().encodeToString(authResponseSeq.getEncoded("DER"));
@@ -435,5 +450,52 @@ public class LpaDownloadService {
       sb.append(String.format("%02x", b));
     }
     return sb.toString();
+  }
+
+  private KeyPair getDeterministicKeyPair(String seed) throws Exception {
+    KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", "BC");
+    SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
+    random.setSeed(seed.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    kpg.initialize(new ECGenParameterSpec("secp256r1"), random);
+    return kpg.generateKeyPair();
+  }
+
+  private java.security.cert.X509Certificate generateCertificate(
+      String subjectDn,
+      KeyPair subjectKeyPair,
+      String issuerDn,
+      PrivateKey issuerPrivateKey,
+      java.math.BigInteger serialNumber)
+      throws Exception {
+    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+    java.util.Date startDate = sdf.parse("2026-01-01");
+    java.util.Date endDate = sdf.parse("2036-01-01");
+
+    org.bouncycastle.asn1.x500.X500Name dnSubject =
+        new org.bouncycastle.asn1.x500.X500Name(subjectDn);
+    org.bouncycastle.asn1.x500.X500Name dnIssuer =
+        new org.bouncycastle.asn1.x500.X500Name(issuerDn);
+
+    org.bouncycastle.cert.X509v3CertificateBuilder certBuilder =
+        new org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder(
+            dnIssuer, serialNumber, startDate, endDate, dnSubject, subjectKeyPair.getPublic());
+
+    org.bouncycastle.operator.ContentSigner contentSigner =
+        new org.bouncycastle.operator.jcajce.JcaContentSignerBuilder("SHA256withECDSA")
+            .build(issuerPrivateKey);
+    return new org.bouncycastle.cert.jcajce.JcaX509CertificateConverter()
+        .setProvider("BC")
+        .getCertificate(certBuilder.build(contentSigner));
+  }
+
+  private java.security.cert.X509Certificate getEumCertificate() throws Exception {
+    KeyPair rootKeyPair = getDeterministicKeyPair("GSMA_ROOT_CA_SEED");
+    KeyPair eumKeyPair = getDeterministicKeyPair("EUM_CA_SEED");
+    return generateCertificate(
+        "CN=EUM-CA-01, O=EUM-Manufacturer, C=US",
+        eumKeyPair,
+        "CN=GSMA-Root-CA, O=GSMA, C=US",
+        rootKeyPair.getPrivate(),
+        java.math.BigInteger.valueOf(2));
   }
 }

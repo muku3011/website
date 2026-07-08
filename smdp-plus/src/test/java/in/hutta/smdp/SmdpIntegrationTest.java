@@ -34,6 +34,8 @@ public class SmdpIntegrationTest {
 
   @Autowired private ProfileRepository profileRepository;
 
+  @Autowired private in.hutta.smdp.service.CryptoService cryptoService;
+
   @BeforeEach
   public void setUp() {
     if (Security.getProvider("BC") == null) {
@@ -453,12 +455,26 @@ public class SmdpIntegrationTest {
     ecdsaSign.update(clientSignedBytes);
     byte[] clientSigBytes = ecdsaSign.sign();
 
+    // Generate EUM CA cert and dynamic eUICC cert using the cryptoService helpers
+    java.security.cert.X509Certificate eumCert = cryptoService.getEumCertificate();
+    KeyPair eumKeyPair = cryptoService.getDeterministicKeyPair("EUM_CA_SEED");
+
+    // Generate leaf eUICC cert signed by EUM CA
+    java.security.cert.X509Certificate euiccCert =
+        cryptoService.generateCertificate(
+            "CN=eUICC-Simulated, O=eUICC-Manufacturer, C=US",
+            clientSignKeyPair,
+            "CN=EUM-CA-01, O=EUM-Manufacturer, C=US",
+            eumKeyPair.getPrivate(),
+            java.math.BigInteger.valueOf(3));
+
     // Assemble authenticateServerResponse ASN.1 sequence:
-    // [0] clientSignedData, [1] clientSigBytes, [2] clientPublicKey
+    // [0] clientSignedData, [1] clientSigBytes, [2] euiccCertificate, [3] eumCertificate
     ASN1EncodableVector authResponseVector = new ASN1EncodableVector();
     authResponseVector.add(clientSignedData);
     authResponseVector.add(new DEROctetString(clientSigBytes));
-    authResponseVector.add(new DEROctetString(clientSignKeyPair.getPublic().getEncoded()));
+    authResponseVector.add(new DEROctetString(euiccCert.getEncoded()));
+    authResponseVector.add(new DEROctetString(eumCert.getEncoded()));
     DERSequence authResponseSeq = new DERSequence(authResponseVector);
     String authenticateServerResponseBase64 =
         Base64.getEncoder().encodeToString(authResponseSeq.getEncoded("DER"));

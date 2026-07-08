@@ -263,20 +263,33 @@ public class CryptoService {
               sigBytes = sigObj.getEncoded("DER");
             }
 
-            java.security.PublicKey verifyKey = this.smdpKeyPair.getPublic();
-            if (seq.size() >= 3) {
+            java.security.PublicKey verifyKey = null;
+            if (seq.size() >= 4) {
               try {
-                byte[] clientPubKeyBytes =
-                    ((org.bouncycastle.asn1.ASN1OctetString) seq.getObjectAt(2)).getOctets();
-                java.security.KeyFactory kf = java.security.KeyFactory.getInstance("EC", "BC");
-                verifyKey =
-                    kf.generatePublic(new java.security.spec.X509EncodedKeySpec(clientPubKeyBytes));
-                log.info("Using client-supplied public key for ECDSA signature verification");
+                byte[] euiccCertBytes = ASN1OctetString.getInstance(seq.getObjectAt(2)).getOctets();
+                byte[] eumCertBytes = ASN1OctetString.getInstance(seq.getObjectAt(3)).getOctets();
+
+                boolean chainValid = verifyCertificateChain(euiccCertBytes, eumCertBytes);
+                if (!chainValid) {
+                  log.error("eUICC certificate chain verification failed!");
+                  return false;
+                }
+
+                java.security.cert.CertificateFactory cf =
+                    java.security.cert.CertificateFactory.getInstance("X.509", "BC");
+                java.security.cert.X509Certificate euiccCert =
+                    (java.security.cert.X509Certificate)
+                        cf.generateCertificate(new java.io.ByteArrayInputStream(euiccCertBytes));
+                verifyKey = euiccCert.getPublicKey();
+                log.info("Using verified eUICC public key for ECDSA signature verification");
               } catch (Exception ex) {
-                log.warn(
-                    "Failed to parse client public key, falling back to server public key: {}",
-                    ex.getMessage());
+                log.error("Failed to parse and verify eUICC/EUM certificates: {}", ex.getMessage());
+                return false;
               }
+            } else {
+              log.error(
+                  "AuthenticateServerResponse does not contain enough elements for PKI verification");
+              return false;
             }
 
             log.info("Verifying ECDSA signature over {} bytes of signed data", signedBytes.length);
@@ -296,6 +309,90 @@ public class CryptoService {
           e.getMessage());
       return true;
     }
+  }
+
+  public boolean verifyCertificateChain(byte[] euiccCertBytes, byte[] eumCertBytes) {
+    try {
+      java.security.cert.CertificateFactory cf =
+          java.security.cert.CertificateFactory.getInstance("X.509", "BC");
+      java.security.cert.X509Certificate euiccCert =
+          (java.security.cert.X509Certificate)
+              cf.generateCertificate(new java.io.ByteArrayInputStream(euiccCertBytes));
+      java.security.cert.X509Certificate eumCert =
+          (java.security.cert.X509Certificate)
+              cf.generateCertificate(new java.io.ByteArrayInputStream(eumCertBytes));
+
+      java.security.cert.X509Certificate rootCert = getTrustedRootCaCertificate();
+
+      // 1. Verify EUM cert is signed by Root CA
+      eumCert.verify(rootCert.getPublicKey());
+      eumCert.checkValidity();
+
+      // 2. Verify eUICC cert is signed by EUM cert
+      euiccCert.verify(eumCert.getPublicKey());
+      euiccCert.checkValidity();
+
+      log.info(
+          "GSMA SGP.22 PKI Certificate Chain verified successfully: eUICC -> EUM -> GSMA Root CA");
+      return true;
+    } catch (Exception e) {
+      log.error("Certificate chain verification failed: {}", e.getMessage());
+      return false;
+    }
+  }
+
+  public java.security.cert.X509Certificate getTrustedRootCaCertificate() throws Exception {
+    KeyPair rootKeyPair = getDeterministicKeyPair("GSMA_ROOT_CA_SEED");
+    return generateCertificate(
+        "CN=GSMA-Root-CA, O=GSMA, C=US",
+        rootKeyPair,
+        "CN=GSMA-Root-CA, O=GSMA, C=US",
+        rootKeyPair.getPrivate(),
+        BigInteger.ONE);
+  }
+
+  public KeyPair getDeterministicKeyPair(String seed) throws Exception {
+    KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", "BC");
+    SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
+    random.setSeed(seed.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    kpg.initialize(new ECGenParameterSpec("secp256r1"), random);
+    return kpg.generateKeyPair();
+  }
+
+  public java.security.cert.X509Certificate generateCertificate(
+      String subjectDn,
+      KeyPair subjectKeyPair,
+      String issuerDn,
+      PrivateKey issuerPrivateKey,
+      BigInteger serialNumber)
+      throws Exception {
+    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+    Date startDate = sdf.parse("2026-01-01");
+    Date endDate = sdf.parse("2036-01-01");
+
+    X500Name dnSubject = new X500Name(subjectDn);
+    X500Name dnIssuer = new X500Name(issuerDn);
+
+    X509v3CertificateBuilder certBuilder =
+        new JcaX509v3CertificateBuilder(
+            dnIssuer, serialNumber, startDate, endDate, dnSubject, subjectKeyPair.getPublic());
+
+    ContentSigner contentSigner =
+        new JcaContentSignerBuilder("SHA256withECDSA").build(issuerPrivateKey);
+    return new JcaX509CertificateConverter()
+        .setProvider("BC")
+        .getCertificate(certBuilder.build(contentSigner));
+  }
+
+  public java.security.cert.X509Certificate getEumCertificate() throws Exception {
+    KeyPair rootKeyPair = getDeterministicKeyPair("GSMA_ROOT_CA_SEED");
+    KeyPair eumKeyPair = getDeterministicKeyPair("EUM_CA_SEED");
+    return generateCertificate(
+        "CN=EUM-CA-01, O=EUM-Manufacturer, C=US",
+        eumKeyPair,
+        "CN=GSMA-Root-CA, O=GSMA, C=US",
+        rootKeyPair.getPrivate(),
+        BigInteger.valueOf(2));
   }
 
   public String signSmdpSigned3(SessionContext session) {
