@@ -159,6 +159,25 @@ if ask_yes_no "Do you want to deploy the Blog Service Jar file ($(basename "$LOC
     fi
 fi
 
+# --- 5. Service Monitor & HTML Status Page Deployment ---
+if ask_yes_no "Do you want to deploy the lightweight service monitor and status page?"; then
+    echo -e "${YELLOW}[*] Syncing monitor.sh script...${NC}"
+    ssh "${TARGET_USER}@${TARGET_IP}" "mkdir -p '${REMOTE_PATH}/scripts'"
+    rsync -avz "scripts/monitor.sh" "${TARGET_USER}@${TARGET_IP}:${REMOTE_PATH}/scripts/monitor.sh"
+    ssh "${TARGET_USER}@${TARGET_IP}" "chmod +x '${REMOTE_PATH}/scripts/monitor.sh'"
+    
+    echo -e "${YELLOW}[*] Setting up 1-minute cron job for status page generation...${NC}"
+    ssh -t "${TARGET_USER}@${TARGET_IP}" "
+        # Create cron file for monitoring if not exists
+        (crontab -l 2>/dev/null | grep -v 'monitor.sh'; echo '* * * * * ${REMOTE_PATH}/scripts/monitor.sh') | crontab -
+        # Run it once immediately to generate initial page
+        sudo mkdir -p /var/www/html
+        sudo chown -R ${TARGET_USER}:${TARGET_USER} /var/www/html 2>/dev/null || true
+        ${REMOTE_PATH}/scripts/monitor.sh
+    "
+    echo -e "${GREEN}[+] Service monitor deployed and status page initialized.${NC}"
+fi
+
 # ── Step 5: Remote Verification & Diagnostics ────────────────────────────────
 echo -e "\n${BLUE}============================================================${NC}"
 echo -e "${BLUE}   Post-Deployment Verification & Diagnostics               ${NC}"
