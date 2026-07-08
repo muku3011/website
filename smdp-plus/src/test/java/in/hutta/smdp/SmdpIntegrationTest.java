@@ -6,7 +6,15 @@ import in.hutta.smdp.dto.Es2Dtos;
 import in.hutta.smdp.dto.Es9Dtos;
 import in.hutta.smdp.model.Profile;
 import in.hutta.smdp.repository.ProfileRepository;
+import java.security.*;
+import java.security.spec.ECGenParameterSpec;
+import java.util.Base64;
 import java.util.Objects;
+import javax.crypto.Cipher;
+import javax.crypto.KeyAgreement;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import org.bouncycastle.asn1.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +36,9 @@ public class SmdpIntegrationTest {
 
   @BeforeEach
   public void setUp() {
+    if (Security.getProvider("BC") == null) {
+      Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+    }
     profileRepository.deleteAll();
   }
 
@@ -308,6 +319,245 @@ public class SmdpIntegrationTest {
 
       // 8. Clean up profile by deleting it from admin controller
       restTemplate.delete("/gsma/rsp/v2/admin/profiles/" + extractedIccid);
+    }
+  }
+
+  @Test
+  public void testRealRspLifecycle() throws Exception {
+    // 1. Admin Profile Import (Multipart File Upload)
+    MultiValueMap<String, Object> importBody = new LinkedMultiValueMap<>();
+    importBody.add(
+        "file",
+        new ClassPathResource("profiles/TS48 V7.0 eSIM_GTP_SAIP2.3_BERTLV_SUCI.rename2der"));
+    importBody.add("iccid", "89000123456789012399");
+
+    HttpHeaders importHeaders = new HttpHeaders();
+    importHeaders.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+    HttpEntity<MultiValueMap<String, Object>> importRequest =
+        new HttpEntity<>(importBody, importHeaders);
+
+    ResponseEntity<String> importResponse =
+        restTemplate.postForEntity("/gsma/rsp/v2/admin/importProfile", importRequest, String.class);
+    assertThat(importResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+    // 2. ES2+ Download Order
+    Es2Dtos.DownloadOrderRequest orderReq = new Es2Dtos.DownloadOrderRequest();
+    orderReq.setEid("89049032000008888888888888888801");
+    orderReq.setIccid("89000123456789012399");
+    orderReq.setProfileType("Standard");
+
+    Es2Dtos.RequestHeader orderHeader = new Es2Dtos.RequestHeader();
+    orderHeader.setFunctionRequesterIdentifier("OperatorX");
+    orderHeader.setFunctionCallIdentifier("TX-100");
+    orderReq.setHeader(orderHeader);
+
+    ResponseEntity<Es2Dtos.DownloadOrderResponse> orderResponse =
+        restTemplate.postForEntity(
+            "/gsma/rsp/v2/es2plus/downloadOrder", orderReq, Es2Dtos.DownloadOrderResponse.class);
+    assertThat(orderResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+    // 3. ES2+ Release Profile
+    Es2Dtos.ReleaseProfileRequest releaseReq = new Es2Dtos.ReleaseProfileRequest();
+    releaseReq.setIccid("89000123456789012399");
+
+    Es2Dtos.RequestHeader releaseHeader = new Es2Dtos.RequestHeader();
+    releaseHeader.setFunctionRequesterIdentifier("OperatorX");
+    releaseHeader.setFunctionCallIdentifier("TX-101");
+    releaseReq.setHeader(releaseHeader);
+
+    ResponseEntity<Es2Dtos.ReleaseProfileResponse> releaseResponse =
+        restTemplate.postForEntity(
+            "/gsma/rsp/v2/es2plus/releaseProfile",
+            releaseReq,
+            Es2Dtos.ReleaseProfileResponse.class);
+    assertThat(releaseResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+    // 4. ES9+ Initiate Authentication (Real Challenge)
+    byte[] challBytes = new byte[16];
+    new SecureRandom().nextBytes(challBytes);
+    StringBuilder sb = new StringBuilder();
+    for (byte b : challBytes) {
+      sb.append(String.format("%02x", b));
+    }
+    String euiccChallengeStr = sb.toString();
+
+    Es9Dtos.InitiateAuthenticationRequest initReq = new Es9Dtos.InitiateAuthenticationRequest();
+    initReq.setEuiccChallenge(euiccChallengeStr);
+    initReq.setSmdpAddress("localhost:8092");
+    initReq.setEuiccInfo1("MOCK_EUICC_INFO_1");
+
+    ResponseEntity<Es9Dtos.InitiateAuthenticationResponse> initResponse =
+        restTemplate.postForEntity(
+            "/gsma/rsp/v2/es9plus/initiateAuthentication",
+            initReq,
+            Es9Dtos.InitiateAuthenticationResponse.class);
+    assertThat(initResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+    Es9Dtos.InitiateAuthenticationResponse initResponseBody =
+        Objects.requireNonNull(initResponse.getBody());
+    String transactionId = initResponseBody.getTransactionId();
+    assertThat(transactionId).isNotBlank();
+
+    // 5. Verify server signature and prepare real AuthenticateClientRequest
+    String smdpSigned2Base64 = initResponseBody.getSmdpSigned2();
+    String smdpSignature2Base64 = initResponseBody.getSmdpSignature2();
+    String smdpCertificateBase64 = initResponseBody.getSmdpCertificate();
+
+    byte[] signed2Bytes = Base64.getDecoder().decode(smdpSigned2Base64.trim());
+    byte[] signature2Bytes = Base64.getDecoder().decode(smdpSignature2Base64.trim());
+    byte[] certBytes = Base64.getDecoder().decode(smdpCertificateBase64.trim());
+
+    // Parse Server Certificate
+    java.security.cert.CertificateFactory cf =
+        java.security.cert.CertificateFactory.getInstance("X.509");
+    java.security.cert.X509Certificate serverCert =
+        (java.security.cert.X509Certificate)
+            cf.generateCertificate(new java.io.ByteArrayInputStream(certBytes));
+    PublicKey serverPublicKey = serverCert.getPublicKey();
+
+    // Verify signature
+    Signature ecdsaVerify = Signature.getInstance("SHA256withECDSA", "BC");
+    ecdsaVerify.initVerify(serverPublicKey);
+    ecdsaVerify.update(signed2Bytes);
+    assertThat(ecdsaVerify.verify(signature2Bytes)).isTrue();
+
+    // Extract challenges
+    String smdpChallenge = null;
+    String euiccChallenge = null;
+    try (ASN1InputStream asn1In = new ASN1InputStream(signed2Bytes)) {
+      ASN1Primitive obj = asn1In.readObject();
+      assertThat(obj).isInstanceOf(ASN1Sequence.class);
+      ASN1Sequence seq = (ASN1Sequence) obj;
+      smdpChallenge = ((DERPrintableString) seq.getObjectAt(1)).getString();
+      euiccChallenge = ((DERPrintableString) seq.getObjectAt(2)).getString();
+    }
+    assertThat(smdpChallenge).isNotBlank();
+    assertThat(euiccChallenge).isEqualTo(euiccChallengeStr);
+
+    // Generate client EC signing key pair
+    KeyPairGenerator kpgSign = KeyPairGenerator.getInstance("EC", "BC");
+    kpgSign.initialize(new ECGenParameterSpec("secp256r1"));
+    KeyPair clientSignKeyPair = kpgSign.generateKeyPair();
+
+    // Build signedData sequence
+    ASN1EncodableVector clientSignedVector = new ASN1EncodableVector();
+    clientSignedVector.add(new DERPrintableString(transactionId));
+    clientSignedVector.add(new DERPrintableString(euiccChallenge));
+    clientSignedVector.add(new DERPrintableString(smdpChallenge));
+    DERSequence clientSignedData = new DERSequence(clientSignedVector);
+    byte[] clientSignedBytes = clientSignedData.getEncoded("DER");
+
+    // Sign clientSignedBytes
+    Signature ecdsaSign = Signature.getInstance("SHA256withECDSA", "BC");
+    ecdsaSign.initSign(clientSignKeyPair.getPrivate());
+    ecdsaSign.update(clientSignedBytes);
+    byte[] clientSigBytes = ecdsaSign.sign();
+
+    // Assemble authenticateServerResponse ASN.1 sequence:
+    // [0] clientSignedData, [1] clientSigBytes, [2] clientPublicKey
+    ASN1EncodableVector authResponseVector = new ASN1EncodableVector();
+    authResponseVector.add(clientSignedData);
+    authResponseVector.add(new DEROctetString(clientSigBytes));
+    authResponseVector.add(new DEROctetString(clientSignKeyPair.getPublic().getEncoded()));
+    DERSequence authResponseSeq = new DERSequence(authResponseVector);
+    String authenticateServerResponseBase64 =
+        Base64.getEncoder().encodeToString(authResponseSeq.getEncoded("DER"));
+
+    // Call ES9+ Authenticate Client
+    Es9Dtos.AuthenticateClientRequest authReq = new Es9Dtos.AuthenticateClientRequest();
+    authReq.setTransactionId(transactionId);
+    authReq.setAuthenticateServerResponse(authenticateServerResponseBase64);
+
+    ResponseEntity<Es9Dtos.AuthenticateClientResponse> authResponse =
+        restTemplate.postForEntity(
+            "/gsma/rsp/v2/es9plus/authenticateClient",
+            authReq,
+            Es9Dtos.AuthenticateClientResponse.class);
+    assertThat(authResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+    Es9Dtos.AuthenticateClientResponse authResponseBody =
+        Objects.requireNonNull(authResponse.getBody());
+    assertThat(authResponseBody.getTransactionId()).isEqualTo(transactionId);
+
+    // 6. Generate client EC Ephemeral key pair for real ECDH key agreement
+    KeyPairGenerator kpgAg = KeyPairGenerator.getInstance("EC", "BC");
+    kpgAg.initialize(new ECGenParameterSpec("secp256r1"));
+    KeyPair clientEphemeralKeyPair = kpgAg.generateKeyPair();
+    byte[] clientPublicKeyBytes = clientEphemeralKeyPair.getPublic().getEncoded();
+
+    // Build DER Sequence for PrepareDownloadResponse
+    ASN1EncodableVector prepareVector = new ASN1EncodableVector();
+    prepareVector.add(new DERPrintableString(transactionId));
+    prepareVector.add(new DEROctetString(clientPublicKeyBytes));
+    DERSequence prepareSeq = new DERSequence(prepareVector);
+    String prepareDownloadResponseBase64 =
+        Base64.getEncoder().encodeToString(prepareSeq.getEncoded("DER"));
+
+    // Call ES9+ Get Bound Profile Package (BPP)
+    Es9Dtos.GetBoundProfilePackageRequest bppReq = new Es9Dtos.GetBoundProfilePackageRequest();
+    bppReq.setTransactionId(transactionId);
+    bppReq.setPrepareDownloadResponse(prepareDownloadResponseBase64);
+
+    ResponseEntity<Es9Dtos.GetBoundProfilePackageResponse> bppResponse =
+        restTemplate.postForEntity(
+            "/gsma/rsp/v2/es9plus/getBoundProfilePackage",
+            bppReq,
+            Es9Dtos.GetBoundProfilePackageResponse.class);
+    assertThat(bppResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+    Es9Dtos.GetBoundProfilePackageResponse bppResponseBody =
+        Objects.requireNonNull(bppResponse.getBody());
+    assertThat(bppResponseBody.getTransactionId()).isEqualTo(transactionId);
+    String bpp = bppResponseBody.getBoundProfilePackage();
+    assertThat(bpp).isNotBlank();
+
+    // 7. Decode BPP DER sequence and decrypt profile payload
+    byte[] bppBytes = Base64.getDecoder().decode(bpp.trim());
+    try (ASN1InputStream asn1In = new ASN1InputStream(bppBytes)) {
+      ASN1Primitive obj = asn1In.readObject();
+      assertThat(obj).isInstanceOf(ASN1Sequence.class);
+      ASN1Sequence seq = (ASN1Sequence) obj;
+      assertThat(seq.size()).isEqualTo(4);
+
+      ASN1TaggedObject taggedCert = (ASN1TaggedObject) seq.getObjectAt(2);
+      byte[] certBytesBpp = ((ASN1OctetString) taggedCert.getBaseObject()).getOctets();
+
+      ASN1TaggedObject taggedEncPayload = (ASN1TaggedObject) seq.getObjectAt(3);
+      byte[] encPayload = ((ASN1OctetString) taggedEncPayload.getBaseObject()).getOctets();
+
+      // Extract Server Public Key
+      java.security.cert.CertificateFactory cfBpp =
+          java.security.cert.CertificateFactory.getInstance("X.509");
+      java.security.cert.X509Certificate serverCertBpp =
+          (java.security.cert.X509Certificate)
+              cfBpp.generateCertificate(new java.io.ByteArrayInputStream(certBytesBpp));
+      PublicKey serverPublicKeyBpp = serverCertBpp.getPublicKey();
+
+      // Perform client-side ECDH key agreement
+      KeyAgreement ka = KeyAgreement.getInstance("ECDH", "BC");
+      ka.init(clientEphemeralKeyPair.getPrivate());
+      ka.doPhase(serverPublicKeyBpp, true);
+      byte[] sharedSecret = ka.generateSecret();
+
+      // Derive symmetric key via SHA-256 KDF
+      byte[] keyBytes = new byte[16];
+      MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
+      byte[] hashedSecret = sha256.digest(sharedSecret);
+      System.arraycopy(hashedSecret, 0, keyBytes, 0, 16);
+      SecretKeySpec secretKey = new SecretKeySpec(keyBytes, "AES");
+
+      // Decrypt
+      byte[] iv = new byte[12];
+      byte[] ciphertext = new byte[encPayload.length - 12];
+      System.arraycopy(encPayload, 0, iv, 0, 12);
+      System.arraycopy(encPayload, 12, ciphertext, 0, ciphertext.length);
+
+      Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+      GCMParameterSpec parameterSpec = new GCMParameterSpec(128, iv);
+      cipher.init(Cipher.DECRYPT_MODE, secretKey, parameterSpec);
+      byte[] decryptedPayloadBytes = cipher.doFinal(ciphertext);
+
+      // Verify that the decrypted payload length matches the exact imported profile payload Base64
+      // size!
+      assertThat(decryptedPayloadBytes.length).isEqualTo(16516);
     }
   }
 }

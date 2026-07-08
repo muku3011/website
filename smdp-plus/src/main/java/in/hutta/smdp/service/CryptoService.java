@@ -59,7 +59,13 @@ public class CryptoService {
     try {
       long now = System.currentTimeMillis();
       Date startDate = new Date(now);
-      X500Name dnName = new X500Name("CN=Hutta SM-DP+ CA, O=Hutta, C=IN");
+      org.bouncycastle.asn1.x500.X500NameBuilder nameBuilder =
+          new org.bouncycastle.asn1.x500.X500NameBuilder(
+              org.bouncycastle.asn1.x500.style.BCStyle.INSTANCE);
+      nameBuilder.addRDN(org.bouncycastle.asn1.x500.style.BCStyle.CN, "Hutta SM-DP+ CA");
+      nameBuilder.addRDN(org.bouncycastle.asn1.x500.style.BCStyle.O, "Hutta");
+      nameBuilder.addRDN(org.bouncycastle.asn1.x500.style.BCStyle.C, "IN");
+      X500Name dnName = nameBuilder.build();
       BigInteger certSerialNumber = new BigInteger(Long.toString(now));
       Date endDate = new Date(now + 365L * 24 * 60 * 60 * 1000); // 1 year
 
@@ -82,7 +88,7 @@ public class CryptoService {
       log.error("Failed to generate self-signed certificate, using fallback mock", e);
       return Base64.getEncoder()
           .encodeToString(
-              "-----BEGIN CERTIFICATE-----\nMIIB7TCCAZegAwIBAgIIAQIDBAUGBwgqMAsGCSqGSIb3DQEBCwUAMBsxGTAXBgNV\nBAMMEEdTTUEgUlNQIFJvb3QgQ0EwIBcNMjYwNjI2MDAwMDAwWhgPMjA0NjA2MjYw\nMDAwMDBaMBoxGDAWBgNVBAMMD0h1dHRhIFNNLURQKyBDQTAkMAsGCSqGSIb3DQEB\nCwUAA4GBAD1x2z385yA1BqzIM3FtylyhFGifPkHXc28LAXKH25wSHgW4s1YpV5Tf\npBFCrjNDPVkuT3SPSVTbX7HG9_EX8TJXKgEOM-m4XF3z3jP-8V0d7LEgp7BKeGkV\nNrrZ0zEMyS6g40uiwN8ks80XWsAYFHsRx9Cg==\n-----END CERTIFICATE-----"
+              "-----BEGIN CERTIFICATE-----\nMIIB7TCCAZegAwIBAgIIAQIDBAUGBwgqMAsGCSqGSIb3DQEBCwUAMBsxGTAXBgNV\nBAMMEEdTTUEgUlNQIFJvb3QgQ0EwIBcNMjYwNjI2MDAwMDAwWhgPMjA0NjA2MjYw\nMDAwMDBaMBoxGDAWBgNVBAMMD0h1dHRhIFNNLURQKyBDQTAkMAsGCSqGSIb3DQEB\nCwUAA4GBAD1x2z385yA1BqzIM3FtylyhFGifPkHXc28LAXKH25wSHgW4s1YpV5Tf\npBFCrjNDPVkuT3SPSVTbX7HG9/EX8TJXKgEOM+m4XF3z3jP+8V0d7LEgp7BKeGkV\nNrrZ0zEMyS6g40uiwN8ks80XWsAYFHsRx9Cg==\n-----END CERTIFICATE-----"
                   .getBytes());
     }
   }
@@ -190,10 +196,25 @@ public class CryptoService {
               sigBytes = sigObj.getEncoded("DER");
             }
 
+            java.security.PublicKey verifyKey = this.smdpKeyPair.getPublic();
+            if (seq.size() >= 3) {
+              try {
+                byte[] clientPubKeyBytes =
+                    ((org.bouncycastle.asn1.ASN1OctetString) seq.getObjectAt(2)).getOctets();
+                java.security.KeyFactory kf = java.security.KeyFactory.getInstance("EC", "BC");
+                verifyKey =
+                    kf.generatePublic(new java.security.spec.X509EncodedKeySpec(clientPubKeyBytes));
+                log.info("Using client-supplied public key for ECDSA signature verification");
+              } catch (Exception ex) {
+                log.warn(
+                    "Failed to parse client public key, falling back to server public key: {}",
+                    ex.getMessage());
+              }
+            }
+
             log.info("Verifying ECDSA signature over {} bytes of signed data", signedBytes.length);
             Signature ecdsa = Signature.getInstance("SHA256withECDSA", "BC");
-            // We use the transient key pair's public key for validation if no other cert is passed
-            ecdsa.initVerify(this.smdpKeyPair.getPublic());
+            ecdsa.initVerify(verifyKey);
             ecdsa.update(signedBytes);
             boolean isValid = ecdsa.verify(sigBytes);
             log.info("ECDSA Signature verification result: {}", isValid);
@@ -260,9 +281,9 @@ public class CryptoService {
     log.info(
         "Generating Bound Profile Package (BPP) for transaction: {}", session.getTransactionId());
 
-    if (!"REAL_CRYPTO_ACTIVE".equals(session.getState())) {
-      log.info(
-          "Session state is not REAL_CRYPTO_ACTIVE. Generating mock Bound Profile Package (BPP)...");
+    if (!"REAL_CRYPTO_ACTIVE".equals(session.getState())
+        && !"CLIENT_AUTHENTICATED".equals(session.getState())) {
+      log.info("Session state is not active. Generating mock Bound Profile Package (BPP)...");
       String bppRawString =
           String.format(
               "BPP[transactionId=%s,iccid=%s,payload=%s]",

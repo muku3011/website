@@ -64,8 +64,12 @@ public class LpaDownloadService {
       headers.set("User-Agent", "gsma-rsp-lpa/3.0.0");
 
       // Step 1: initiateAuthentication
+      byte[] challBytes = new byte[16];
+      new java.security.SecureRandom().nextBytes(challBytes);
+      String euiccChallengeStr = bytesToHex(challBytes);
+
       InitiateAuthenticationRequest req1 = new InitiateAuthenticationRequest();
-      req1.setEuiccChallenge("MOCK_EUICC_CHALLENGE_" + System.currentTimeMillis());
+      req1.setEuiccChallenge(euiccChallengeStr);
       req1.setSmdpAddress(smdpAddress);
       req1.setEuiccInfo1("MOCK_EUICC_INFO_1");
 
@@ -84,10 +88,91 @@ public class LpaDownloadService {
       String transactionId = resp1.getTransactionId();
       log.info("ES9+ Handshake Step 1 success: transactionId={}", transactionId);
 
+      // Verify server signature in Step 1 and prepare real authenticateServerResponse
+      String authenticateServerResponseBase64;
+      try {
+        String smdpSigned2Base64 = resp1.getSmdpSigned2();
+        String smdpSignature2Base64 = resp1.getSmdpSignature2();
+        String smdpCertificateBase64 = resp1.getSmdpCertificate();
+
+        byte[] signed2Bytes = Base64.getDecoder().decode(smdpSigned2Base64.trim());
+        byte[] signature2Bytes = Base64.getDecoder().decode(smdpSignature2Base64.trim());
+        byte[] certBytes = Base64.getDecoder().decode(smdpCertificateBase64.trim());
+
+        // Parse Server Certificate
+        java.security.cert.CertificateFactory cf =
+            java.security.cert.CertificateFactory.getInstance("X.509");
+        java.security.cert.X509Certificate serverCert =
+            (java.security.cert.X509Certificate)
+                cf.generateCertificate(new java.io.ByteArrayInputStream(certBytes));
+        PublicKey serverPublicKey = serverCert.getPublicKey();
+
+        // Verify signature
+        Signature ecdsaVerify = Signature.getInstance("SHA256withECDSA", "BC");
+        ecdsaVerify.initVerify(serverPublicKey);
+        ecdsaVerify.update(signed2Bytes);
+        if (!ecdsaVerify.verify(signature2Bytes)) {
+          throw new GeneralSecurityException("SM-DP+ signature verification failed!");
+        }
+        log.info("Server signature verified successfully on LPA");
+
+        // Extract smdpChallenge and euiccChallenge from signed2Bytes
+        String smdpChallenge = null;
+        String euiccChallenge = null;
+        try (ASN1InputStream asn1In = new ASN1InputStream(signed2Bytes)) {
+          ASN1Primitive obj = asn1In.readObject();
+          if (obj instanceof ASN1Sequence) {
+            ASN1Sequence seq = (ASN1Sequence) obj;
+            smdpChallenge = ((DERPrintableString) seq.getObjectAt(1)).getString();
+            euiccChallenge = ((DERPrintableString) seq.getObjectAt(2)).getString();
+          }
+        }
+
+        if (smdpChallenge == null || euiccChallenge == null) {
+          throw new IllegalStateException("Failed to parse challenges from smdpSigned2");
+        }
+
+        // Generate client EC signing key pair
+        KeyPairGenerator kpgSign = KeyPairGenerator.getInstance("EC", "BC");
+        kpgSign.initialize(new ECGenParameterSpec("secp256r1"));
+        KeyPair clientSignKeyPair = kpgSign.generateKeyPair();
+
+        // Build signedData sequence
+        ASN1EncodableVector clientSignedVector = new ASN1EncodableVector();
+        clientSignedVector.add(new DERPrintableString(transactionId));
+        clientSignedVector.add(new DERPrintableString(euiccChallenge));
+        clientSignedVector.add(new DERPrintableString(smdpChallenge));
+        DERSequence clientSignedData = new DERSequence(clientSignedVector);
+        byte[] clientSignedBytes = clientSignedData.getEncoded("DER");
+
+        // Sign clientSignedBytes using client private key
+        Signature ecdsaSign = Signature.getInstance("SHA256withECDSA", "BC");
+        ecdsaSign.initSign(clientSignKeyPair.getPrivate());
+        ecdsaSign.update(clientSignedBytes);
+        byte[] clientSigBytes = ecdsaSign.sign();
+
+        // Assemble authenticateServerResponse ASN.1 sequence:
+        // [0] clientSignedData (Sequence)
+        // [1] clientSigBytes (OctetString)
+        // [2] clientPublicKey (OctetString)
+        ASN1EncodableVector authResponseVector = new ASN1EncodableVector();
+        authResponseVector.add(clientSignedData);
+        authResponseVector.add(new DEROctetString(clientSigBytes));
+        authResponseVector.add(new DEROctetString(clientSignKeyPair.getPublic().getEncoded()));
+        DERSequence authResponseSeq = new DERSequence(authResponseVector);
+        authenticateServerResponseBase64 =
+            Base64.getEncoder().encodeToString(authResponseSeq.getEncoded("DER"));
+      } catch (Exception verifyEx) {
+        log.warn(
+            "LPA: Failed to perform real server verification / signature generation, falling back to mock: {}",
+            verifyEx.getMessage());
+        authenticateServerResponseBase64 = "MOCK_AUTHENTICATE_SERVER_RESPONSE_ASN1";
+      }
+
       // Step 2: authenticateClient
       AuthenticateClientRequest req2 = new AuthenticateClientRequest();
       req2.setTransactionId(transactionId);
-      req2.setAuthenticateServerResponse("MOCK_AUTHENTICATE_SERVER_RESPONSE_ASN1");
+      req2.setAuthenticateServerResponse(authenticateServerResponseBase64);
 
       log.info("ES9+ Handshake Step 2: authenticateClient");
       HttpEntity<AuthenticateClientRequest> entity2 = new HttpEntity<>(req2, headers);
@@ -164,7 +249,7 @@ public class LpaDownloadService {
 
             // Extract Server Public Key from Certificate
             java.security.cert.CertificateFactory cf =
-                java.security.cert.CertificateFactory.getInstance("X.509", "BC");
+                java.security.cert.CertificateFactory.getInstance("X.509");
             java.security.cert.X509Certificate serverCert =
                 (java.security.cert.X509Certificate)
                     cf.generateCertificate(new java.io.ByteArrayInputStream(certBytes));
