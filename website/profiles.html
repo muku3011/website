@@ -246,15 +246,31 @@
                 </div>
                 <div class="form-group">
                     <label for="order-profile-type">Profile Type</label>
-                    <input type="text" id="order-profile-type" name="profileType" value="Standard" required class="form-input">
+                    <select id="order-profile-type" name="profileType" class="form-input" style="background: var(--console-bg); border: 1px solid var(--card-border); color: var(--text-primary); padding: 0.6rem;">
+                        <option value="Standard">Standard (Commercial)</option>
+                        <option value="TS48">TS48 (TS.48 Conformance)</option>
+                        <option value="Testing">Testing (General Test)</option>
+                        <option value="Bootstrap">Bootstrap (Provisioning)</option>
+                        <option value="custom">Custom...</option>
+                    </select>
+                    <input type="text" id="order-profile-type-custom" placeholder="Enter custom profile type" class="form-input" style="margin-top: 0.5rem; display: none;">
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="margin-top: 0.75rem;">
                     <label for="order-requester">Function Requester Identifier</label>
-                    <input type="text" id="order-requester" name="requester" value="OperatorX" required class="form-input">
+                    <select id="order-requester" name="requester" class="form-input" style="background: var(--console-bg); border: 1px solid var(--card-border); color: var(--text-primary); padding: 0.6rem;">
+                        <option value="OperatorX">OperatorX (Integration Default)</option>
+                        <option value="HuttaPortal">HuttaPortal (Admin Console)</option>
+                        <option value="BSS_OrderSystem">BSS_OrderSystem (BSS API)</option>
+                        <option value="custom">Custom...</option>
+                    </select>
+                    <input type="text" id="order-requester-custom" placeholder="Enter custom requester ID" class="form-input" style="margin-top: 0.5rem; display: none;">
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="margin-top: 0.75rem;">
                     <label for="order-callid">Function Call Identifier</label>
-                    <input type="text" id="order-callid" name="callId" value="TX-100" required class="form-input">
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="order-callid" name="callId" required class="form-input" style="flex: 1;">
+                        <button type="button" id="btn-regenerate-callid" class="btn btn-secondary" style="padding: 0 0.8rem;" title="Regenerate unique ID">🔄</button>
+                    </div>
                 </div>
                 <div class="form-actions" style="margin-top: 1.5rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
                     <button type="submit" class="btn btn-primary">Submit Order</button>

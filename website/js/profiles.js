@@ -848,9 +848,59 @@ async function deleteProfile(iccid) {
 const orderDialog = document.getElementById('dialog-order');
 const orderForm = document.getElementById('order-form');
 
+const orderProfileTypeSelect = document.getElementById('order-profile-type');
+const orderProfileTypeCustom = document.getElementById('order-profile-type-custom');
+if (orderProfileTypeSelect && orderProfileTypeCustom) {
+    orderProfileTypeSelect.addEventListener('change', () => {
+        orderProfileTypeCustom.style.display = orderProfileTypeSelect.value === 'custom' ? 'block' : 'none';
+        if (orderProfileTypeSelect.value === 'custom') {
+            orderProfileTypeCustom.focus();
+        }
+    });
+}
+
+const orderRequesterSelect = document.getElementById('order-requester');
+const orderRequesterCustom = document.getElementById('order-requester-custom');
+if (orderRequesterSelect && orderRequesterCustom) {
+    orderRequesterSelect.addEventListener('change', () => {
+        orderRequesterCustom.style.display = orderRequesterSelect.value === 'custom' ? 'block' : 'none';
+        if (orderRequesterSelect.value === 'custom') {
+            orderRequesterCustom.focus();
+        }
+    });
+}
+
+const btnRegenCallId = document.getElementById('btn-regenerate-callid');
+const orderCallIdInput = document.getElementById('order-callid');
+if (btnRegenCallId && orderCallIdInput) {
+    btnRegenCallId.addEventListener('click', () => {
+        orderCallIdInput.value = generateCallId();
+    });
+}
+
+function generateCallId() {
+    return 'TX-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+}
+
 function openOrderModal(iccid) {
     if (window.userRole === 'viewer') return;
     document.getElementById('order-iccid').value = iccid;
+    
+    // Reset combo boxes and inputs
+    if (orderProfileTypeSelect) {
+        orderProfileTypeSelect.value = 'Standard';
+        orderProfileTypeCustom.value = '';
+        orderProfileTypeCustom.style.display = 'none';
+    }
+    if (orderRequesterSelect) {
+        orderRequesterSelect.value = 'OperatorX';
+        orderRequesterCustom.value = '';
+        orderRequesterCustom.style.display = 'none';
+    }
+    if (orderCallIdInput) {
+        orderCallIdInput.value = generateCallId();
+    }
+
     if (orderDialog) {
         orderDialog.showModal();
     }
@@ -865,9 +915,18 @@ if (orderForm) {
 
         const iccid = document.getElementById('order-iccid').value;
         const eid = document.getElementById('order-eid').value.trim();
-        const profileType = document.getElementById('order-profile-type').value.trim();
-        const requester = document.getElementById('order-requester').value.trim();
-        const callId = document.getElementById('order-callid').value.trim();
+        
+        let profileType = orderProfileTypeSelect ? orderProfileTypeSelect.value : 'Standard';
+        if (profileType === 'custom' && orderProfileTypeCustom) {
+            profileType = orderProfileTypeCustom.value.trim() || 'Standard';
+        }
+        
+        let requester = orderRequesterSelect ? orderRequesterSelect.value : 'OperatorX';
+        if (requester === 'custom' && orderRequesterCustom) {
+            requester = orderRequesterCustom.value.trim() || 'OperatorX';
+        }
+        
+        const callId = orderCallIdInput ? orderCallIdInput.value.trim() : generateCallId();
 
         addLogLine(`Submitting downloadOrder to ES2+ interface for ICCID ${iccid}...`, "info");
 
