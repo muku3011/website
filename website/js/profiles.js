@@ -630,9 +630,9 @@ function readAndParseProfileMetadata(file) {
             // Keep binary bytes
         }
 
-        // 1. Scan for ICCID (tag 0x83 with length 0x0A)
+        // 1. Scan for ICCID (tag 0x83 with length 0x0A) in first 500 bytes
         let iccid = null;
-        let limit = Math.min(bytes.length - 11, 2000);
+        let limit = Math.min(bytes.length - 11, 500);
         for (let i = 0; i < limit; i++) {
             if (bytes[i] === 0x83 && bytes[i + 1] === 0x0A) {
                 const slice = bytes.slice(i + 2, i + 12);
@@ -641,11 +641,11 @@ function readAndParseProfileMetadata(file) {
             }
         }
 
-        // 2. Scan for Service Provider Name (tag 0x84)
-        let spName = extractStringField(bytes, 0x84);
+        // 2. Scan for Service Provider Name (tag 0x82) in first 500 bytes
+        let spName = extractStringField(bytes, 0x82, 500);
         
-        // 3. Scan for Profile Name (tag 0x85)
-        let profileName = extractStringField(bytes, 0x85);
+        // 3. Scan for Profile Name (tag 0x83) in first 500 bytes
+        let profileName = extractStringField(bytes, 0x83, 500);
 
         // Pre-populate fields
         if (iccid) {
@@ -690,8 +690,8 @@ function readAndParseProfileMetadata(file) {
     reader.readAsArrayBuffer(file);
 }
 
-function extractStringField(bytes, tagValue) {
-    let limit = Math.min(bytes.length - 4, 2000);
+function extractStringField(bytes, tagValue, searchLimit) {
+    let limit = Math.min(bytes.length - 4, searchLimit || 500);
     for (let i = 0; i < limit; i++) {
         if (bytes[i] === tagValue) {
             let lenByte = bytes[i + 1];
@@ -710,10 +710,18 @@ function extractStringField(bytes, tagValue) {
                 }
             }
 
+            // Skip ICCID tag if tagValue is 0x83 and length is 10
+            if (tagValue === 0x83 && length === 10) {
+                continue;
+            }
+
             if (length > 0 && length < 256 && i + valueOffset + length <= bytes.length) {
                 const slice = bytes.slice(i + valueOffset, i + valueOffset + length);
                 try {
-                    return new TextDecoder('utf-8').decode(slice);
+                    const text = new TextDecoder('utf-8').decode(slice);
+                    if (/^[\x20-\x7E\s]*$/.test(text)) {
+                        return text;
+                    }
                 } catch (e) {
                     return null;
                 }
