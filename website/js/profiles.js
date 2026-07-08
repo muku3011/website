@@ -645,21 +645,11 @@ function readAndParseProfileMetadata(file) {
             }
         }
 
-        // 2. Scan for Service Provider Name (tag 0x82) in first 500 bytes
-        let spName = extractStringField(bytes, 0x82, 500);
-        
-        // 3. Scan for Profile Name (tag 0x83) in first 500 bytes
-        let profileName = extractStringField(bytes, 0x83, 500);
-
         // Pre-populate fields
         if (iccid) {
             if (overrideIccidInput) overrideIccidInput.value = iccid;
-            const previewIccid = document.getElementById('preview-iccid');
-            if (previewIccid) previewIccid.textContent = iccid;
         } else {
             if (overrideIccidInput) overrideIccidInput.value = '';
-            const previewIccid = document.getElementById('preview-iccid');
-            if (previewIccid) previewIccid.textContent = 'Not found (using server default)';
         }
 
         // Auto-detect profile class based on filename
@@ -672,66 +662,8 @@ function readAndParseProfileMetadata(file) {
                 profileClassSelect.value = 'OPERATIONAL';
             }
         }
-
-        // Update preview details
-        const previewFilename = document.getElementById('preview-filename');
-        if (previewFilename) previewFilename.textContent = file.name;
-        
-        const previewFilesize = document.getElementById('preview-filesize');
-        if (previewFilesize) previewFilesize.textContent = `${(file.size / 1024).toFixed(2)} KB`;
-        
-        const previewSpname = document.getElementById('preview-spname');
-        if (previewSpname) previewSpname.textContent = spName || 'Not found';
-        
-        const previewProfilename = document.getElementById('preview-profilename');
-        if (previewProfilename) previewProfilename.textContent = profileName || 'Not found';
-        
-        const previewArea = document.getElementById('profile-preview-area');
-        if (previewArea) {
-            previewArea.style.display = 'block';
-        }
     };
     reader.readAsArrayBuffer(file);
-}
-
-function extractStringField(bytes, tagValue, searchLimit) {
-    let limit = Math.min(bytes.length - 4, searchLimit || 500);
-    for (let i = 0; i < limit; i++) {
-        if (bytes[i] === tagValue) {
-            let lenByte = bytes[i + 1];
-            let length = 0;
-            let valueOffset = 2;
-
-            if (lenByte < 128) {
-                length = lenByte;
-            } else {
-                let numLenBytes = lenByte & 0x7F;
-                if (numLenBytes > 0 && numLenBytes <= 4 && i + 1 + numLenBytes < bytes.length) {
-                    for (let j = 0; j < numLenBytes; j++) {
-                        length = (length << 8) | bytes[i + 2 + j];
-                    }
-                    valueOffset = 2 + numLenBytes;
-                }
-            }
-
-            // Skip ICCID tag if tagValue is 0x83 and length is 10
-            if (tagValue === 0x83 && length === 10) {
-                continue;
-            }
-
-            if (length > 0 && length < 256 && i + valueOffset + length <= bytes.length) {
-                const slice = bytes.slice(i + valueOffset, i + valueOffset + length);
-                try {
-                    const text = new TextDecoder('utf-8').decode(slice);
-                    if (/^[\x20-\x7E\s]*$/.test(text)) {
-                        return text;
-                    }
-                } catch (e) {
-                    return null;
-                }
-            }
-        }
-    }
 }
 
 function resetImportForm() {
@@ -741,10 +673,6 @@ function resetImportForm() {
     if (dropzone) {
         dropzone.querySelector('.dropzone-text').textContent = 'Drag & drop profile file or click to browse';
         dropzone.querySelector('.dropzone-subtext').textContent = 'Supports .der, .bin, or base64 files';
-    }
-    const previewArea = document.getElementById('profile-preview-area');
-    if (previewArea) {
-        previewArea.style.display = 'none';
     }
     if (btnCancelImport) {
         btnCancelImport.style.display = 'none';
