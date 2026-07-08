@@ -72,6 +72,18 @@
                     <p class="dropzone-subtext">Supports .der, .bin, or base64 files</p>
                     <input type="file" id="profile-file-input" style="display: none;" accept=".der,.bin,.rename2der,.txt">
                 </div>
+ 
+                <!-- Profile Metadata Preview -->
+                <div id="profile-preview-area" style="display: none; margin-top: 1rem; padding: 0.8rem; background: var(--console-bg); border: 1px solid var(--card-border); border-radius: var(--border-radius-sm); font-size: 0.85rem;">
+                    <h4 style="font-size: 0.85rem; font-weight: 600; color: var(--primary-glow); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px;">Loaded Profile Metadata</h4>
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 0.4rem; line-height: 1.4;">
+                        <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">File Name:</span><span id="preview-filename" style="font-weight: 500; word-break: break-all;">--</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Size:</span><span id="preview-filesize" style="font-weight: 500;">--</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Extracted ICCID:</span><span id="preview-iccid" style="font-family: monospace; font-weight: 600; color: var(--secondary-glow);">--</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Service Provider:</span><span id="preview-spname" style="font-weight: 500;">--</span></div>
+                        <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-muted);">Profile Name:</span><span id="preview-profilename" style="font-weight: 500;">--</span></div>
+                    </div>
+                </div>
 
                 <div class="form-group" style="margin-top: 1rem;">
                     <label for="override-iccid">Override ICCID (Optional)</label>

@@ -604,7 +604,123 @@ function updateDropzoneUI() {
     if (selectedFile && dropzone) {
         dropzone.querySelector('.dropzone-text').textContent = `Selected: ${selectedFile.name}`;
         dropzone.querySelector('.dropzone-subtext').textContent = `Size: ${(selectedFile.size / 1024).toFixed(2)} KB`;
+        readAndParseProfileMetadata(selectedFile);
     }
+}
+
+function readAndParseProfileMetadata(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        let arrayBuffer = e.target.result;
+        let bytes = new Uint8Array(arrayBuffer);
+        
+        // Auto-decode base64 or PEM encoded profiles
+        const textDecoder = new TextDecoder('utf-8');
+        try {
+            const textContent = textDecoder.decode(bytes.slice(0, 200)).trim();
+            if (textContent.startsWith('-----BEGIN') || /^[A-Za-z0-9+/=\s\r\n]+$/.test(textContent.slice(0, 50))) {
+                let base64String = textContent.replace(/-----BEGIN[^-]+-----|-----END[^-]+-----|\s/g, '');
+                const binaryString = atob(base64String);
+                bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+            }
+        } catch (ex) {
+            // Keep binary bytes
+        }
+
+        // 1. Scan for ICCID (tag 0x83 with length 0x0A)
+        let iccid = null;
+        let limit = Math.min(bytes.length - 11, 2000);
+        for (let i = 0; i < limit; i++) {
+            if (bytes[i] === 0x83 && bytes[i + 1] === 0x0A) {
+                const slice = bytes.slice(i + 2, i + 12);
+                iccid = Array.from(slice, b => b.toString(16).padStart(2, '0')).join('');
+                break;
+            }
+        }
+
+        // 2. Scan for Service Provider Name (tag 0x84)
+        let spName = extractStringField(bytes, 0x84);
+        
+        // 3. Scan for Profile Name (tag 0x85)
+        let profileName = extractStringField(bytes, 0x85);
+
+        // Pre-populate fields
+        if (iccid) {
+            if (overrideIccidInput) overrideIccidInput.value = iccid;
+            const previewIccid = document.getElementById('preview-iccid');
+            if (previewIccid) previewIccid.textContent = iccid;
+        } else {
+            if (overrideIccidInput) overrideIccidInput.value = '';
+            const previewIccid = document.getElementById('preview-iccid');
+            if (previewIccid) previewIccid.textContent = 'Not found (using server default)';
+        }
+
+        // Auto-detect profile class based on filename
+        const profileClassSelect = document.getElementById('import-profile-class');
+        if (profileClassSelect) {
+            const lowerName = file.name.toLowerCase();
+            if (lowerName.includes('test') || lowerName.includes('ts48') || lowerName.includes('conformance')) {
+                profileClassSelect.value = 'TEST';
+            } else {
+                profileClassSelect.value = 'OPERATIONAL';
+            }
+        }
+
+        // Update preview details
+        const previewFilename = document.getElementById('preview-filename');
+        if (previewFilename) previewFilename.textContent = file.name;
+        
+        const previewFilesize = document.getElementById('preview-filesize');
+        if (previewFilesize) previewFilesize.textContent = `${(file.size / 1024).toFixed(2)} KB`;
+        
+        const previewSpname = document.getElementById('preview-spname');
+        if (previewSpname) previewSpname.textContent = spName || 'Not found';
+        
+        const previewProfilename = document.getElementById('preview-profilename');
+        if (previewProfilename) previewProfilename.textContent = profileName || 'Not found';
+        
+        const previewArea = document.getElementById('profile-preview-area');
+        if (previewArea) {
+            previewArea.style.display = 'block';
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function extractStringField(bytes, tagValue) {
+    let limit = Math.min(bytes.length - 4, 2000);
+    for (let i = 0; i < limit; i++) {
+        if (bytes[i] === tagValue) {
+            let lenByte = bytes[i + 1];
+            let length = 0;
+            let valueOffset = 2;
+
+            if (lenByte < 128) {
+                length = lenByte;
+            } else {
+                let numLenBytes = lenByte & 0x7F;
+                if (numLenBytes > 0 && numLenBytes <= 4 && i + 1 + numLenBytes < bytes.length) {
+                    for (let j = 0; j < numLenBytes; j++) {
+                        length = (length << 8) | bytes[i + 2 + j];
+                    }
+                    valueOffset = 2 + numLenBytes;
+                }
+            }
+
+            if (length > 0 && length < 256 && i + valueOffset + length <= bytes.length) {
+                const slice = bytes.slice(i + valueOffset, i + valueOffset + length);
+                try {
+                    return new TextDecoder('utf-8').decode(slice);
+                } catch (e) {
+                    return null;
+                }
+            }
+        }
+    }
+    return null;
 }
 
 if (btnImport) {
@@ -653,6 +769,10 @@ if (btnImport) {
             if (dropzone) {
                 dropzone.querySelector('.dropzone-text').textContent = 'Drag & drop profile file or click to browse';
                 dropzone.querySelector('.dropzone-subtext').textContent = 'Supports .der, .bin, or base64 files';
+            }
+            const previewArea = document.getElementById('profile-preview-area');
+            if (previewArea) {
+                previewArea.style.display = 'none';
             }
 
             fetchProfiles();
