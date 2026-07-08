@@ -18,6 +18,7 @@ public class Profile {
   private String networkType; // "4G" or "5G"
 
   @Column(columnDefinition = "TEXT")
+  @jakarta.persistence.Convert(converter = in.hutta.smdp.util.CryptoConverter.class)
   private String profilePayload; // Base64 mock BPP or profile bytes
 
   @Column(name = "profile_class")

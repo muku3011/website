@@ -22,4 +22,10 @@ logging:
     root: INFO
     in.hutta.smdp: DEBUG
 
+smdp:
+  keystore-path: ${SMDP_KEYSTORE_PATH:smdp-keystore.p12}
+  keystore-password: ${SMDP_KEYSTORE_PASSWORD:changeit}
+  db-encryption-key: ${SMDP_DB_ENCRYPTION_KEY:}
+
+
 

@@ -21,6 +21,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -40,19 +41,85 @@ public class CryptoService {
     }
   }
 
-  public CryptoService() {
-    try {
-      KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", "BC");
-      kpg.initialize(new ECGenParameterSpec("secp256r1")); // secp256r1 is NIST P-256
-      this.smdpKeyPair = kpg.generateKeyPair();
-      log.info("Generated SM-DP+ ECDSA/ECDH Key Pair (NIST P-256/secp256r1)");
+  private static class CredentialsHolder {
+    final KeyPair keyPair;
+    final String certificateBase64;
 
-      this.smdpCertificateBase64 = generateSelfSignedCertificate(this.smdpKeyPair);
-      log.info("Generated real self-signed SM-DP+ X.509 certificate (ECDSA/NIST P-256)");
+    CredentialsHolder(KeyPair keyPair, String certificateBase64) {
+      this.keyPair = keyPair;
+      this.certificateBase64 = certificateBase64;
+    }
+  }
+
+  public CryptoService(
+      @Value("${smdp.keystore-path:smdp-keystore.p12}") String keystorePath,
+      @Value("${smdp.keystore-password:changeit}") String keystorePassword) {
+    try {
+      CredentialsHolder holder = loadOrGenerateCredentials(keystorePath, keystorePassword);
+      this.smdpKeyPair = holder.keyPair;
+      this.smdpCertificateBase64 = holder.certificateBase64;
     } catch (Exception e) {
-      log.error("Failed to generate SM-DP+ Key Pair / Certificate", e);
+      log.error("Failed to initialize SM-DP+ Key Pair / Certificate from keystore", e);
       throw new RuntimeException(e);
     }
+  }
+
+  private CredentialsHolder loadOrGenerateCredentials(String pathStr, String password)
+      throws Exception {
+    char[] pwd = password.toCharArray();
+    java.io.File file = new java.io.File(pathStr);
+    KeyStore ks = KeyStore.getInstance("PKCS12", "BC");
+
+    if (file.exists()) {
+      log.info("Loading SM-DP+ credentials from keystore: {}", file.getAbsolutePath());
+      try (java.io.FileInputStream fis = new java.io.FileInputStream(file)) {
+        ks.load(fis, pwd);
+      }
+      PrivateKey privateKey = (PrivateKey) ks.getKey("smdp-key", pwd);
+      java.security.cert.X509Certificate certificate =
+          (java.security.cert.X509Certificate) ks.getCertificate("smdp-key");
+      if (privateKey != null && certificate != null) {
+        PublicKey publicKey = certificate.getPublicKey();
+        KeyPair kp = new KeyPair(publicKey, privateKey);
+        String certBase64 = Base64.getEncoder().encodeToString(certificate.getEncoded());
+        log.info(
+            "Successfully loaded persistent SM-DP+ keys and certificate (Subject: {})",
+            certificate.getSubjectX500Principal());
+        return new CredentialsHolder(kp, certBase64);
+      }
+      log.warn("Keystore exists but smdp-key entry was not found. Re-generating credentials...");
+    }
+
+    // Generate new credentials
+    log.info("Generating new persistent SM-DP+ credentials...");
+    KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", "BC");
+    kpg.initialize(new ECGenParameterSpec("secp256r1"));
+    KeyPair kp = kpg.generateKeyPair();
+
+    String certBase64 = generateSelfSignedCertificate(kp);
+    byte[] certBytes = Base64.getDecoder().decode(certBase64);
+    java.security.cert.CertificateFactory cf =
+        java.security.cert.CertificateFactory.getInstance("X.509");
+    java.security.cert.X509Certificate cert =
+        (java.security.cert.X509Certificate)
+            cf.generateCertificate(new java.io.ByteArrayInputStream(certBytes));
+
+    // Save to keystore
+    ks.load(null, pwd);
+    ks.setKeyEntry("smdp-key", kp.getPrivate(), pwd, new java.security.cert.Certificate[] {cert});
+
+    // Create parent directories if they don't exist
+    java.io.File parent = file.getParentFile();
+    if (parent != null && !parent.exists()) {
+      parent.mkdirs();
+    }
+
+    try (java.io.FileOutputStream fos = new java.io.FileOutputStream(file)) {
+      ks.store(fos, pwd);
+    }
+    log.info(
+        "Successfully generated and saved new SM-DP+ credentials to {}", file.getAbsolutePath());
+    return new CredentialsHolder(kp, certBase64);
   }
 
   private String generateSelfSignedCertificate(KeyPair keyPair) {

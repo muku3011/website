@@ -21,3 +21,8 @@ logging:
   level:
     root: INFO
     in.hutta.smdp: DEBUG
+
+smdp:
+  keystore-path: target/smdp-keystore-test.p12
+  keystore-password: testpassword
+
