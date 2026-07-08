@@ -180,3 +180,26 @@ The workflow **[deploy-smdp.yml](file:///Users/muku/Projects/website/.github/wor
    ```bash
    sudo systemctl restart smdp-plus.service
    ```
+
+---
+
+## 7. Security Hardening & Standards Compliance (SAS FS.18 & SGP.22)
+
+The server incorporates strict security mechanisms to comply with GSMA SGP.22 and SAS FS.18 guidelines:
+
+### 1. Database-at-Rest Encryption (SAS FS.18 Area B)
+* Sensitive eSIM profiles are GCM-encrypted at the database column level (`Profile.profilePayload`) using the JPA `@Converter` [CryptoConverter.java](file:///Users/muku/Projects/website/smdp-plus/src/main/java/in/hutta/smdp/util/CryptoConverter.java).
+* Uses **AES-GCM-256** with dynamic 12-byte random initialization vectors (IVs) prepended to the ciphertext.
+* Decryption is handled transparently during entity loading. The encryption key is loaded on boot from environment secrets (`smdp.db-encryption-key`).
+
+### 2. Persistent Cryptographic Keystore (SAS FS.18 Area A)
+* The SM-DP+ EC identity key pair and root-signed certificate are stored persistently in a password-protected PKCS12 file (`smdp-keystore.p12`).
+* This maintains the server's cryptographic identity across reboots, satisfying SAS key-lifecycle policies and avoiding client connection issues.
+
+### 3. Compliant PKI Certificate Chain Verification (SGP.22 Section 5.7)
+* During the client handshake, the server expects a 4-element `AuthenticateServerResponse` DER sequence: `[euiccSigned1, euiccSignature1, euiccCertificate, eumCertificate]`.
+* Performs PKIX path validation up to a GSMA Root CA trust anchor:
+  1. Verifies the `eumCertificate` is signed by the trusted GSMA Root CA.
+  2. Verifies the `euiccCertificate` is signed by the validated EUM certificate.
+  3. Validates expiration dates, constraints, and key usages.
+* Extracts the validated public key from the eUICC certificate to verify the client's signature.
