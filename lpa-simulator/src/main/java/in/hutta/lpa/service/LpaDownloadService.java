@@ -62,6 +62,7 @@ public class LpaDownloadService {
       HttpHeaders headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_JSON);
       headers.set("User-Agent", "gsma-rsp-lpa/3.0.0");
+      headers.set("X-Admin-Protocol", "gsma/rsp/v3.1.0");
 
       // Step 1: initiateAuthentication
       byte[] challBytes = new byte[16];
