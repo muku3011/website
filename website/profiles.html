@@ -103,10 +103,15 @@
                     <input type="text" id="import-mcc-mnc" value="00101" placeholder="e.g. 20810" class="form-input">
                 </div>
                 
-                <button id="btn-import-profile" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-                    Import Profile
-                </button>
+                <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                    <button id="btn-import-profile" class="btn btn-primary" style="flex: 1;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                        Import Profile
+                    </button>
+                    <button id="btn-cancel-import" class="btn btn-secondary" style="flex: 1; display: none;">
+                        Cancel
+                    </button>
+                </div>
             </div>
         </section>
 

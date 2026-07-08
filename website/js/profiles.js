@@ -567,6 +567,7 @@ const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('profile-file-input');
 const overrideIccidInput = document.getElementById('override-iccid');
 const btnImport = document.getElementById('btn-import-profile');
+const btnCancelImport = document.getElementById('btn-cancel-import');
 let selectedFile = null;
 
 if (dropzone) {
@@ -605,6 +606,9 @@ function updateDropzoneUI() {
         dropzone.querySelector('.dropzone-text').textContent = `Selected: ${selectedFile.name}`;
         dropzone.querySelector('.dropzone-subtext').textContent = `Size: ${(selectedFile.size / 1024).toFixed(2)} KB`;
         readAndParseProfileMetadata(selectedFile);
+        if (btnCancelImport) {
+            btnCancelImport.style.display = 'block';
+        }
     }
 }
 
@@ -728,7 +732,30 @@ function extractStringField(bytes, tagValue, searchLimit) {
             }
         }
     }
-    return null;
+}
+
+function resetImportForm() {
+    selectedFile = null;
+    if (fileInput) fileInput.value = '';
+    if (overrideIccidInput) overrideIccidInput.value = '';
+    if (dropzone) {
+        dropzone.querySelector('.dropzone-text').textContent = 'Drag & drop profile file or click to browse';
+        dropzone.querySelector('.dropzone-subtext').textContent = 'Supports .der, .bin, or base64 files';
+    }
+    const previewArea = document.getElementById('profile-preview-area');
+    if (previewArea) {
+        previewArea.style.display = 'none';
+    }
+    if (btnCancelImport) {
+        btnCancelImport.style.display = 'none';
+    }
+}
+
+if (btnCancelImport) {
+    btnCancelImport.addEventListener('click', () => {
+        resetImportForm();
+        addLogLine("Profile import cancelled.", "info");
+    });
 }
 
 if (btnImport) {
@@ -771,17 +798,7 @@ if (btnImport) {
             addLogLine(`Profile imported successfully!`, "success");
             
             // Reset state
-            selectedFile = null;
-            fileInput.value = '';
-            overrideIccidInput.value = '';
-            if (dropzone) {
-                dropzone.querySelector('.dropzone-text').textContent = 'Drag & drop profile file or click to browse';
-                dropzone.querySelector('.dropzone-subtext').textContent = 'Supports .der, .bin, or base64 files';
-            }
-            const previewArea = document.getElementById('profile-preview-area');
-            if (previewArea) {
-                previewArea.style.display = 'none';
-            }
+            resetImportForm();
 
             fetchProfiles();
         } catch (err) {
