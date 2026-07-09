@@ -95,10 +95,11 @@ async function refreshServices() {
     const grid = document.getElementById('service-grid');
     grid.innerHTML = services.map(s => {
       const status = s.active ? 'active' : 'inactive';
+      const stateClass = s.active ? 'active-state' : 'inactive-state';
       const httpBadge = s.httpStatus
           ? `<span class="service-tile-port">HTTP ${s.httpStatus}</span>` : '';
       return `
-        <div class="service-tile">
+        <div class="service-tile ${stateClass}">
           <div class="service-tile-name">${s.name}</div>
           <div class="service-tile-port">:${s.port}</div>
           <div class="status-pill ${status}">
