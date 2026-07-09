@@ -17,6 +17,7 @@
     <style>
         /* ── Sentinel-specific layout tokens (using shared Hutta design system) ── */
         .sentinel-grid {
+            width: 100%;
             max-width: 1650px;
             margin: 0 auto;
             padding: 2.5rem 1.5rem;
@@ -1101,38 +1102,6 @@
 
     <script src="js/auth-nav.js"></script>
     <script src="js/sentinel.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                const grid = document.querySelector('.sentinel-grid');
-                const content = document.querySelector('.sentinel-content');
-                const row = document.querySelector('.row-3');
-                const card = document.querySelector('.sentinel-card');
-                
-                const debugDiv = document.createElement('div');
-                debugDiv.style.position = 'fixed';
-                debugDiv.style.bottom = '10px';
-                debugDiv.style.right = '10px';
-                debugDiv.style.background = 'rgba(0,0,0,0.85)';
-                debugDiv.style.color = '#00ff00';
-                debugDiv.style.padding = '15px';
-                debugDiv.style.borderRadius = '8px';
-                debugDiv.style.zIndex = '99999';
-                debugDiv.style.fontSize = '12px';
-                debugDiv.style.fontFamily = 'monospace';
-                debugDiv.style.border = '1px solid #00ff00';
-                
-                debugDiv.innerHTML = `
-                    <b>GRID:</b> w=${grid?.offsetWidth}px display=${window.getComputedStyle(grid)?.display}<br/>
-                    <b>CONTENT:</b> w=${content?.offsetWidth}px display=${window.getComputedStyle(content)?.display}<br/>
-                    <b>ROW-3:</b> w=${row?.offsetWidth}px display=${window.getComputedStyle(row)?.display}<br/>
-                    <b>ROW-3 grid-template:</b> ${window.getComputedStyle(row)?.gridTemplateColumns}<br/>
-                    <b>CARD:</b> w=${card?.offsetWidth}px
-                `;
-                document.body.appendChild(debugDiv);
-            }, 1000);
-        });
-    </script>
 </body>
 
 </html>
