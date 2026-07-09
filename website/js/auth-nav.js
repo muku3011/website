@@ -44,11 +44,16 @@
     // Dynamic Navigation Tab Visibility Rules
     function initNavigation() {
         const navProfiles = document.getElementById('nav-profiles');
+        const navSentinel = document.getElementById('nav-sentinel');
         const isLoggedIn = !!window.userNameVal;
 
         // Profiles tab: visible to any authenticated user
         if (navProfiles) {
             navProfiles.style.display = isLoggedIn ? 'inline-block' : 'none';
+        }
+        // Sentinel tab: visible to any authenticated user
+        if (navSentinel) {
+            navSentinel.style.display = isLoggedIn ? 'inline-block' : 'none';
         }
         // Admin tab has been removed — user management is done in Keycloak console
     }

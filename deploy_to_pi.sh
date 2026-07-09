@@ -159,23 +159,28 @@ if ask_yes_no "Do you want to deploy the Blog Service Jar file ($(basename "$LOC
     fi
 fi
 
-# --- 5. Service Monitor & HTML Status Page Deployment ---
-if ask_yes_no "Do you want to deploy the lightweight service monitor and status page?"; then
-    echo -e "${YELLOW}[*] Syncing monitor.sh script...${NC}"
-    ssh "${TARGET_USER}@${TARGET_IP}" "mkdir -p '${REMOTE_PATH}/scripts'"
-    rsync -avz "scripts/monitor.sh" "${TARGET_USER}@${TARGET_IP}:${REMOTE_PATH}/scripts/monitor.sh"
-    ssh "${TARGET_USER}@${TARGET_IP}" "chmod +x '${REMOTE_PATH}/scripts/monitor.sh'"
-    
-    echo -e "${YELLOW}[*] Setting up 1-minute cron job for status page generation...${NC}"
-    ssh -t "${TARGET_USER}@${TARGET_IP}" "
-        # Create cron file for monitoring if not exists
-        (crontab -l 2>/dev/null | grep -v 'monitor.sh'; echo '* * * * * ${REMOTE_PATH}/scripts/monitor.sh') | crontab -
-        # Run it once immediately to generate initial page
-        sudo mkdir -p /var/www/html
-        sudo chown -R ${TARGET_USER}:${TARGET_USER} /var/www/html 2>/dev/null || true
-        ${REMOTE_PATH}/scripts/monitor.sh
-    "
-    echo -e "${GREEN}[+] Service monitor deployed and status page initialized.${NC}"
+
+# --- 6. Monitor Service (Sentinel) Jar Deployment ---
+LOCAL_MONITOR_JAR="monitor-service/target/monitor-service-1.0.0.jar"
+REMOTE_MONITOR_DIR="/home/rbpi/monitor-service"
+if ask_yes_no "Do you want to deploy the Monitor Service (Sentinel) Jar file?"; then
+    if [ -f "$LOCAL_MONITOR_JAR" ]; then
+        echo -e "${YELLOW}[*] Syncing Sentinel Monitor Service jar and setup script...${NC}"
+        ssh "${TARGET_USER}@${TARGET_IP}" "mkdir -p '${REMOTE_MONITOR_DIR}'"
+        rsync -avz "$LOCAL_MONITOR_JAR" "${TARGET_USER}@${TARGET_IP}:${REMOTE_MONITOR_DIR}/monitor-service.jar"
+
+        if [ -f "monitor-service/setup_pi_service.sh" ]; then
+            rsync -avz "monitor-service/setup_pi_service.sh" "${TARGET_USER}@${TARGET_IP}:${REMOTE_MONITOR_DIR}/setup_pi_service.sh"
+            ssh "${TARGET_USER}@${TARGET_IP}" "chmod +x '${REMOTE_MONITOR_DIR}/setup_pi_service.sh'"
+            echo -e "${YELLOW}[*] Registering Sentinel systemd service on remote target...${NC}"
+            ssh -t "${TARGET_USER}@${TARGET_IP}" "sudo '${REMOTE_MONITOR_DIR}/setup_pi_service.sh'"
+        fi
+
+        echo -e "${GREEN}[+] Monitor Service jar deployed successfully.${NC}"
+        ssh -t "${TARGET_USER}@${TARGET_IP}" "sudo systemctl restart monitor-service 2>/dev/null || echo -e '${YELLOW}Note: Failed to restart monitor-service.${NC}'"
+    else
+        echo -e "${RED}Warning: '${LOCAL_MONITOR_JAR}' not found. Skipping Monitor Service deployment.${NC}"
+    fi
 fi
 
 # ── Step 5: Remote Verification & Diagnostics ────────────────────────────────

@@ -177,12 +177,23 @@ fi
 
 provision_service_database "Blog" "blog" "blogdb" "$BLOG_DB_PASS"
 
-# 7. Persist consolidated secrets without overwriting unrelated values
+# 7. Setup Monitor Service (Sentinel) User & Database
+if [ -n "${MONITOR_DB_PASSWORD:-}" ]; then
+    MONITOR_DB_PASS="$MONITOR_DB_PASSWORD"
+else
+    MONITOR_DB_PASS=$(generate_password)
+    echo -e "${YELLOW}[*] Generated a new Monitor (Sentinel) database password and stored it in ${SECRETS_FILE}.${NC}"
+fi
+
+provision_service_database "Monitor (Sentinel)" "monitor" "monitordb" "$MONITOR_DB_PASS"
+
+# 8. Persist consolidated secrets without overwriting unrelated values
 chmod 600 "$SECRETS_FILE"
 update_secret_value "SMDP_DB_PASSWORD" "$SMDP_DB_PASS"
 update_secret_value "LPA_DB_PASSWORD" "$LPA_DB_PASS"
 update_secret_value "KC_DB_PASSWORD" "$KC_DB_PASS"
 update_secret_value "BLOG_DB_PASSWORD" "$BLOG_DB_PASS"
+update_secret_value "MONITOR_DB_PASSWORD" "$MONITOR_DB_PASS"
 
 echo -e "${GREEN}[+] PostgreSQL setup and verification completed successfully!${NC}"
 echo ""

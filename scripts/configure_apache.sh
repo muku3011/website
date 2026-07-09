@@ -117,6 +117,14 @@ cat > "$SSL_TMP" <<'APACHEEOF'
     ProxyPass /api/blog/ http://127.0.0.1:8094/api/blog/
     ProxyPassReverse /api/blog/ http://127.0.0.1:8094/api/blog/
 
+    # -- Reverse Proxy: Sentinel Monitor Service --
+    ProxyPass /api/sentinel/ http://127.0.0.1:8095/api/sentinel/
+    ProxyPassReverse /api/sentinel/ http://127.0.0.1:8095/api/sentinel/
+    ProxyPass /api/alert-rules http://127.0.0.1:8095/api/alert-rules
+    ProxyPassReverse /api/alert-rules http://127.0.0.1:8095/api/alert-rules
+    ProxyPass /api/alert-history http://127.0.0.1:8095/api/alert-history
+    ProxyPassReverse /api/alert-history http://127.0.0.1:8095/api/alert-history
+
     # -- OIDC: exclude redirect_uri callback from proxying --
     ProxyPass /redirect_uri !
 
@@ -164,6 +172,22 @@ cat >> "$SSL_TMP" <<'APACHEEOF'
         Header add Set-Cookie "hutta_groups=\"%{OIDC_CLAIM_groups}e\"; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_groups
 
         # Prevent caching of protected pages
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </Location>
+
+    # -- sentinel.html: requires any authenticated Keycloak user --
+    <Location /sentinel.html>
+        AuthType openid-connect
+        Require valid-user
+
+        Header always set Set-Cookie "hutta_auth=true; Path=/; Secure; SameSite=Lax"
+        Header add Set-Cookie "hutta_user=\"%{OIDC_CLAIM_preferred_username}e\"; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_preferred_username
+        Header add Set-Cookie "hutta_name=\"%{OIDC_CLAIM_name}e\"; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_name
+        Header add Set-Cookie "hutta_email=\"%{OIDC_CLAIM_email}e\"; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_email
+        Header add Set-Cookie "hutta_groups=\"%{OIDC_CLAIM_groups}e\"; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_groups
+
         Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
         Header set Pragma "no-cache"
         Header set Expires "0"
