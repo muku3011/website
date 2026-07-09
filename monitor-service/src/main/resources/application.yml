@@ -31,6 +31,7 @@ monitor:
     lpa-password: ${LPA_DB_PASSWORD:}
     blog-password: ${BLOG_DB_PASSWORD:}
     monitor-password: ${MONITOR_DB_PASSWORD:}
+    keycloak-password: ${KEYCLOAK_DB_PASSWORD:}
 
 management:
   endpoints:

@@ -22,6 +22,7 @@ ExecStart=/usr/bin/java \
   -Dmonitor.db.lpa-password=${LPA_DB_PASSWORD} \
   -Dmonitor.db.blog-password=${BLOG_DB_PASSWORD} \
   -Dmonitor.db.monitor-password=${MONITOR_DB_PASSWORD} \
+  -Dmonitor.db.keycloak-password=${KEYCLOAK_DB_PASSWORD} \
   -jar /home/rbpi/monitor-service/monitor-service.jar
 SuccessExitStatus=143
 StandardOutput=journal
