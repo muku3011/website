@@ -1,0 +1,28 @@
+name: Deploy Monitor Service (Self-Hosted)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'monitor-service/**'
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Spring Boot JAR
+        run: |
+          cd monitor-service
+          mvn clean package -DskipTests
+
+      - name: Copy JAR to App Directory
+        run: |
+          cp monitor-service/target/monitor-service-1.0.0.jar /home/rbpi/monitor-service/monitor-service.jar
+
+      - name: Restart Monitor Service
+        run: |
+          sudo systemctl restart monitor-service.service
