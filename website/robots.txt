@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Disallow private/authenticated pages
+Disallow: /sentinel.html
+Disallow: /profiles.html
+
+Sitemap: https://hutta.in/sitemap.xml

@@ -2508,6 +2508,7 @@ input[type="file"].form-input::file-selector-button:hover {
     padding: 0 1.5rem;
     flex: 1;
     align-items: start;
+    min-height: calc(100svh - 140px);
 }
 
 .tools-sidebar {
@@ -2809,14 +2810,137 @@ input[type="file"].form-input::file-selector-button:hover {
 
 /* Hero Section */
 .portfolio-hero {
-    min-height: 80vh;
+    min-height: 100svh;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
-    padding: 4rem 2rem;
+    padding: 6rem 2rem 4rem;
     overflow: hidden;
 }
+
+/* ── Profile Photo ─────────────────────────────────────────────────────────── */
+.profile-photo-wrap {
+    position: relative;
+    width: 260px;
+    height: 260px;
+    margin: 0 auto;
+}
+
+.profile-photo {
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.profile-photo:hover {
+    transform: scale(1.04);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+}
+
+/* spinning dashed ring */
+.profile-photo-ring {
+    position: absolute;
+    inset: -12px;
+    border-radius: 50%;
+    border: 2px dashed var(--card-border);
+    animation: rotate-dashed 25s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* soft glow behind photo */
+.profile-photo-glow {
+    position: absolute;
+    inset: -20px;
+    border-radius: 50%;
+    background: radial-gradient(circle, hsla(var(--hue-primary), 100%, 60%, 0.15) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* caption below photo */
+.whoami-caption {
+    margin-top: 1.2rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 0.7rem 0.9rem;
+    max-width: 280px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.whoami-caption-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+.whoami-caption p {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0;
+    font-style: italic;
+}
+
+/* ── Secondary CTA button ───────────────────────────────────────────────────── */
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.55rem 1.2rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: 1.5px solid var(--card-border);
+    color: var(--text-primary);
+    background: transparent;
+    text-decoration: none;
+    transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.btn-secondary:hover {
+    border-color: var(--primary-glow);
+    background: hsla(var(--hue-primary), 100%, 60%, 0.08);
+    color: var(--primary-glow);
+}
+
+/* ── Hero actions row spacing ───────────────────────────────────────────────── */
+.hero-actions-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+}
+
+/* ── Mobile: left-align bio text ────────────────────────────────────────────── */
+@media (max-width: 640px) {
+    .hero-desc { text-align: left; }
+    .hero-actions-row { justify-content: center; }
+}
+
+/* ── Scroll-driven fade-up entrance animations ─────────────────────────────── */
+@supports (animation-timeline: view()) {
+    .scroll-animate {
+        animation: fade-up-section linear both;
+        animation-timeline: view();
+        animation-range: entry 5% entry 35%;
+    }
+}
+
+@keyframes fade-up-section {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
 
 .hero-glow-1 {
     position: absolute;
