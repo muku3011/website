@@ -262,6 +262,10 @@ async function refreshSecurity() {
       { label: 'UFW Firewall', value: s.ufwActive ? '✓ Active' : '✗ Inactive', ok: s.ufwActive },
       { label: 'Fail2ban', value: s.fail2banActive ? '✓ Active' : '✗ Inactive', ok: s.fail2banActive },
       { label: 'Unattended Upgrades', value: s.unattendedUpgradesActive ? '✓ Active' : '✗ Inactive', ok: s.unattendedUpgradesActive },
+      { label: 'SSH Password Auth', value: s.sshPasswordAuthDisabled ? '✓ Disabled (Secure)' : '✗ Enabled (Insecure)', ok: s.sshPasswordAuthDisabled },
+      { label: 'SSH Root Login', value: s.sshRootLoginDisabled ? '✓ Disabled (Secure)' : '✗ Enabled (Insecure)', ok: s.sshRootLoginDisabled },
+      { label: 'Apache Security Headers', value: s.apacheSecurityHeadersActive ? '✓ Configured' : '✗ Missing', ok: s.apacheSecurityHeadersActive },
+      { label: 'Kernel parameters', value: s.kernelHardeningActive ? '✓ Hardened' : '✗ Default', ok: s.kernelHardeningActive },
       { label: 'SSH Failures (24h)', value: s.sshFailures24h ?? 0, ok: (s.sshFailures24h ?? 0) === 0 },
       { label: 'Fail2ban Banned IPs', value: s.fail2banBannedIps ?? 0, ok: true },
       { label: 'Last Auto-Upgrade', value: s.lastAutoUpgrade ?? 'N/A', ok: true },
@@ -280,12 +284,13 @@ async function refreshSecurity() {
           <span class="data-value" style="color:${r.ok ? 'var(--success-glow)' : 'var(--warning-glow)'};">${r.value}</span>
         </div>`;
     }).join('');
-    securityOk = s.ufwActive && s.fail2banActive;
+    securityOk = s.ufwActive && s.fail2banActive && s.sshPasswordAuthDisabled && s.sshRootLoginDisabled;
   } catch (e) {
     console.warn('security refresh failed:', e);
     securityOk = false;
   }
 }
+
 
 // ── Security Incidents ────────────────────────────────────────────────────────
 

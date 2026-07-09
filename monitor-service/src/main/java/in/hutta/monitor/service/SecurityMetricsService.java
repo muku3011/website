@@ -21,6 +21,12 @@ public class SecurityMetricsService {
     metrics.put("sshFailures24h", countSshFailures());
     metrics.put("fail2banBannedIps", countBannedIps());
     metrics.put("lastAutoUpgrade", lastAutoUpgrade());
+
+    // Hardening metrics
+    metrics.put("sshPasswordAuthDisabled", checkSshSetting("passwordauthentication no"));
+    metrics.put("sshRootLoginDisabled", checkSshSetting("permitrootlogin no"));
+    metrics.put("apacheSecurityHeadersActive", checkApacheHeadersConf());
+    metrics.put("kernelHardeningActive", checkKernelHardening());
     return metrics;
   }
 
@@ -80,6 +86,45 @@ public class SecurityMetricsService {
       return result.isBlank() ? "No recent log entry" : result.trim();
     } catch (Exception e) {
       return "Unavailable";
+    }
+  }
+
+  private boolean checkSshSetting(String settingPattern) {
+    try {
+      String result =
+          sys.runCommand(
+              "bash", "-c", "sudo sshd -T 2>/dev/null | grep -i '" + settingPattern + "' || true");
+      return !result.isBlank();
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  private boolean checkApacheHeadersConf() {
+    try {
+      // Check if Apache security-headers conf is enabled
+      String result =
+          sys.runCommand(
+              "bash",
+              "-c",
+              "[ -f /etc/apache2/conf-enabled/security-headers.conf ] && echo 'enabled' || true");
+      return "enabled".equals(result.trim());
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  private boolean checkKernelHardening() {
+    try {
+      // Check active rp_filter value (should be 1 for hardened status)
+      String result =
+          sys.runCommand(
+              "bash",
+              "-c",
+              "sysctl net.ipv4.conf.all.rp_filter 2>/dev/null | awk '{print $NF}' || echo 0");
+      return "1".equals(result.trim());
+    } catch (Exception e) {
+      return false;
     }
   }
 }
