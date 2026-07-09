@@ -8,6 +8,15 @@ const RULES_URL = '/api/alert-rules';
 const HISTORY_URL = '/api/alert-history';
 const POLL_INTERVAL = 5000;
 
+// Health state flags for sidebar dots
+let systemOk = true;
+let servicesOk = true;
+let databasesOk = true;
+let certificatesOk = true;
+let dnsOk = true;
+let securityOk = true;
+let alertsOk = true;
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 async function fetchJson(url) {
@@ -70,8 +79,11 @@ async function refreshSystem() {
     document.getElementById('disk-detail').textContent =
         `Free: ${formatBytes(disk.freeKb ?? 0)}`;
     setProgress('disk-bar', diskPct);
+    
+    systemOk = (cpu < 90 && memPct < 90 && diskPct < 90);
   } catch (e) {
     console.warn('system refresh failed:', e);
+    systemOk = false;
   }
 }
 
@@ -95,8 +107,10 @@ async function refreshServices() {
           ${httpBadge}
         </div>`;
     }).join('');
+    servicesOk = services.every(s => s.active);
   } catch (e) {
     console.warn('services refresh failed:', e);
+    servicesOk = false;
   }
 }
 
@@ -116,8 +130,10 @@ async function refreshDatabases() {
           </div>
         </div>`;
     }).join('');
+    databasesOk = dbs.every(db => db.connected);
   } catch (e) {
     console.warn('databases refresh failed:', e);
+    databasesOk = false;
   }
 }
 
@@ -141,8 +157,10 @@ async function refreshCertificates() {
           ${cron}
         </div>`;
     }).join('');
+    certificatesOk = certs.every(c => (c.daysLeft ?? -1) >= 14);
   } catch (e) {
     console.warn('certificates refresh failed:', e);
+    certificatesOk = false;
   }
 }
 
@@ -174,8 +192,10 @@ async function refreshDns() {
       </div>
       ${domainRows}
       <div class="data-row"><span class="data-label">DDNS Status</span>${ddns}</div>`;
+    dnsOk = (d.domains ?? []).every(dom => dom.matches);
   } catch (e) {
     console.warn('dns refresh failed:', e);
+    dnsOk = false;
   }
 }
 
@@ -206,8 +226,10 @@ async function refreshSecurity() {
           <span class="data-value" style="color:${r.ok ? 'var(--success-glow)' : 'var(--warning-glow)'};">${r.value}</span>
         </div>`;
     }).join('');
+    securityOk = s.ufwActive && s.fail2banActive;
   } catch (e) {
     console.warn('security refresh failed:', e);
+    securityOk = false;
   }
 }
 
@@ -277,6 +299,7 @@ async function refreshHistory() {
     const container = document.getElementById('alert-history');
     if (!items.length) {
       container.innerHTML = '<div class="empty-state">No alerts have fired. All systems nominal ✓</div>';
+      alertsOk = true;
       return;
     }
     container.innerHTML = items.map(e => {
@@ -291,8 +314,10 @@ async function refreshHistory() {
           ${resolvedTag}
         </div>`;
     }).join('');
+    alertsOk = (items.filter(e => !e.resolved).length === 0);
   } catch (e) {
     console.warn('history refresh failed:', e);
+    alertsOk = false;
   }
 }
 
@@ -359,6 +384,32 @@ function updateTimestamp() {
       'Updated ' + new Date().toLocaleTimeString();
 }
 
+function updateSidebarDots() {
+  const dotOverview = document.getElementById('dot-overview');
+  if (dotOverview) {
+    const ok = systemOk && servicesOk;
+    dotOverview.className = 'sidebar-status-dot' + (ok ? '' : ' warn');
+  }
+
+  const dotInfra = document.getElementById('dot-infrastructure');
+  if (dotInfra) {
+    const ok = databasesOk && certificatesOk && dnsOk;
+    dotInfra.className = 'sidebar-status-dot' + (ok ? '' : ' warn');
+  }
+
+  const dotSecurity = document.getElementById('dot-security');
+  if (dotSecurity) {
+    const ok = securityOk;
+    dotSecurity.className = 'sidebar-status-dot' + (ok ? '' : ' warn');
+  }
+
+  const dotAlerts = document.getElementById('dot-alerts');
+  if (dotAlerts) {
+    const ok = alertsOk;
+    dotAlerts.className = 'sidebar-status-dot' + (ok ? '' : ' warn');
+  }
+}
+
 async function refreshAll() {
   await Promise.allSettled([
     refreshSystem(),
@@ -370,8 +421,24 @@ async function refreshAll() {
     refreshRules(),
     refreshHistory(),
   ]);
+  updateSidebarDots();
   updateTimestamp();
 }
+
+// ── Tab / Sidebar Switching Logic ───────────────────────────────────────────
+document.querySelectorAll('.sentinel-menu-item').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.sentinel-menu-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.sentinel-tab-panel').forEach(p => p.classList.remove('active'));
+
+    btn.classList.add('active');
+
+    const targetPanel = document.getElementById(btn.getAttribute('data-target'));
+    if (targetPanel) {
+      targetPanel.classList.add('active');
+    }
+  });
+});
 
 // Initial load + periodic refresh
 refreshAll();

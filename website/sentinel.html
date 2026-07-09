@@ -16,12 +16,14 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: 260px 1fr;
             gap: 1.5rem;
+            align-items: start;
         }
 
         .sentinel-page-header {
+            grid-column: span 2;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -70,23 +72,145 @@
             50% { opacity: 0.3; }
         }
 
+        /* ── Sidebar layout ── */
+        .sentinel-sidebar {
+            position: sticky;
+            top: 110px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius-md);
+            padding: 1rem;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        .sentinel-menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.7rem 0.9rem;
+            border-radius: var(--border-radius-sm);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            font-size: 0.88rem;
+            font-weight: 500;
+            border: 1px solid transparent;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-family: inherit;
+        }
+
+        .sentinel-menu-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-primary);
+        }
+
+        .sentinel-menu-item.active {
+            background: hsla(var(--hue-primary), 100%, 60%, 0.08);
+            color: var(--primary-glow);
+            border-color: hsla(var(--hue-primary), 100%, 60%, 0.2);
+        }
+
+        .sentinel-menu-label {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+        }
+
+        .sentinel-menu-label svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-glow);
+            box-shadow: 0 0 6px var(--success-glow);
+            flex-shrink: 0;
+            transition: all 0.3s;
+        }
+
+        .sidebar-status-dot.warn {
+            background: var(--warning-glow);
+            box-shadow: 0 0 6px var(--warning-glow);
+        }
+
+        /* ── Content panels ── */
+        .sentinel-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            min-width: 0;
+        }
+
+        .sentinel-tab-panel {
+            display: none;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .sentinel-tab-panel.active {
+            display: flex;
+        }
+
         /* ── Row layout ── */
         .row-3 {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
             gap: 1.5rem;
         }
 
         .row-2 {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
             gap: 1.5rem;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 991px) {
             .sentinel-grid {
-                padding: 1rem;
-                gap: 1rem;
+                grid-template-columns: 1fr;
+                padding: 1.25rem 1rem;
+                gap: 1.25rem;
+            }
+
+            .sentinel-page-header {
+                grid-column: auto;
+            }
+
+            .sentinel-sidebar {
+                position: sticky;
+                top: 88px;
+                z-index: 10;
+                flex-direction: row;
+                overflow-x: auto;
+                padding: 0.5rem;
+                border-radius: var(--border-radius-sm);
+                gap: 0.35rem;
+                white-space: nowrap;
+                scrollbar-width: none;
+            }
+
+            .sentinel-sidebar::-webkit-scrollbar {
+                display: none;
+            }
+
+            .sentinel-menu-item {
+                flex-shrink: 0;
+                width: auto;
+                padding: 0.5rem 0.85rem;
+                font-size: 0.85rem;
+            }
+
+            .sentinel-menu-item.active {
+                background: hsla(var(--hue-primary), 100%, 60%, 0.12);
             }
         }
 
@@ -501,128 +625,174 @@
             </div>
         </div>
 
-        <!-- Row 1: System Resources -->
-        <div class="row-3">
-            <!-- CPU -->
-            <div class="sentinel-card">
-                <div class="card-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/></svg>
-                    CPU
-                </div>
-                <div class="metric-value" id="cpu-value">—</div>
-                <div class="metric-sub" id="cpu-load">Load avg: —</div>
-                <div class="progress-track"><div class="progress-fill" id="cpu-bar" style="width:0%"></div></div>
-                <div class="metric-sub" style="margin-top:0.5rem;" id="cpu-temp">Temp: —</div>
-            </div>
-            <!-- Memory -->
-            <div class="sentinel-card">
-                <div class="card-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 19v-3M10 19v-3M14 19v-3M18 19v-3M6 8V5M10 8V5M14 8V5M18 8V5M3 8h18v8H3z"/></svg>
-                    Memory
-                </div>
-                <div class="metric-value" id="mem-value">—</div>
-                <div class="metric-sub" id="mem-detail">— MB / — MB</div>
-                <div class="progress-track"><div class="progress-fill" id="mem-bar" style="width:0%"></div></div>
-            </div>
-            <!-- Disk -->
-            <div class="sentinel-card">
-                <div class="card-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-                    Disk (/)
-                </div>
-                <div class="metric-value" id="disk-value">—</div>
-                <div class="metric-sub" id="disk-detail">Free: —</div>
-                <div class="progress-track"><div class="progress-fill" id="disk-bar" style="width:0%"></div></div>
-            </div>
-        </div>
-
-        <!-- Row 2: Services -->
-        <div class="sentinel-card">
-            <div class="card-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                Service Status
-            </div>
-            <div class="service-grid" id="service-grid">
-                <div class="empty-state">Loading services...</div>
-            </div>
-        </div>
-
-
-        <!-- Row 3: Databases & Security Summary -->
-        <div class="row-2">
-            <div class="sentinel-card">
-                <div class="card-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-                    Database Connections
-                </div>
-                <div id="db-list"></div>
-            </div>
-
-            <div class="sentinel-card">
-                <div class="card-title">
+        <!-- Sidebar Navigation -->
+        <aside class="sentinel-sidebar">
+            <button class="sentinel-menu-item active" data-target="panel-overview">
+                <span class="sentinel-menu-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+                    Overview
+                </span>
+                <div class="sidebar-status-dot" id="dot-overview"></div>
+            </button>
+            <button class="sentinel-menu-item" data-target="panel-infrastructure">
+                <span class="sentinel-menu-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
+                    Infrastructure
+                </span>
+                <div class="sidebar-status-dot" id="dot-infrastructure"></div>
+            </button>
+            <button class="sentinel-menu-item" data-target="panel-security">
+                <span class="sentinel-menu-label">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                     Security Summary
-                </div>
-                <div id="security-list"></div>
-            </div>
-        </div>
-
-        <!-- Row 4: SSL + DNS -->
-        <div class="row-2">
-            <div class="sentinel-card">
-                <div class="card-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    SSL Certificates
-                </div>
-                <div id="cert-list"></div>
-            </div>
-            <div class="sentinel-card">
-                <div class="card-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                    DNS & Public IP
-                </div>
-                <div id="dns-list"></div>
-            </div>
-        </div>
-
-        <!-- Row 6: Alert Rules -->
-        <div class="sentinel-card" id="alert-rules-card">
-            <div class="card-title" style="justify-content: space-between;">
-                <span style="display:flex;align-items:center;gap:0.5rem;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                    Alert Rules
                 </span>
-                <button class="btn btn-primary" id="new-rule-btn" style="font-size:0.82rem;padding:0.35rem 0.85rem;">+ New Rule</button>
-            </div>
-            <div style="overflow-x:auto;">
-                <table class="rules-table">
-                    <thead>
-                        <tr>
-                            <th>Component</th>
-                            <th>Metric</th>
-                            <th>Condition</th>
-                            <th>Severity</th>
-                            <th>Enabled</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="rules-tbody">
-                        <tr><td colspan="6" class="empty-state">Loading rules...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                <div class="sidebar-status-dot" id="dot-security"></div>
+            </button>
+            <button class="sentinel-menu-item" data-target="panel-alerts">
+                <span class="sentinel-menu-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    Alert Manager
+                </span>
+                <div class="sidebar-status-dot" id="dot-alerts"></div>
+            </button>
+        </aside>
 
-        <!-- Row 7: Alert History -->
-        <div class="sentinel-card">
-            <div class="card-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                Alert History
+        <!-- Main Content Panel Area -->
+        <section class="sentinel-content">
+            <!-- PANEL 1: Overview -->
+            <div class="sentinel-tab-panel active" id="panel-overview">
+                <!-- Row 1: System Resources -->
+                <div class="row-3">
+                    <!-- CPU -->
+                    <div class="sentinel-card">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/></svg>
+                            CPU
+                        </div>
+                        <div class="metric-value" id="cpu-value">—</div>
+                        <div class="metric-sub" id="cpu-load">Load avg: —</div>
+                        <div class="progress-track"><div class="progress-fill" id="cpu-bar" style="width:0%"></div></div>
+                        <div class="metric-sub" style="margin-top:0.5rem;" id="cpu-temp">Temp: —</div>
+                    </div>
+                    <!-- Memory -->
+                    <div class="sentinel-card">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 19v-3M10 19v-3M14 19v-3M18 19v-3M6 8V5M10 8V5M14 8V5M18 8V5M3 8h18v8H3z"/></svg>
+                            Memory
+                        </div>
+                        <div class="metric-value" id="mem-value">—</div>
+                        <div class="metric-sub" id="mem-detail">— MB / — MB</div>
+                        <div class="progress-track"><div class="progress-fill" id="mem-bar" style="width:0%"></div></div>
+                    </div>
+                    <!-- Disk -->
+                    <div class="sentinel-card">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                            Disk (/)
+                        </div>
+                        <div class="metric-value" id="disk-value">—</div>
+                        <div class="metric-sub" id="disk-detail">Free: —</div>
+                        <div class="progress-track"><div class="progress-fill" id="disk-bar" style="width:0%"></div></div>
+                    </div>
+                </div>
+
+                <!-- Row 2: Services -->
+                <div class="sentinel-card">
+                    <div class="card-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        Service Status
+                    </div>
+                    <div class="service-grid" id="service-grid">
+                        <div class="empty-state">Loading services...</div>
+                    </div>
+                </div>
             </div>
-            <div id="alert-history">
-                <div class="empty-state">No alerts fired yet.</div>
+
+            <!-- PANEL 2: Infrastructure -->
+            <div class="sentinel-tab-panel" id="panel-infrastructure">
+                <div class="row-3">
+                    <!-- Databases -->
+                    <div class="sentinel-card">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                            Database Connections
+                        </div>
+                        <div id="db-list"></div>
+                    </div>
+
+                    <!-- SSL Certificates -->
+                    <div class="sentinel-card">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            SSL Certificates
+                        </div>
+                        <div id="cert-list"></div>
+                    </div>
+
+                    <!-- DNS & Public IP -->
+                    <div class="sentinel-card">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                            DNS & Public IP
+                        </div>
+                        <div id="dns-list"></div>
+                    </div>
+                </div>
             </div>
-        </div>
+
+            <!-- PANEL 3: Security -->
+            <div class="sentinel-tab-panel" id="panel-security">
+                <div class="sentinel-card">
+                    <div class="card-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        Security Summary
+                    </div>
+                    <div id="security-list"></div>
+                </div>
+            </div>
+
+            <!-- PANEL 4: Alerts -->
+            <div class="sentinel-tab-panel" id="panel-alerts">
+                <!-- Alert Rules -->
+                <div class="sentinel-card" id="alert-rules-card">
+                    <div class="card-title" style="justify-content: space-between;">
+                        <span style="display:flex;align-items:center;gap:0.5rem;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                            Alert Rules
+                        </span>
+                        <button class="btn btn-primary" id="new-rule-btn" style="font-size:0.82rem;padding:0.35rem 0.85rem;">+ New Rule</button>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="rules-table">
+                            <thead>
+                                <tr>
+                                    <th>Component</th>
+                                    <th>Metric</th>
+                                    <th>Condition</th>
+                                    <th>Severity</th>
+                                    <th>Enabled</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="rules-tbody">
+                                <tr><td colspan="6" class="empty-state">Loading rules...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Alert History -->
+                <div class="sentinel-card">
+                    <div class="card-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        Alert History
+                    </div>
+                    <div id="alert-history">
+                        <div class="empty-state">No alerts fired yet.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <!-- New Rule Modal -->
