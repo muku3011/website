@@ -1,0 +1,21 @@
+name: Deploy Scripts (Self-Hosted)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'scripts/**'
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Copy Scripts to User Bin / Directory
+        run: |
+          mkdir -p /home/rbpi/scripts
+          cp scripts/* /home/rbpi/scripts/
+          chmod +x /home/rbpi/scripts/*.sh
