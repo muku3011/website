@@ -487,6 +487,274 @@ document.getElementById('rule-modal').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
 });
 
+// ── Traffic ───────────────────────────────────────────────────────────────────
+
+const TRAFFIC_COLORS = {
+  '2xx': 'hsl(142,70%,55%)',
+  '3xx': 'hsl(210,80%,60%)',
+  '4xx': 'hsl(38,90%,55%)',
+  '5xx': 'hsl(0,75%,55%)',
+};
+const TRAFFIC_COLORS_ALPHA = {
+  '2xx': 'hsla(142,70%,55%,0.15)',
+  '3xx': 'hsla(210,80%,60%,0.15)',
+  '4xx': 'hsla(38,90%,55%,0.15)',
+  '5xx': 'hsla(0,75%,55%,0.15)',
+};
+
+let chartStatus = null;
+let chartHourly = null;
+let chartPaths  = null;
+
+function chartDefaults() {
+  return {
+    color: 'rgba(255,255,255,0.7)',
+    borderColor: 'rgba(255,255,255,0.08)',
+  };
+}
+
+function initCharts() {
+  if (chartStatus) return; // already initialised
+
+  const ctxStatus = document.getElementById('chart-status');
+  if (!ctxStatus) return;
+
+  Chart.defaults.color = 'rgba(255,255,255,0.55)';
+  Chart.defaults.borderColor = 'rgba(255,255,255,0.07)';
+  Chart.defaults.font.family = "'Inter', sans-serif";
+
+  // ── Doughnut: status codes ────────────────────────────────────────────────
+  chartStatus = new Chart(ctxStatus, {
+    type: 'doughnut',
+    data: {
+      labels: ['2xx', '3xx', '4xx', '5xx'],
+      datasets: [{
+        data: [0, 0, 0, 0],
+        backgroundColor: Object.values(TRAFFIC_COLORS),
+        borderWidth: 0,
+        hoverOffset: 6,
+      }],
+    },
+    options: {
+      cutout: '72%',
+      plugins: { legend: { display: false }, tooltip: { callbacks: {
+        label: ctx => ` ${ctx.label}: ${ctx.raw} requests`
+      }}},
+      animation: { duration: 600 },
+    },
+  });
+
+  // ── Area chart: hourly requests ───────────────────────────────────────────
+  const ctxHourly = document.getElementById('chart-hourly');
+  const grad = ctxHourly.getContext('2d').createLinearGradient(0, 0, 0, 180);
+  grad.addColorStop(0,   'hsla(252,90%,68%,0.35)');
+  grad.addColorStop(1,   'hsla(252,90%,68%,0.02)');
+
+  chartHourly = new Chart(ctxHourly, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Requests',
+        data: [],
+        fill: true,
+        backgroundColor: grad,
+        borderColor: 'hsl(252,90%,68%)',
+        borderWidth: 2,
+        pointRadius: 2,
+        pointHoverRadius: 5,
+        tension: 0.4,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { maxTicksLimit: 12 } },
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true, ticks: { precision: 0 } },
+      },
+      plugins: { legend: { display: false } },
+      animation: { duration: 500 },
+    },
+  });
+
+  // ── Horizontal bar: top paths ─────────────────────────────────────────────
+  const ctxPaths = document.getElementById('chart-paths');
+  chartPaths = new Chart(ctxPaths, {
+    type: 'bar',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Requests',
+        data: [],
+        backgroundColor: 'hsla(190,80%,55%,0.75)',
+        borderColor: 'hsl(190,80%,55%)',
+        borderWidth: 1,
+        borderRadius: 3,
+      }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true, ticks: { precision: 0 } },
+        y: { grid: { display: false }, ticks: {
+          font: { family: "'JetBrains Mono','Courier New',monospace", size: 10 },
+          callback: v => v.length > 30 ? v.slice(0, 28) + '…' : v,
+        }},
+      },
+      plugins: { legend: { display: false } },
+      animation: { duration: 500 },
+    },
+  });
+}
+
+function statusBadge(code) {
+  const cls = code < 300 ? 'badge-ok' : code < 400 ? 'badge-info' : code < 500 ? 'badge-warn' : 'badge-crit';
+  return `<span class="status-badge ${cls}">${code}</span>`;
+}
+
+function methodBadge(m) {
+  const colors = { GET: '#4fc3f7', POST: '#81c784', PUT: '#ffb74d', DELETE: '#e57373', PATCH: '#ce93d8' };
+  const c = colors[m] || '#aaa';
+  return `<span style="color:${c};font-weight:600;font-size:0.75rem;">${m}</span>`;
+}
+
+function fmtBytes(b) {
+  if (!b) return '—';
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+  return (b / 1048576).toFixed(1) + ' MB';
+}
+
+function fmtRelTime(iso) {
+  const diff = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
+  if (diff < 60) return diff + 's ago';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  return Math.floor(diff / 3600) + 'h ago';
+}
+
+async function refreshTraffic() {
+  try {
+    const d = await fetchJson(`${BASE}/traffic`);
+
+    if (d.readable === false) {
+      document.getElementById('recent-requests-tbody').innerHTML =
+        `<tr><td colspan="7" class="empty-state" style="color:hsl(38,90%,60%);">
+          ⚠ ${d.error || 'Log not readable'}<br>
+          <small style="opacity:0.6;">Run: <code>sudo usermod -aG adm rbpi</code> then restart monitor-service</small>
+        </td></tr>`;
+      return;
+    }
+
+    initCharts();
+
+    // ── KPI cards ─────────────────────────────────────────────────────────────
+    document.getElementById('traffic-rpm').textContent = d.requestsPerMinute ?? '0';
+    document.getElementById('traffic-total').textContent =
+        `${(d.totalSampled ?? 0).toLocaleString()} requests sampled`;
+    document.getElementById('traffic-total-count').textContent =
+        (d.totalSampled ?? 0).toLocaleString();
+
+    const errRate = d.errorRate ?? 0;
+    document.getElementById('traffic-error-rate').textContent = errRate.toFixed(1) + '%';
+    const errBar = document.getElementById('traffic-error-bar');
+    errBar.style.width = errRate + '%';
+    errBar.className = 'progress-fill' + (errRate > 10 ? ' crit' : errRate > 5 ? ' warn' : '');
+
+    // ── Doughnut chart ────────────────────────────────────────────────────────
+    const sc = d.statusCounts ?? {};
+    const keys = ['2xx', '3xx', '4xx', '5xx'];
+    chartStatus.data.datasets[0].data = keys.map(k => sc[k] ?? 0);
+    chartStatus.update('none');
+
+    // Legend
+    const legendEl = document.getElementById('status-legend');
+    legendEl.innerHTML = keys.map(k =>
+      `<span style="display:flex;align-items:center;gap:0.3rem;">
+        <span style="width:8px;height:8px;border-radius:50%;background:${TRAFFIC_COLORS[k]};flex-shrink:0;"></span>
+        ${k} <b>${(sc[k] ?? 0).toLocaleString()}</b>
+      </span>`
+    ).join('');
+
+    // ── Hourly area chart ─────────────────────────────────────────────────────
+    const hourly = d.hourlyRequests ?? [];
+    chartHourly.data.labels = hourly.map(h => h.hour);
+    chartHourly.data.datasets[0].data = hourly.map(h => h.count);
+    chartHourly.update('none');
+
+    // ── Top paths bar chart ───────────────────────────────────────────────────
+    const paths = d.topPaths ?? [];
+    chartPaths.data.labels = paths.map(p => p.path);
+    chartPaths.data.datasets[0].data = paths.map(p => p.count);
+    chartPaths.update('none');
+
+    // ── Top IPs inline bars ───────────────────────────────────────────────────
+    const ips = d.topIps ?? [];
+    const maxIpCount = ips[0]?.count ?? 1;
+    const ipsEl = document.getElementById('top-ips-list');
+    if (ipsEl) {
+      ipsEl.innerHTML = ips.map((ip, i) => {
+        const pct = Math.round((ip.count / maxIpCount) * 100);
+        return `<div>
+          <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:0.2rem;">
+            <span style="font-family:'JetBrains Mono','Courier New',monospace;">${ip.ip}</span>
+            <span style="opacity:0.6;">${ip.count.toLocaleString()} req</span>
+          </div>
+          <div style="height:4px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden;">
+            <div style="height:100%;width:${pct}%;background:hsl(${200 - i * 20},75%,55%);border-radius:4px;transition:width 0.6s ease;"></div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Recent requests table ─────────────────────────────────────────────────
+    const recent = d.recentRequests ?? [];
+    const tbody = document.getElementById('recent-requests-tbody');
+    if (tbody) {
+      if (recent.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No traffic data yet</td></tr>';
+      } else {
+        tbody.innerHTML = recent.map(r =>
+          `<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+            <td style="padding:0.3rem 0.6rem;white-space:nowrap;opacity:0.6;font-size:0.75rem;">${fmtRelTime(r.timestamp)}</td>
+            <td style="padding:0.3rem 0.6rem;font-family:'JetBrains Mono','Courier New',monospace;font-size:0.75rem;">${r.ip}</td>
+            <td style="padding:0.3rem 0.6rem;">${methodBadge(r.method)}</td>
+            <td style="padding:0.3rem 0.6rem;font-family:'JetBrains Mono','Courier New',monospace;font-size:0.75rem;
+                max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.path}">${r.path}</td>
+            <td style="padding:0.3rem 0.6rem;">${statusBadge(r.status)}</td>
+            <td style="padding:0.3rem 0.6rem;opacity:0.6;font-size:0.75rem;">${fmtBytes(r.bytes)}</td>
+            <td style="padding:0.3rem 0.6rem;opacity:0.6;font-size:0.75rem;">${r.client}</td>
+          </tr>`
+        ).join('');
+      }
+    }
+
+  } catch (e) {
+    console.warn('traffic refresh failed:', e);
+  }
+}
+
+// ── Tab / Sidebar Switching Logic ───────────────────────────────────────────
+let activePanel = 'panel-overview';
+
+document.querySelectorAll('.sentinel-menu-item').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.sentinel-menu-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.sentinel-tab-panel').forEach(p => p.classList.remove('active'));
+
+    btn.classList.add('active');
+    activePanel = btn.getAttribute('data-target');
+
+    const targetPanel = document.getElementById(activePanel);
+    if (targetPanel) targetPanel.classList.add('active');
+
+    // Immediately load traffic data when tab is first opened
+    if (activePanel === 'panel-traffic') refreshTraffic();
+  });
+});
+
 // ── Main Polling Loop ─────────────────────────────────────────────────────────
 
 function updateTimestamp() {
@@ -500,23 +768,18 @@ function updateSidebarDots() {
     const ok = systemOk && servicesOk;
     dotOverview.className = 'sidebar-status-dot' + (ok ? '' : ' warn');
   }
-
   const dotInfra = document.getElementById('dot-infrastructure');
   if (dotInfra) {
     const ok = databasesOk && certificatesOk && dnsOk;
     dotInfra.className = 'sidebar-status-dot' + (ok ? '' : ' warn');
   }
-
   const dotSecurity = document.getElementById('dot-security');
   if (dotSecurity) {
-    const ok = securityOk;
-    dotSecurity.className = 'sidebar-status-dot' + (ok ? '' : ' warn');
+    dotSecurity.className = 'sidebar-status-dot' + (securityOk ? '' : ' warn');
   }
-
   const dotAlerts = document.getElementById('dot-alerts');
   if (dotAlerts) {
-    const ok = alertsOk;
-    dotAlerts.className = 'sidebar-status-dot' + (ok ? '' : ' warn');
+    dotAlerts.className = 'sidebar-status-dot' + (alertsOk ? '' : ' warn');
   }
 }
 
@@ -532,25 +795,14 @@ async function refreshAll() {
     refreshRules(),
     refreshHistory(),
   ]);
+  // Only poll traffic when that tab is visible (log parsing is expensive)
+  if (activePanel === 'panel-traffic') refreshTraffic();
   updateSidebarDots();
   updateTimestamp();
 }
 
-// ── Tab / Sidebar Switching Logic ───────────────────────────────────────────
-document.querySelectorAll('.sentinel-menu-item').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.sentinel-menu-item').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.sentinel-tab-panel').forEach(p => p.classList.remove('active'));
-
-    btn.classList.add('active');
-
-    const targetPanel = document.getElementById(btn.getAttribute('data-target'));
-    if (targetPanel) {
-      targetPanel.classList.add('active');
-    }
-  });
-});
 
 // Initial load + periodic refresh
 refreshAll();
 setInterval(refreshAll, POLL_INTERVAL);
+

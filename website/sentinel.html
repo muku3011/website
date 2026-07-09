@@ -428,6 +428,22 @@
             color: hsl(35, 90%, 65%);
         }
 
+        /* ── Traffic status & method badges ── */
+        .status-badge {
+            display: inline-block;
+            padding: 0.1rem 0.45rem;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+        }
+
+        .badge-ok   { background: hsla(142,70%,45%,0.2); color: hsl(142,70%,65%); }
+        .badge-info { background: hsla(210,80%,55%,0.2); color: hsl(210,80%,70%); }
+        .badge-warn { background: hsla(38,90%,50%,0.2);  color: hsl(38,90%,65%);  }
+        .badge-crit { background: hsla(0,75%,50%,0.2);   color: hsl(0,75%,65%);   }
+
         /* ── Service status grid ── */
         .service-grid {
             display: grid;
@@ -901,6 +917,15 @@
                 </span>
                 <div class="sidebar-status-dot" id="dot-alerts"></div>
             </button>
+            <button class="sentinel-menu-item" data-target="panel-traffic">
+                <span class="sentinel-menu-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                    </svg>
+                    Traffic
+                </span>
+                <div class="sidebar-status-dot" id="dot-traffic"></div>
+            </button>
         </aside>
 
         <!-- Main Content Panel Area -->
@@ -1140,7 +1165,134 @@
                     </div>
                 </div>
             </div>
+
+            <!-- PANEL 5: Traffic -->
+            <div class="sentinel-tab-panel" id="panel-traffic">
+
+                <!-- Row 1: KPI cards -->
+                <div class="row-3">
+                    <!-- Requests / min -->
+                    <div class="sentinel-card">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                            </svg>
+                            Requests / min
+                        </div>
+                        <div class="metric-value" id="traffic-rpm">—</div>
+                        <div class="metric-sub" id="traffic-total">Total sampled: —</div>
+                    </div>
+                    <!-- Status code doughnut -->
+                    <div class="sentinel-card" style="align-items:center;">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10"/>
+                            </svg>
+                            Status Codes
+                        </div>
+                        <div style="position:relative;width:160px;height:160px;margin:0.5rem auto 0;">
+                            <canvas id="chart-status"></canvas>
+                            <div id="chart-status-center" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;">
+                                <div style="font-size:1.4rem;font-weight:700;" id="traffic-total-count">—</div>
+                                <div style="font-size:0.65rem;opacity:0.5;">requests</div>
+                            </div>
+                        </div>
+                        <div style="display:flex;flex-wrap:wrap;gap:0.5rem 1rem;margin-top:0.75rem;font-size:0.72rem;justify-content:center;" id="status-legend"></div>
+                    </div>
+                    <!-- Error rate -->
+                    <div class="sentinel-card">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            Error Rate
+                        </div>
+                        <div class="metric-value" id="traffic-error-rate">—</div>
+                        <div class="metric-sub">4xx + 5xx of total</div>
+                        <div class="progress-track" style="margin-top:0.75rem;">
+                            <div class="progress-fill" id="traffic-error-bar" style="width:0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 2: Hourly area chart (full width) -->
+                <div class="sentinel-card">
+                    <div class="card-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 17 8 12 13 15 22 6"/><polyline points="17 6 22 6 22 11"/>
+                        </svg>
+                        Requests — Last 24 Hours
+                    </div>
+                    <div style="position:relative;height:180px;">
+                        <canvas id="chart-hourly"></canvas>
+                    </div>
+                </div>
+
+                <!-- Row 3: Top paths bar + Top IPs + Recent requests -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+                    <!-- Top paths horizontal bar -->
+                    <div class="sentinel-card">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+                                <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
+                                <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                            </svg>
+                            Top Paths
+                        </div>
+                        <div style="position:relative;height:240px;">
+                            <canvas id="chart-paths"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Top IPs -->
+                    <div class="sentinel-card">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                            Top Source IPs
+                        </div>
+                        <div id="top-ips-list" style="display:flex;flex-direction:column;gap:0.6rem;margin-top:0.5rem;"></div>
+                    </div>
+                </div>
+
+                <!-- Row 4: Recent requests table -->
+                <div class="sentinel-card">
+                    <div class="card-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                        </svg>
+                        Recent Requests
+                        <span style="margin-left:auto;font-size:0.75rem;opacity:0.5;">last 50 entries (loopback &amp; self-poll excluded)</span>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+                            <thead>
+                                <tr style="opacity:0.5;text-align:left;border-bottom:1px solid rgba(255,255,255,0.08);">
+                                    <th style="padding:0.3rem 0.6rem;white-space:nowrap;">Time</th>
+                                    <th style="padding:0.3rem 0.6rem;">IP</th>
+                                    <th style="padding:0.3rem 0.6rem;width:3rem;">Method</th>
+                                    <th style="padding:0.3rem 0.6rem;">Path</th>
+                                    <th style="padding:0.3rem 0.6rem;width:3.5rem;">Status</th>
+                                    <th style="padding:0.3rem 0.6rem;width:4rem;">Size</th>
+                                    <th style="padding:0.3rem 0.6rem;width:4.5rem;">Client</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-requests-tbody">
+                                <tr><td colspan="7" class="empty-state">Loading traffic data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div><!-- /panel-traffic -->
+
         </section>
+
     </main>
 
     <!-- New Rule Modal -->
@@ -1194,6 +1346,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script src="js/auth-nav.js"></script>
     <script src="js/sentinel.js"></script>
 </body>

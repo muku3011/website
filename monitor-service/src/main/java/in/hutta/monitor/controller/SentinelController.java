@@ -21,6 +21,7 @@ public class SentinelController {
   private final SecurityMetricsService securityMetrics;
   private final CertificateService certificateService;
   private final DnsService dnsService;
+  private final TrafficService trafficService;
   private final SecurityIncidentRepository securityIncidentRepository;
 
   @GetMapping("/system")
@@ -56,5 +57,10 @@ public class SentinelController {
   @GetMapping("/security/incidents")
   public Object securityIncidents() {
     return securityIncidentRepository.findTop100ByOrderByTimestampDesc();
+  }
+
+  @GetMapping("/traffic")
+  public Map<String, Object> traffic() {
+    return trafficService.collect();
   }
 }
