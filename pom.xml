@@ -32,6 +32,14 @@
         <spotless.version>3.8.0</spotless.version>
     </properties>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+    </dependencies>
+
+
     <build>
         <plugins>
             <!-- Spotless Plugin for consistent code formatting -->
