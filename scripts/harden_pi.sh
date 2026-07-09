@@ -12,21 +12,21 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-echo -e "${YELLOW}[*] Starting Raspberry Pi Security Hardening...${NC}"
+printf "${YELLOW}[*] Starting Raspberry Pi Security Hardening...${NC}\n"
 
-# 1. Ensure script is run as root
-if [ "$EUID" -ne 0 ]; then
-    echo -e "${RED}Error: This script must be run as root (sudo).${NC}"
+# 1. Ensure script is run as root (using id -u for portability across shell envs)
+if [ "$(id -u)" -ne 0 ]; then
+    printf "${RED}Error: This script must be run as root (sudo).${NC}\n"
     exit 1
 fi
 
 # 2. Update package list and install required security tools
-echo -e "${YELLOW}[*] Updating package repositories and installing security packages...${NC}"
+printf "${YELLOW}[*] Updating package repositories and installing security packages...${NC}\n"
 apt-get update
 apt-get install -y ufw fail2ban unattended-upgrades
 
 # 3. Configure UFW (Uncomplicated Firewall)
-echo -e "${YELLOW}[*] Configuring Firewall (UFW)...${NC}"
+printf "${YELLOW}[*] Configuring Firewall (UFW)...${NC}\n"
 # Set defaults: Deny incoming, Allow outgoing
 ufw default deny incoming
 ufw default allow outgoing
@@ -40,15 +40,15 @@ ufw allow from 172.16.0.0/12 to any port 22 proto tcp comment 'SSH local only'
 ufw allow 443/tcp comment 'HTTPS'
 
 # Enable UFW (non-interactively)
-echo -e "${YELLOW}[*] Enabling UFW firewall rules...${NC}"
+printf "${YELLOW}[*] Enabling UFW firewall rules...${NC}\n"
 ufw --force enable
 
 # 4. Enable and start services
-echo -e "${YELLOW}[*] Activating and configuring Fail2ban brute-force monitor...${NC}"
+printf "${YELLOW}[*] Activating and configuring Fail2ban brute-force monitor...${NC}\n"
 systemctl enable fail2ban
 systemctl restart fail2ban
 
-echo -e "${YELLOW}[*] Activating automated security updates (unattended-upgrades)...${NC}"
+printf "${YELLOW}[*] Activating automated security updates (unattended-upgrades)...${NC}\n"
 # Ensure unattended-upgrades config is enabled
 # (Debian default enables it automatically upon install, but we force enable it to be sure)
 echo 'APT::Periodic::Update-Package-Lists "1";' > /etc/apt/apt.conf.d/20auto-upgrades
@@ -58,7 +58,7 @@ systemctl enable unattended-upgrades
 systemctl restart unattended-upgrades
 
 # 5. Configure Certbot renewal hooks to open/close port 80 on demand
-echo -e "${YELLOW}[*] Configuring Certbot dynamic UFW renewal hooks...${NC}"
+printf "${YELLOW}[*] Configuring Certbot dynamic UFW renewal hooks...${NC}\n"
 mkdir -p /etc/letsencrypt
 CLI_INI="/etc/letsencrypt/cli.ini"
 
@@ -71,13 +71,13 @@ fi
 echo "pre-hook = ufw allow 80/tcp comment 'Temp open for Certbot'" >> "$CLI_INI"
 echo "post-hook = ufw delete allow 80/tcp" >> "$CLI_INI"
 
-# 5. Print status summary
-echo -e "\n${GREEN}============================================================${NC}"
-echo -e "${GREEN}   Hardening Completed Successfully!                         ${NC}"
-echo -e "${GREEN}============================================================${NC}"
-echo -e "Firewall status:"
+# 6. Print status summary
+printf "\n${GREEN}============================================================${NC}\n"
+printf "${GREEN}   Hardening Completed Successfully!                         ${NC}\n"
+printf "${GREEN}============================================================${NC}\n"
+printf "Firewall status:\n"
 ufw status verbose
-echo -e "\nService Statuses:"
-echo -e " - fail2ban:          $(systemctl is-active fail2ban)"
-echo -e " - unattended-upgrades: $(systemctl is-active unattended-upgrades)"
-echo -e "============================================================"
+printf "\nService Statuses:\n"
+printf " - fail2ban:          $(systemctl is-active fail2ban)\n"
+printf " - unattended-upgrades: $(systemctl is-active unattended-upgrades)\n"
+printf "============================================================\n"
