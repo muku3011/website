@@ -19,11 +19,12 @@ let alertsOk = true;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-async function fetchJson(url) {
-  const res = await fetch(url);
+async function fetchJson(url, options = {}) {
+  const res = await fetch(url, options);
   if (!res.ok) throw new Error(`HTTP ${res.status} on ${url}`);
   return res.json();
 }
+
 
 function setProgress(barId, pct) {
   const bar = document.getElementById(barId);
@@ -151,14 +152,26 @@ async function refreshServices() {
       const stateClass = s.active ? 'active-state' : 'inactive-state';
       const httpBadge = s.httpStatus
           ? `<span class="service-tile-port">HTTP ${s.httpStatus}</span>` : '';
+      
+      // Determine the systemd service name mapping
+      let systemdName = s.name;
+      if (s.name === 'Apache') systemdName = 'apache2';
+      if (s.name === 'PostgreSQL') systemdName = 'postgresql';
+      if (s.name === 'Keycloak') systemdName = 'keycloak';
+
       return `
-        <div class="service-tile ${stateClass}">
+        <div class="service-tile ${stateClass}" style="padding-bottom: 0.8rem;">
           <div class="service-tile-name">${s.name}</div>
           <div class="service-tile-port">:${s.port}</div>
           <div class="status-pill ${status}">
             <div class="status-dot ${status}"></div>${status}
           </div>
           ${httpBadge}
+          <div class="service-controls" style="display:flex;gap:0.35rem;margin-top:0.75rem;width:100%;justify-content:center;z-index:10;position:relative;">
+             <button class="btn btn-ctrl start" onclick="controlService('${systemdName}', 'start')" ${s.active ? 'disabled' : ''} style="padding:0.25rem 0.45rem;font-size:0.68rem;background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.25);border-radius:4px;cursor:pointer;font-weight:600;opacity:${s.active ? 0.3 : 1}; pointer-events:${s.active ? 'none' : 'auto'};">Start</button>
+             <button class="btn btn-ctrl stop" onclick="controlService('${systemdName}', 'stop')" ${!s.active ? 'disabled' : ''} style="padding:0.25rem 0.45rem;font-size:0.68rem;background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.25);border-radius:4px;cursor:pointer;font-weight:600;opacity:${!s.active ? 0.3 : 1}; pointer-events:${!s.active ? 'none' : 'auto'};">Stop</button>
+             <button class="btn btn-ctrl restart" onclick="controlService('${systemdName}', 'restart')" style="padding:0.25rem 0.45rem;font-size:0.68rem;background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.25);border-radius:4px;cursor:pointer;font-weight:600;">Restart</button>
+          </div>
         </div>`;
     }).join('');
     servicesOk = services.every(s => s.active);
@@ -168,7 +181,25 @@ async function refreshServices() {
   }
 }
 
+window.controlService = async function(service, action) {
+  if (!confirm(`Are you sure you want to ${action} service '${service}'?`)) return;
+  try {
+    const res = await fetchJson(`${BASE}/services/control`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ service, action })
+    });
+    if (res.error) {
+      alert(`Error: ${res.error}`);
+    } else {
+      alert(`Service ${service} action '${action}' completed successfully.`);
+      refreshServices();
+    }
+  }
+};
+
 // ── Databases ──────────────────────────────────────────────────────────────────
+
 
 async function refreshDatabases() {
   try {
@@ -757,8 +788,153 @@ document.querySelectorAll('.sentinel-menu-item').forEach(btn => {
 
     // Immediately load traffic data when tab is first opened
     if (activePanel === 'panel-traffic') refreshTraffic();
+    if (activePanel === 'panel-logs') tailLogs();
   });
 });
+
+// Bind log tail button
+document.getElementById('btn-refresh-logs')?.addEventListener('click', tailLogs);
+
+// ── Logs Tailer ──────────────────────────────────────────────────────────────
+
+async function tailLogs() {
+  const term = document.getElementById('logs-terminal');
+  if (!term) return;
+  
+  const service = document.getElementById('logs-service-select').value;
+  const lines = document.getElementById('logs-lines-select').value;
+  
+  term.textContent = `Tailing last ${lines} lines for ${service}...`;
+  
+  try {
+    const res = await fetchJson(`${BASE}/logs?service=${service}&lines=${lines}`);
+    if (res.error) {
+      term.innerHTML = `<span style="color:var(--warning-glow);">Error: ${res.error}</span>`;
+    } else {
+      term.textContent = res.logs || 'No logs found.';
+      // Scroll to bottom of terminal
+      term.scrollTop = term.scrollHeight;
+    }
+  } catch (e) {
+    term.innerHTML = `<span style="color:var(--warning-glow);">Failed to connect: ${e.message || e}</span>`;
+  }
+}
+
+// ── I/O Metrics ───────────────────────────────────────────────────────────────
+
+async function refreshIoMetrics() {
+  try {
+    const io = await fetchJson(`${BASE}/io`);
+    
+    const diskRead = formatSpeed(io.readBytesSec ?? 0);
+    const diskWrite = formatSpeed(io.writeBytesSec ?? 0);
+    const netRx = formatSpeed(io.rxBytesSec ?? 0);
+    const netTx = formatSpeed(io.txBytesSec ?? 0);
+    
+    document.getElementById('disk-read-speed').textContent = diskRead;
+    document.getElementById('disk-write-speed').textContent = diskWrite;
+    document.getElementById('net-rx-speed').textContent = netRx;
+    document.getElementById('net-tx-speed').textContent = netTx;
+  } catch (e) {
+    console.warn('I/O stats refresh failed:', e);
+  }
+}
+
+function formatSpeed(bytesPerSec) {
+  if (bytesPerSec < 1024) return bytesPerSec + ' B/s';
+  const kb = bytesPerSec / 1024;
+  if (kb < 1024) return kb.toFixed(1) + ' KB/s';
+  const mb = kb / 1024;
+  return mb.toFixed(1) + ' MB/s';
+}
+
+function formatMbOrGb(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// ── Postgres stats ────────────────────────────────────────────────────────────
+
+async function refreshPostgresStats() {
+  try {
+    const stats = await fetchJson(`${BASE}/postgres/stats`);
+    const tbody = document.getElementById('db-performance-tbody');
+    if (!tbody) return;
+    
+    if (!stats || stats.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No database stats available.</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = stats.map(s => {
+      const formattedSize = formatMbOrGb(s.sizeBytes ?? 0);
+      const isLowCache = (s.cacheHitRatio ?? 100) < 95;
+      return `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+          <td style="padding:0.45rem 0.5rem; font-weight:600; color:var(--text-primary);">${s.database}</td>
+          <td style="padding:0.45rem 0.5rem; text-align:right; color:var(--text-secondary);">${formattedSize}</td>
+          <td style="padding:0.45rem 0.5rem; text-align:right; font-weight:600; color:var(--primary-glow);">${s.activeConnections ?? 0}</td>
+          <td style="padding:0.45rem 0.5rem; text-align:right; font-weight:600; color:${isLowCache ? 'var(--warning-glow)' : 'var(--success-glow)'};">${s.cacheHitRatio ?? 100}%</td>
+        </tr>`;
+    }).join('');
+  } catch (e) {
+    console.warn('Postgres stats refresh failed:', e);
+  }
+}
+
+// ── Backups Monitor ───────────────────────────────────────────────────────────
+
+async function refreshBackups() {
+  try {
+    const b = await fetchJson(`${BASE}/backups`);
+    const container = document.getElementById('backup-status-container');
+    if (!container) return;
+    
+    if (b.status === 'UNKNOWN') {
+      container.innerHTML = `
+        <div style="padding:0.5rem; background:rgba(239,68,68,0.05); border:1px dashed var(--warning-glow); border-radius:6px; color:var(--warning-glow); text-align:center;">
+          ⚠️ Backup status unknown. Database daily dump script hasn't run yet.
+        </div>`;
+      return;
+    }
+    
+    const isOk = b.status === 'SUCCESS';
+    const dateStr = b.completedAt ? new Date(b.completedAt).toLocaleString() : 'N/A';
+    const totalSizeFormatted = formatMbOrGb(b.totalSize ?? 0);
+    const filesList = Array.isArray(b.files) 
+        ? b.files.map(f => `<li style="font-size:0.75rem; color:var(--text-secondary); font-family:monospace; margin-bottom:0.15rem;">• ${f}</li>`).join('') 
+        : '';
+        
+    container.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:0.5rem;">
+        <span class="data-label">Status</span>
+        <span class="status-pill ${isOk ? 'active' : 'inactive'}">
+          <div class="status-dot ${isOk ? 'active' : 'inactive'}"></div>
+          ${b.status}
+        </span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding-top:0.2rem;">
+        <span class="data-label">Last Backup Run</span>
+        <span style="color:var(--text-primary); font-weight:500;">${dateStr}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding-top:0.2rem;">
+        <span class="data-label">Total Size</span>
+        <span style="color:var(--primary-glow); font-weight:600;">${totalSizeFormatted}</span>
+      </div>
+      ${b.error ? `<div style="padding:0.4rem; background:rgba(239,68,68,0.1); border-radius:4px; color:#f87171; font-size:0.75rem; margin-top:0.3rem;">Error: ${b.error}</div>` : ''}
+      <div style="margin-top:0.4rem;">
+        <span class="data-label" style="display:block; margin-bottom:0.25rem;">Backup Archives Created:</span>
+        <ul style="list-style:none; padding-left:0; margin:0;">
+          ${filesList || '<span style="color:var(--text-muted); font-size:0.75rem;">None</span>'}
+        </ul>
+      </div>`;
+  } catch (e) {
+    console.warn('Backup stats refresh failed:', e);
+  }
+}
 
 // ── Main Polling Loop ─────────────────────────────────────────────────────────
 
@@ -786,15 +962,22 @@ function updateSidebarDots() {
   if (dotAlerts) {
     dotAlerts.className = 'sidebar-status-dot' + (alertsOk ? '' : ' warn');
   }
+  const dotLogs = document.getElementById('dot-logs');
+  if (dotLogs) {
+    dotLogs.className = 'sidebar-status-dot'; // Logs is an utility tab, always green
+  }
 }
 
 async function refreshAll() {
   await Promise.allSettled([
     refreshSystem(),
+    refreshIoMetrics(),
     refreshServices(),
     refreshDatabases(),
     refreshCertificates(),
     refreshDns(),
+    refreshPostgresStats(),
+    refreshBackups(),
     refreshSecurity(),
     refreshSecurityIncidents(),
     refreshRules(),
@@ -805,6 +988,7 @@ async function refreshAll() {
   updateSidebarDots();
   updateTimestamp();
 }
+
 
 
 // Initial load + periodic refresh
