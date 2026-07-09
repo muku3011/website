@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>hutta.in | Sentinel — Monitoring & Alerts</title>
-    <meta name="description" content="Sentinel: Real-time system monitoring, service health, certificate tracking, and alert management for the Hutta.in infrastructure.">
+    <title>hutta.in | Sentinel — Monitoring & Alerts sd</title>
+    <meta name="description"
+        content="Sentinel: Real-time system monitoring, service health, certificate tracking, and alert management for the Hutta.in infrastructure.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="css/index.css?v=6">
     <link rel="icon" type="image/png" href="favicon.png">
     <style>
@@ -59,7 +63,7 @@
             border: 1px solid var(--card-border);
             padding: 0.45rem 1.1rem;
             border-radius: 50px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .refresh-dot {
@@ -72,8 +76,17 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.3; transform: scale(0.85); }
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.3;
+                transform: scale(0.85);
+            }
         }
 
         /* ── Sidebar layout ── */
@@ -220,7 +233,7 @@
                 scrollbar-width: none;
                 backdrop-filter: blur(20px);
                 -webkit-backdrop-filter: blur(20px);
-                box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
             }
 
             .sentinel-sidebar::-webkit-scrollbar {
@@ -245,7 +258,7 @@
                 border-left-width: 1px;
                 border-radius: 50px;
                 color: var(--primary-glow);
-                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
                 padding-left: 1.1rem;
             }
         }
@@ -273,8 +286,10 @@
         .sentinel-card::before {
             content: '';
             position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 3px;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
             background: linear-gradient(90deg, var(--primary-glow), var(--secondary-glow));
         }
 
@@ -290,7 +305,8 @@
         }
 
         .card-title svg {
-            width: 18px; height: 18px;
+            width: 18px;
+            height: 18px;
             color: var(--primary-glow);
             flex-shrink: 0;
         }
@@ -311,7 +327,8 @@
         }
 
         .progress-track {
-            width: 100%; height: 6px;
+            width: 100%;
+            height: 6px;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 10px;
             overflow: hidden;
@@ -338,7 +355,9 @@
         }
 
         @keyframes blink {
-            50% { opacity: 0.5; }
+            50% {
+                opacity: 0.5;
+            }
         }
 
         /* ── Service status grid ── */
@@ -414,12 +433,21 @@
         }
 
         .status-dot {
-            width: 7px; height: 7px;
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
         }
 
-        .status-dot.active { background: var(--success-glow); box-shadow: 0 0 6px var(--success-glow); }
-        .status-dot.inactive { background: var(--warning-glow); box-shadow: 0 0 6px var(--warning-glow); animation: blink 1.5s step-start infinite; }
+        .status-dot.active {
+            background: var(--success-glow);
+            box-shadow: 0 0 6px var(--success-glow);
+        }
+
+        .status-dot.inactive {
+            background: var(--warning-glow);
+            box-shadow: 0 0 6px var(--warning-glow);
+            animation: blink 1.5s step-start infinite;
+        }
 
         /* ── Table rows (DB, security, history) ── */
         .data-row {
@@ -427,11 +455,13 @@
             justify-content: space-between;
             align-items: center;
             padding: 0.65rem 0;
-            border-bottom: 1px solid rgba(255,255,255,0.04);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
             gap: 0.5rem;
         }
 
-        .data-row:last-child { border-bottom: none; }
+        .data-row:last-child {
+            border-bottom: none;
+        }
 
         .data-label {
             font-size: 0.88rem;
@@ -455,9 +485,20 @@
             font-weight: 600;
         }
 
-        .cert-badge.ok { background: hsla(145,80%,50%,0.12); color: var(--success-glow); }
-        .cert-badge.warn { background: hsla(45,90%,55%,0.12); color: hsl(45,90%,60%); }
-        .cert-badge.crit { background: hsla(14,90%,60%,0.12); color: var(--warning-glow); }
+        .cert-badge.ok {
+            background: hsla(145, 80%, 50%, 0.12);
+            color: var(--success-glow);
+        }
+
+        .cert-badge.warn {
+            background: hsla(45, 90%, 55%, 0.12);
+            color: hsl(45, 90%, 60%);
+        }
+
+        .cert-badge.crit {
+            background: hsla(14, 90%, 60%, 0.12);
+            color: var(--warning-glow);
+        }
 
         /* ── Alert rules table ── */
         .rules-table {
@@ -476,27 +517,40 @@
 
         .rules-table td {
             padding: 0.65rem 0.75rem;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
             color: var(--text-primary);
             vertical-align: middle;
         }
 
-        .rules-table tr:last-child td { border-bottom: none; }
-        .rules-table tr:hover td { background: rgba(255,255,255,0.02); }
+        .rules-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .rules-table tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
 
         /* Toggle switch */
         .toggle-switch {
             position: relative;
             display: inline-block;
-            width: 36px; height: 20px;
+            width: 36px;
+            height: 20px;
         }
 
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
 
         .toggle-slider {
             position: absolute;
             cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             background: var(--card-border);
             border-radius: 20px;
             transition: 0.3s;
@@ -505,15 +559,22 @@
         .toggle-slider:before {
             content: '';
             position: absolute;
-            height: 14px; width: 14px;
-            left: 3px; bottom: 3px;
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
             background: white;
             border-radius: 50%;
             transition: 0.3s;
         }
 
-        input:checked + .toggle-slider { background: var(--success-glow); }
-        input:checked + .toggle-slider:before { transform: translateX(16px); }
+        input:checked+.toggle-slider {
+            background: var(--success-glow);
+        }
+
+        input:checked+.toggle-slider:before {
+            transform: translateX(16px);
+        }
 
         /* Delete btn */
         .btn-delete {
@@ -527,7 +588,10 @@
             transition: color 0.2s, background 0.2s;
         }
 
-        .btn-delete:hover { color: var(--warning-glow); background: hsla(14,90%,60%,0.1); }
+        .btn-delete:hover {
+            color: var(--warning-glow);
+            background: hsla(14, 90%, 60%, 0.1);
+        }
 
         /* History entries */
         .history-item {
@@ -535,10 +599,12 @@
             align-items: flex-start;
             gap: 0.75rem;
             padding: 0.75rem 0;
-            border-bottom: 1px solid rgba(255,255,255,0.04);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
         }
 
-        .history-item:last-child { border-bottom: none; }
+        .history-item:last-child {
+            border-bottom: none;
+        }
 
         .severity-chip {
             flex-shrink: 0;
@@ -549,16 +615,32 @@
             text-transform: uppercase;
         }
 
-        .severity-chip.high { background: hsla(14,90%,60%,0.15); color: var(--warning-glow); }
-        .severity-chip.default { background: hsla(45,90%,55%,0.15); color: hsl(45,90%,60%); }
+        .severity-chip.high {
+            background: hsla(14, 90%, 60%, 0.15);
+            color: var(--warning-glow);
+        }
 
-        .history-msg { font-size: 0.85rem; color: var(--text-secondary); flex: 1; }
-        .history-time { font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; }
+        .severity-chip.default {
+            background: hsla(45, 90%, 55%, 0.15);
+            color: hsl(45, 90%, 60%);
+        }
+
+        .history-msg {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            flex: 1;
+        }
+
+        .history-time {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
 
         .resolved-tag {
             font-size: 0.72rem;
             color: var(--success-glow);
-            background: hsla(145,80%,50%,0.1);
+            background: hsla(145, 80%, 50%, 0.1);
             padding: 0.1rem 0.4rem;
             border-radius: 4px;
             flex-shrink: 0;
@@ -569,14 +651,16 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(4px);
             z-index: 200;
             align-items: center;
             justify-content: center;
         }
 
-        .modal-backdrop.open { display: flex; }
+        .modal-backdrop.open {
+            display: flex;
+        }
 
         .modal-box {
             background: var(--card-bg);
@@ -595,7 +679,9 @@
             color: var(--text-primary);
         }
 
-        .form-group { margin-bottom: 1rem; }
+        .form-group {
+            margin-bottom: 1rem;
+        }
 
         .form-group label {
             display: block;
@@ -607,7 +693,7 @@
         .form-control {
             width: 100%;
             padding: 0.6rem 0.85rem;
-            background: rgba(255,255,255,0.04);
+            background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--card-border);
             border-radius: var(--border-radius-sm);
             color: var(--text-primary);
@@ -621,7 +707,11 @@
             border-color: var(--primary-glow);
         }
 
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
 
         .modal-actions {
             display: flex;
@@ -638,9 +728,10 @@
         }
     </style>
 </head>
+
 <body class="dark-theme">
     <script>
-        (function() {
+        (function () {
             const savedTheme = localStorage.getItem('theme');
             if (savedTheme && savedTheme !== 'dark') {
                 document.body.classList.remove('dark-theme');
@@ -667,9 +758,18 @@
             </nav>
             <div class="header-actions">
                 <div id="auth-header-container" style="display: flex; align-items: center;"></div>
-                <button id="theme-toggle" class="btn-icon" aria-label="Toggle light and dark theme" title="Toggle Theme">
-                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                <button id="theme-toggle" class="btn-icon" aria-label="Toggle light and dark theme"
+                    title="Toggle Theme">
+                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="4" />
+                        <path
+                            d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+                    </svg>
+                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                    </svg>
                 </button>
             </div>
         </div>
@@ -692,28 +792,43 @@
         <aside class="sentinel-sidebar">
             <button class="sentinel-menu-item active" data-target="panel-overview">
                 <span class="sentinel-menu-label">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="9" rx="1" />
+                        <rect x="14" y="3" width="7" height="5" rx="1" />
+                        <rect x="14" y="12" width="7" height="9" rx="1" />
+                        <rect x="3" y="16" width="7" height="5" rx="1" />
+                    </svg>
                     Overview
                 </span>
                 <div class="sidebar-status-dot" id="dot-overview"></div>
             </button>
             <button class="sentinel-menu-item" data-target="panel-infrastructure">
                 <span class="sentinel-menu-label">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <path
+                            d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                        <path d="M2 12h20" />
+                    </svg>
                     Infrastructure
                 </span>
                 <div class="sidebar-status-dot" id="dot-infrastructure"></div>
             </button>
             <button class="sentinel-menu-item" data-target="panel-security">
                 <span class="sentinel-menu-label">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
                     Security Summary
                 </span>
                 <div class="sidebar-status-dot" id="dot-security"></div>
             </button>
             <button class="sentinel-menu-item" data-target="panel-alerts">
                 <span class="sentinel-menu-label">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
                     Alert Manager
                 </span>
                 <div class="sidebar-status-dot" id="dot-alerts"></div>
@@ -729,40 +844,58 @@
                     <!-- CPU -->
                     <div class="sentinel-card">
                         <div class="card-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="4" y="4" width="16" height="16" rx="2" />
+                                <rect x="9" y="9" width="6" height="6" />
+                                <path d="M9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3" />
+                            </svg>
                             CPU
                         </div>
                         <div class="metric-value" id="cpu-value">—</div>
                         <div class="metric-sub" id="cpu-load">Load avg: —</div>
-                        <div class="progress-track"><div class="progress-fill" id="cpu-bar" style="width:0%"></div></div>
+                        <div class="progress-track">
+                            <div class="progress-fill" id="cpu-bar" style="width:0%"></div>
+                        </div>
                         <div class="metric-sub" style="margin-top:0.5rem;" id="cpu-temp">Temp: —</div>
                     </div>
                     <!-- Memory -->
                     <div class="sentinel-card">
                         <div class="card-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 19v-3M10 19v-3M14 19v-3M18 19v-3M6 8V5M10 8V5M14 8V5M18 8V5M3 8h18v8H3z"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M6 19v-3M10 19v-3M14 19v-3M18 19v-3M6 8V5M10 8V5M14 8V5M18 8V5M3 8h18v8H3z" />
+                            </svg>
                             Memory
                         </div>
                         <div class="metric-value" id="mem-value">—</div>
                         <div class="metric-sub" id="mem-detail">— MB / — MB</div>
-                        <div class="progress-track"><div class="progress-fill" id="mem-bar" style="width:0%"></div></div>
+                        <div class="progress-track">
+                            <div class="progress-fill" id="mem-bar" style="width:0%"></div>
+                        </div>
                     </div>
                     <!-- Disk -->
                     <div class="sentinel-card">
                         <div class="card-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <ellipse cx="12" cy="5" rx="9" ry="3" />
+                                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+                            </svg>
                             Disk (/)
                         </div>
                         <div class="metric-value" id="disk-value">—</div>
                         <div class="metric-sub" id="disk-detail">Free: —</div>
-                        <div class="progress-track"><div class="progress-fill" id="disk-bar" style="width:0%"></div></div>
+                        <div class="progress-track">
+                            <div class="progress-fill" id="disk-bar" style="width:0%"></div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Row 2: Services -->
                 <div class="sentinel-card">
                     <div class="card-title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                        </svg>
                         Service Status
                     </div>
                     <div class="service-grid" id="service-grid">
@@ -777,7 +910,11 @@
                     <!-- Databases -->
                     <div class="sentinel-card">
                         <div class="card-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <ellipse cx="12" cy="5" rx="9" ry="3" />
+                                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+                            </svg>
                             Database Connections
                         </div>
                         <div id="db-list"></div>
@@ -786,7 +923,10 @@
                     <!-- SSL Certificates -->
                     <div class="sentinel-card">
                         <div class="card-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
                             SSL Certificates
                         </div>
                         <div id="cert-list"></div>
@@ -795,7 +935,11 @@
                     <!-- DNS & Public IP -->
                     <div class="sentinel-card">
                         <div class="card-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <path
+                                    d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                            </svg>
                             DNS & Public IP
                         </div>
                         <div id="dns-list"></div>
@@ -809,7 +953,9 @@
                     <!-- Left: Status Summary -->
                     <div class="sentinel-card">
                         <div class="card-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                            </svg>
                             Security Status
                         </div>
                         <div id="security-list"></div>
@@ -818,7 +964,12 @@
                     <!-- Right: Incident Logs -->
                     <div class="sentinel-card" id="security-incidents-card">
                         <div class="card-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path
+                                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
                             Recent Incidents & Bans
                         </div>
                         <div style="overflow-x:auto;">
@@ -833,7 +984,9 @@
                                     </tr>
                                 </thead>
                                 <tbody id="security-incidents-tbody">
-                                    <tr><td colspan="5" class="empty-state">Loading incidents...</td></tr>
+                                    <tr>
+                                        <td colspan="5" class="empty-state">Loading incidents...</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -847,10 +1000,15 @@
                 <div class="sentinel-card" id="alert-rules-card">
                     <div class="card-title" style="justify-content: space-between;">
                         <span style="display:flex;align-items:center;gap:0.5rem;">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18"
+                                height="18">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                            </svg>
                             Alert Rules
                         </span>
-                        <button class="btn btn-primary" id="new-rule-btn" style="font-size:0.82rem;padding:0.35rem 0.85rem;">+ New Rule</button>
+                        <button class="btn btn-primary" id="new-rule-btn"
+                            style="font-size:0.82rem;padding:0.35rem 0.85rem;">+ New Rule</button>
                     </div>
                     <div style="overflow-x:auto;">
                         <table class="rules-table">
@@ -865,7 +1023,9 @@
                                 </tr>
                             </thead>
                             <tbody id="rules-tbody">
-                                <tr><td colspan="6" class="empty-state">Loading rules...</td></tr>
+                                <tr>
+                                    <td colspan="6" class="empty-state">Loading rules...</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -874,7 +1034,10 @@
                 <!-- Alert History -->
                 <div class="sentinel-card">
                     <div class="card-title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>
                         Alert History
                     </div>
                     <div id="alert-history">
@@ -911,7 +1074,7 @@
                     <label>Operator</label>
                     <select class="form-control" id="rule-operator">
                         <option value="!=">!= (not equals)</option>
-                        <option value="=">=  (equals)</option>
+                        <option value="=">= (equals)</option>
                         <option value=">">&gt; (greater than)</option>
                         <option value="<">&lt; (less than)</option>
                     </select>
@@ -939,4 +1102,5 @@
     <script src="js/auth-nav.js"></script>
     <script src="js/sentinel.js"></script>
 </body>
+
 </html>
