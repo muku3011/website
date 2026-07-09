@@ -43,7 +43,7 @@ public class DatabaseStatusService {
             new DbDef("lpadb", "lpadb", "lpa", lpaPassword),
             new DbDef("blogdb", "blogdb", "blog", blogPassword),
             new DbDef("monitordb", "monitordb", "monitor", monitorPassword),
-            new DbDef("keycloak", "keycloak", "keycloak", keycloakPassword));
+            new DbDef("keycloak", "keycloakdb", "keycloak", keycloakPassword));
 
     return databases.stream().map(this::checkDatabase).toList();
   }
