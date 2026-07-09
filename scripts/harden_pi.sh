@@ -26,6 +26,9 @@ apt-get update
 apt-get install -y ufw fail2ban unattended-upgrades
 
 # 3. Configure UFW (Uncomplicated Firewall)
+printf "${YELLOW}[*] Resetting UFW to clean state (clearing old rules)...${NC}\n"
+ufw --force reset
+
 printf "${YELLOW}[*] Configuring Firewall (UFW)...${NC}\n"
 # Set defaults: Deny incoming, Allow outgoing
 ufw default deny incoming
