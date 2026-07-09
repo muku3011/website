@@ -34,7 +34,20 @@ public class CertificateService {
     Map<String, Object> result = new LinkedHashMap<>();
     result.put("domain", domain);
     try {
-      String raw = sys.runCommand("openssl", "x509", "-enddate", "-noout", "-in", CERT_PATH);
+      String raw = "";
+      // Try local TLS query first (no permissions required, highly robust on running server)
+      String tlsCmd = String.format("openssl s_client -connect 127.0.0.1:443 -servername %s -showcerts </dev/null 2>/dev/null | openssl x509 -enddate -noout", domain);
+      raw = sys.runCommand("bash", "-c", tlsCmd);
+      
+      // Fallback to reading the cert file directly if TLS connection fails
+      if (raw == null || raw.isBlank() || !raw.contains("notAfter=")) {
+        raw = sys.runCommand("openssl", "x509", "-enddate", "-noout", "-in", CERT_PATH);
+      }
+      
+      if (raw == null || raw.isBlank()) {
+        throw new RuntimeException("openssl command returned empty output");
+      }
+      
       // raw: "notAfter=Sep 15 12:00:00 2025 GMT"
       String dateStr = raw.replace("notAfter=", "").trim();
       ZonedDateTime expiry = ZonedDateTime.parse(dateStr, OPENSSL_FMT);

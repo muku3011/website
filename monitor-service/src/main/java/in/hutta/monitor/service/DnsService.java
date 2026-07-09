@@ -67,12 +67,14 @@ public class DnsService {
 
   private boolean ddnsCronExists() {
     try {
-      String cron =
+      String check =
           sys.runCommand(
               "bash",
               "-c",
-              "crontab -l 2>/dev/null | grep -iE 'ddns|dyndns|duckdns|noip|ip.*update' || echo ''");
-      return !cron.isBlank();
+              "crontab -l 2>/dev/null | grep -iE 'ddns|dyndns|duckdns|noip|ip.*update' || "
+                  + "systemctl is-active gcp-ddns.timer 2>/dev/null | grep -x 'active' || "
+                  + "systemctl is-active gcp-ddns.service 2>/dev/null | grep -x 'active' || echo ''");
+      return !check.isBlank();
     } catch (Exception e) {
       return false;
     }
