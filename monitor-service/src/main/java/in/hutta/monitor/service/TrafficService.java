@@ -39,7 +39,9 @@ public class TrafficService {
   private static final DateTimeFormatter APACHE_FMT =
       DateTimeFormatter.ofPattern("dd/MMM/yyyy:HH:mm:ss Z", Locale.ENGLISH);
 
+  @SuppressWarnings("null") // stream entries are filtered via Objects::nonNull before use
   public Map<String, Object> collect() {
+
     Map<String, Object> result = new LinkedHashMap<>();
     try {
       String raw = sys.runCommand("tail", "-n", String.valueOf(SAMPLE_LINES), LOG_PATH);
