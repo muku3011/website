@@ -264,6 +264,83 @@
             }
         }
 
+        @media (max-width: 768px) {
+            .sentinel-grid {
+                padding-bottom: 6rem; /* Extra padding so content isn't hidden behind the floating bottom bar */
+            }
+
+            .sentinel-sidebar {
+                position: fixed !important;
+                bottom: 1.25rem !important;
+                top: auto !important;
+                left: 50% !important;
+                transform: translateX(-50%) !important;
+                width: 92% !important;
+                max-width: 480px !important;
+                z-index: 9999 !important;
+                flex-direction: row !important;
+                justify-content: space-around !important;
+                background: rgba(10, 10, 10, 0.72) !important;
+                border: 1px solid rgba(255, 255, 255, 0.08) !important;
+                padding: 0.45rem 0.3rem !important;
+                border-radius: 30px !important;
+                box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65) !important;
+                backdrop-filter: blur(28px) !important;
+                -webkit-backdrop-filter: blur(28px) !important;
+                overflow-x: visible !important;
+                white-space: normal !important;
+            }
+
+            .sentinel-menu-item {
+                flex: 1 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 0.15rem !important;
+                padding: 0.35rem 0.15rem !important;
+                font-size: 0.65rem !important;
+                font-weight: 500 !important;
+                border-radius: 20px !important;
+                color: var(--text-muted) !important;
+                background: none !important;
+                border: none !important;
+                text-align: center !important;
+                transition: all 0.2s ease !important;
+            }
+
+            .sentinel-menu-item:hover {
+                background: none !important;
+                padding-left: 0.15rem !important;
+                color: var(--text-primary) !important;
+            }
+
+            .sentinel-menu-item .sentinel-menu-label {
+                flex-direction: column !important;
+                gap: 0.15rem !important;
+            }
+
+            .sentinel-menu-item .sentinel-menu-label svg {
+                width: 19px !important;
+                height: 19px !important;
+            }
+
+            /* Hide status dots in the bottom nav for cleaner appearance */
+            .sentinel-sidebar .sidebar-status-dot {
+                display: none !important;
+            }
+
+            .sentinel-menu-item.active {
+                background: rgba(255, 255, 255, 0.07) !important;
+                color: var(--primary-glow) !important;
+                border: none !important;
+                border-radius: 18px !important;
+                padding-left: 0.15rem !important;
+                box-shadow: none !important;
+            }
+        }
+
+
         /* ── Sentinel card (inherits widget-card from shared CSS) ── */
         .sentinel-card {
             background: var(--card-bg);
