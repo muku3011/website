@@ -31,8 +31,12 @@ echo -e "${YELLOW}[*] Configuring Firewall (UFW)...${NC}"
 ufw default deny incoming
 ufw default allow outgoing
 
-# Explicitly allow HTTP, HTTPS and SSH
-ufw allow 22/tcp comment 'SSH'
+# Allow SSH only from private subnets (RFC 1918) for local network access
+ufw allow from 192.168.0.0/16 to any port 22 proto tcp comment 'SSH local only'
+ufw allow from 10.0.0.0/8 to any port 22 proto tcp comment 'SSH local only'
+ufw allow from 172.16.0.0/12 to any port 22 proto tcp comment 'SSH local only'
+
+# Explicitly allow HTTP and HTTPS
 ufw allow 80/tcp comment 'HTTP'
 ufw allow 443/tcp comment 'HTTPS'
 
