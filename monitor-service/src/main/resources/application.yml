@@ -1,6 +1,7 @@
 # Sentinel System Monitoring & Alerting Service Configuration
 server:
   port: 8095
+  address: 127.0.0.1
 
 spring:
   application:

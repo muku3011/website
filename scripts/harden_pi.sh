@@ -48,12 +48,37 @@ ufw --force enable
 
 # 4. Enable and start services
 printf "${YELLOW}[*] Activating and configuring Fail2ban brute-force monitor...${NC}\n"
+# Setup tuned sshd jail and new apache jails
+cat > /etc/fail2ban/jail.d/hardened.conf << 'EOF'
+[sshd]
+enabled  = true
+backend  = systemd
+maxretry = 3
+findtime = 10m
+bantime  = 24h
+
+[apache-auth]
+enabled  = true
+port     = http,https
+filter   = apache-auth
+logpath  = /var/log/apache2/error.log
+maxretry = 5
+bantime  = 1h
+
+[apache-badbots]
+enabled  = true
+port     = http,https
+filter   = apache-badbots
+logpath  = /var/log/apache2/access.log
+maxretry = 2
+bantime  = 24h
+EOF
+
 systemctl enable fail2ban
 systemctl restart fail2ban
 
 printf "${YELLOW}[*] Activating automated security updates (unattended-upgrades)...${NC}\n"
 # Ensure unattended-upgrades config is enabled
-# (Debian default enables it automatically upon install, but we force enable it to be sure)
 echo 'APT::Periodic::Update-Package-Lists "1";' > /etc/apt/apt.conf.d/20auto-upgrades
 echo 'APT::Periodic::Unattended-Upgrade "1";' >> /etc/apt/apt.conf.d/20auto-upgrades
 
@@ -74,7 +99,56 @@ fi
 echo "pre-hook = ufw allow 80/tcp comment 'Temp open for Certbot'" >> "$CLI_INI"
 echo "post-hook = ufw delete allow 80/tcp" >> "$CLI_INI"
 
-# 6. Print status summary
+# 6. Hardening SSH Configuration
+printf "${YELLOW}[*] Applying SSH Server hardening configs...${NC}\n"
+mkdir -p /etc/ssh/sshd_config.d
+cat > /etc/ssh/sshd_config.d/99-hardened.conf << 'EOF'
+PasswordAuthentication no
+PermitRootLogin no
+MaxAuthTries 3
+X11Forwarding no
+LoginGraceTime 30
+EOF
+systemctl restart ssh
+
+# 7. Apply Sysctl Kernel Parameters Hardening
+printf "${YELLOW}[*] Applying network sysctl kernel security hardening...${NC}\n"
+cat > /etc/sysctl.d/99-hardened.conf << 'EOF'
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.default.rp_filter = 1
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv6.conf.all.accept_redirects = 0
+net.ipv4.conf.all.log_martians = 1
+net.ipv4.tcp_syncookies = 1
+net.ipv6.conf.all.accept_ra = 0
+net.ipv4.conf.all.accept_source_route = 0
+EOF
+sysctl --system
+
+# 8. Configure Apache Security Headers
+printf "${YELLOW}[*] Configuring Apache security headers and server tokens...${NC}\n"
+cat > /etc/apache2/conf-available/security-headers.conf << 'EOF'
+Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+Header always set X-Frame-Options "SAMEORIGIN"
+Header always set X-Content-Type-Options "nosniff"
+Header always set Referrer-Policy "strict-origin-when-cross-origin"
+Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://auth.hutta.in"
+ServerTokens Prod
+ServerSignature Off
+EOF
+if a2enconf security-headers &>/dev/null; then
+    systemctl reload apache2
+fi
+
+# 9. Cleanup unnecessary SUID on ntfs-3g
+if [ -f /usr/bin/ntfs-3g ]; then
+    printf "${YELLOW}[*] Removing SUID bit from /usr/bin/ntfs-3g...${NC}\n"
+    chmod 0755 /usr/bin/ntfs-3g
+fi
+
+# 10. Print status summary
 printf "\n${GREEN}============================================================${NC}\n"
 printf "${GREEN}   Hardening Completed Successfully!                         ${NC}\n"
 printf "${GREEN}============================================================${NC}\n"
@@ -84,3 +158,4 @@ printf "\nService Statuses:\n"
 printf " - fail2ban:          $(systemctl is-active fail2ban)\n"
 printf " - unattended-upgrades: $(systemctl is-active unattended-upgrades)\n"
 printf "============================================================\n"
+
