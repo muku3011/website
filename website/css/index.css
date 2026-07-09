@@ -2982,9 +2982,9 @@ input[type="file"].form-input::file-selector-button:hover {
     }
 }
 
-/* Profile Photo / Tech Orb */
 .profile-showcase {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     width: 100%;
@@ -3766,4 +3766,132 @@ input[type="file"].form-input::file-selector-button:hover {
 .project-card.scroll-animate-js:nth-child(5) { transition-delay: 0.25s; }
 .project-card.scroll-animate-js:nth-child(6) { transition-delay: 0.3s; }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   MOBILE STYLING IMPROVEMENTS & RESPONSIVE POLISHING
+   ───────────────────────────────────────────────────────────────────────────── */
 
+@media (max-width: 768px) {
+    /* Header layout optimization */
+    .header-container {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 0.6rem 1rem !important;
+        gap: 0.5rem !important;
+    }
+    .brand {
+        flex-shrink: 0;
+    }
+    .header-actions {
+        flex-shrink: 0;
+    }
+    .nav-menu {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: center !important;
+        align-items: center !important;
+        border-top: none !important;
+        padding-top: 0 !important;
+        margin: 0 0.5rem !important;
+        flex: 1;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        flex-wrap: nowrap !important;
+        scrollbar-width: none !important; /* Hide Firefox scrollbar */
+        -webkit-overflow-scrolling: touch;
+    }
+    .nav-menu::-webkit-scrollbar {
+        display: none !important; /* Hide Chrome/Safari scrollbar */
+    }
+    .nav-link {
+        font-size: 0.85rem !important;
+        padding: 0.25rem 0.5rem !important;
+        flex-shrink: 0;
+    }
+
+    /* Hero section centering and optimization */
+    .portfolio-hero {
+        padding: 6rem 1rem 3rem 1rem !important;
+        min-height: auto !important;
+    }
+    .hero-container-inner {
+        grid-template-columns: 1fr !important;
+        gap: 2rem !important;
+        text-align: center !important;
+    }
+    .profile-showcase {
+        flex-direction: column !important;
+        gap: 1.5rem !important;
+    }
+    .whoami-caption {
+        max-width: 320px !important;
+        margin-top: 0.5rem !important;
+        text-align: center !important;
+    }
+    .hero-actions-row {
+        justify-content: center !important;
+        gap: 0.75rem !important;
+    }
+
+    /* About Cards Grid */
+    .whoami-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1.25rem !important;
+    }
+    .whoami-card {
+        padding: 1.25rem !important;
+    }
+
+    /* Experience Timeline mobile optimization */
+    .timeline-container {
+        padding-left: 1.25rem !important;
+        margin-left: 0.5rem !important;
+    }
+    .timeline-dot {
+        left: -1.25rem !important;
+        width: 12px !important;
+        height: 12px !important;
+    }
+    .timeline-content {
+        padding: 1.25rem !important;
+    }
+    .timeline-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.35rem !important;
+    }
+    .timeline-date {
+        margin-top: 0.25rem;
+    }
+
+    /* Projects grid */
+    .projects-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1.5rem !important;
+    }
+
+    /* Skills Grid */
+    .skills-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1.25rem !important;
+    }
+    .skills-card {
+        padding: 1.25rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Tighten typography sizing for small phone screens */
+    .hero-name {
+        font-size: 2.2rem !important;
+    }
+    .hero-title {
+        font-size: 1.2rem !important;
+    }
+    .portfolio-section h2 {
+        font-size: 1.75rem !important;
+    }
+    .timeline-role-org h3 {
+        font-size: 1.15rem !important;
+    }
+}
