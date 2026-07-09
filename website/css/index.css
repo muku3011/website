@@ -3771,44 +3771,6 @@ input[type="file"].form-input::file-selector-button:hover {
    ───────────────────────────────────────────────────────────────────────────── */
 
 @media (max-width: 768px) {
-    /* Header layout optimization */
-    .header-container {
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        padding: 0.6rem 1rem !important;
-        gap: 0.5rem !important;
-    }
-    .brand {
-        flex-shrink: 0;
-    }
-    .header-actions {
-        flex-shrink: 0;
-    }
-    .nav-menu {
-        display: flex !important;
-        flex-direction: row !important;
-        justify-content: center !important;
-        align-items: center !important;
-        border-top: none !important;
-        padding-top: 0 !important;
-        margin: 0 0.5rem !important;
-        flex: 1;
-        overflow-x: auto !important;
-        white-space: nowrap !important;
-        flex-wrap: nowrap !important;
-        scrollbar-width: none !important; /* Hide Firefox scrollbar */
-        -webkit-overflow-scrolling: touch;
-    }
-    .nav-menu::-webkit-scrollbar {
-        display: none !important; /* Hide Chrome/Safari scrollbar */
-    }
-    .nav-link {
-        font-size: 0.85rem !important;
-        padding: 0.25rem 0.5rem !important;
-        flex-shrink: 0;
-    }
-
     /* Hero section centering and optimization */
     .portfolio-hero {
         padding: 6rem 1rem 3rem 1rem !important;
