@@ -195,8 +195,12 @@ window.controlService = async function(service, action) {
       alert(`Service ${service} action '${action}' completed successfully.`);
       refreshServices();
     }
+  } catch (e) {
+    console.error(e);
+    alert(`Failed to execute control action: ${e.message || e}`);
   }
 };
+
 
 // ── Databases ──────────────────────────────────────────────────────────────────
 
