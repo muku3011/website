@@ -39,7 +39,13 @@ public class MetricsScheduler {
 
     // System metrics
     Map<String, Object> sys = systemMetrics.collect();
-    snapshot.put("system.cpu", sys.get("cpu"));
+    // cpu is now a Map with "overall", "cores", etc. — extract overall for alert evaluation
+    Object cpuRaw = sys.get("cpu");
+    if (cpuRaw instanceof Map<?, ?> cpuMap) {
+      snapshot.put("system.cpu", cpuMap.get("overall"));
+    } else {
+      snapshot.put("system.cpu", cpuRaw);
+    }
     snapshot.put("system.cpuTempCelsius", sys.get("cpuTempCelsius"));
     Map<String, Object> mem = (Map<String, Object>) sys.get("memory");
     if (mem != null) snapshot.put("system.mem_percent", mem.get("percent"));
