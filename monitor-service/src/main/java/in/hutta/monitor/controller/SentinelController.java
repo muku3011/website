@@ -1,5 +1,6 @@
 package in.hutta.monitor.controller;
 
+import in.hutta.monitor.repository.SecurityIncidentRepository;
 import in.hutta.monitor.service.*;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ public class SentinelController {
   private final SecurityMetricsService securityMetrics;
   private final CertificateService certificateService;
   private final DnsService dnsService;
+  private final SecurityIncidentRepository securityIncidentRepository;
 
   @GetMapping("/system")
   public Map<String, Object> system() {
@@ -49,5 +51,10 @@ public class SentinelController {
   @GetMapping("/dns")
   public Map<String, Object> dns() {
     return dnsService.collect();
+  }
+
+  @GetMapping("/security/incidents")
+  public Object securityIncidents() {
+    return securityIncidentRepository.findTop100ByOrderByTimestampDesc();
   }
 }

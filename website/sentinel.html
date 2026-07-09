@@ -801,12 +801,39 @@
 
             <!-- PANEL 3: Security -->
             <div class="sentinel-tab-panel" id="panel-security">
-                <div class="sentinel-card">
-                    <div class="card-title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                        Security Summary
+                <div class="row-2">
+                    <!-- Left: Status Summary -->
+                    <div class="sentinel-card">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            Security Status
+                        </div>
+                        <div id="security-list"></div>
                     </div>
-                    <div id="security-list"></div>
+
+                    <!-- Right: Incident Logs -->
+                    <div class="sentinel-card" id="security-incidents-card">
+                        <div class="card-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            Recent Incidents & Bans
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="rules-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>IP & Geo</th>
+                                        <th>User</th>
+                                        <th>Event Type</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="security-incidents-tbody">
+                                    <tr><td colspan="5" class="empty-state">Loading incidents...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
 

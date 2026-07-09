@@ -36,8 +36,7 @@ ufw allow from 192.168.0.0/16 to any port 22 proto tcp comment 'SSH local only'
 ufw allow from 10.0.0.0/8 to any port 22 proto tcp comment 'SSH local only'
 ufw allow from 172.16.0.0/12 to any port 22 proto tcp comment 'SSH local only'
 
-# Explicitly allow HTTP and HTTPS
-ufw allow 80/tcp comment 'HTTP'
+# Explicitly allow HTTPS (Port 80 is kept closed and opened dynamically by Certbot hooks)
 ufw allow 443/tcp comment 'HTTPS'
 
 # Enable UFW (non-interactively)
@@ -57,6 +56,20 @@ echo 'APT::Periodic::Unattended-Upgrade "1";' >> /etc/apt/apt.conf.d/20auto-upgr
 
 systemctl enable unattended-upgrades
 systemctl restart unattended-upgrades
+
+# 5. Configure Certbot renewal hooks to open/close port 80 on demand
+echo -e "${YELLOW}[*] Configuring Certbot dynamic UFW renewal hooks...${NC}"
+mkdir -p /etc/letsencrypt
+CLI_INI="/etc/letsencrypt/cli.ini"
+
+# Ensure clean configuration without duplicate hook entries
+if [ -f "$CLI_INI" ]; then
+    sed -i '/pre-hook/d' "$CLI_INI" 2>/dev/null || true
+    sed -i '/post-hook/d' "$CLI_INI" 2>/dev/null || true
+fi
+
+echo "pre-hook = ufw allow 80/tcp comment 'Temp open for Certbot'" >> "$CLI_INI"
+echo "post-hook = ufw delete allow 80/tcp" >> "$CLI_INI"
 
 # 5. Print status summary
 echo -e "\n${GREEN}============================================================${NC}"

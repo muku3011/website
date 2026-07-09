@@ -234,6 +234,62 @@ async function refreshSecurity() {
   }
 }
 
+// ── Security Incidents ────────────────────────────────────────────────────────
+
+async function refreshSecurityIncidents() {
+  try {
+    const incidents = await fetchJson(`${BASE}/security/incidents`);
+    const tbody = document.getElementById('security-incidents-tbody');
+    if (!tbody) return;
+    if (!incidents.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No security incidents recorded.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = incidents.map(inc => {
+      const timeStr = timeAgo(inc.timestamp);
+      const flag = getFlagEmoji(inc.countryCode);
+      const geo = inc.countryCode === 'LOCAL' ? 'Local Network (LAN)' : `${flag} ${inc.city || ''}, ${inc.country || ''}`;
+      
+      let typeBadge = '';
+      if (inc.incidentType === 'FAIL2BAN_BAN') {
+        typeBadge = '<span class="severity-chip high" style="background:hsla(0,85%,55%,0.15);color:var(--warning-glow);font-size:0.75rem;padding:0.15rem 0.5rem;border-radius:4px;border:1px solid hsla(0,85%,55%,0.25);">Banned</span>';
+      } else if (inc.incidentType === 'FAIL2BAN_UNBAN') {
+        typeBadge = '<span class="severity-chip default" style="background:hsla(145,80%,50%,0.15);color:var(--success-glow);font-size:0.75rem;padding:0.15rem 0.5rem;border-radius:4px;border:1px solid hsla(145,80%,50%,0.25);">Unbanned</span>';
+      } else {
+        typeBadge = '<span class="severity-chip default" style="font-size:0.75rem;padding:0.15rem 0.5rem;border-radius:4px;background:rgba(255,255,255,0.05);color:var(--text-secondary);border:1px solid var(--card-border);">Failed SSH</span>';
+      }
+
+      const actionText = inc.blocked 
+        ? '<span style="color:var(--warning-glow);font-weight:700;">Blocked</span>' 
+        : '<span style="color:var(--text-secondary);">Logged</span>';
+
+      return `
+        <tr>
+          <td style="font-size:0.82rem;color:var(--text-secondary);">${timeStr}</td>
+          <td>
+            <div style="font-weight:600;font-size:0.88rem;color:var(--text-primary);">${inc.ipAddress}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.15rem;">${geo}</div>
+          </td>
+          <td><code style="font-size:0.8rem;background:rgba(255,255,255,0.03);padding:0.15rem 0.35rem;border-radius:3px;border:1px solid var(--card-border);">${inc.username || '—'}</code></td>
+          <td>${typeBadge}</td>
+          <td style="font-size:0.85rem;">${actionText}</td>
+        </tr>`;
+    }).join('');
+  } catch (e) {
+    console.warn('security incidents refresh failed:', e);
+  }
+}
+
+// Convert 2-letter ISO code to flag emoji
+function getFlagEmoji(countryCode) {
+  if (!countryCode || countryCode === 'UN' || countryCode === 'LOCAL') return '🌐';
+  const codePoints = countryCode
+    .toUpperCase()
+    .split('')
+    .map(char => 127397 + char.charCodeAt(0));
+  return String.fromCodePoint(...codePoints);
+}
+
 // ── Alert Rules ───────────────────────────────────────────────────────────────
 
 async function refreshRules() {
@@ -419,6 +475,7 @@ async function refreshAll() {
     refreshCertificates(),
     refreshDns(),
     refreshSecurity(),
+    refreshSecurityIncidents(),
     refreshRules(),
     refreshHistory(),
   ]);
