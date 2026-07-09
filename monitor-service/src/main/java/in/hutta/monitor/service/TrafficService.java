@@ -6,11 +6,13 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -24,6 +26,7 @@ import org.springframework.stereotype.Service;
 public class TrafficService {
 
   private final SystemMetricsService sys;
+  private final DnsService dnsService;
 
   private static final String LOG_PATH = "/var/log/apache2/access.log";
   private static final int SAMPLE_LINES = 5000;
@@ -52,16 +55,22 @@ public class TrafficService {
       }
       result.put("readable", true);
 
+      // Dynamically resolve exclusions: loopback + current ISP public IP
+      Set<String> excluded = new HashSet<>();
+      excluded.add("127.0.0.1");
+      excluded.add("::1");
+      String publicIp = (String) dnsService.collect().get("publicIp");
+      if (publicIp != null && !publicIp.isBlank() && !"unavailable".equals(publicIp)) {
+        excluded.add(publicIp);
+        log.debug("Traffic: excluding current public IP {}", publicIp);
+      }
+
       List<LogEntry> entries =
           Arrays.stream(raw.split("\n"))
               .map(this::parseLine)
               .filter(Objects::nonNull)
-              // Filter loopback self-monitoring traffic
-              .filter(
-                  e ->
-                      !e.ip().equals("127.0.0.1")
-                          && !e.ip().equals("::1")
-                          && !e.path().startsWith("/api/sentinel"))
+              // Filter loopback, configured excluded IPs, and self-monitoring calls
+              .filter(e -> !excluded.contains(e.ip()) && !e.path().startsWith("/api/sentinel"))
               .collect(Collectors.toList());
 
       ZonedDateTime now = ZonedDateTime.now();
