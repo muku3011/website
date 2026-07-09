@@ -55,8 +55,12 @@ function formatBytes(kb) {
 async function refreshSystem() {
   try {
     const d = await fetchJson(`${BASE}/system`);
-    const cpu = Math.round(d.cpu ?? 0);
+
+    // ── CPU ──────────────────────────────────────────────────────────────────
+    const cpuObj = d.cpu ?? {};
+    const cpu = Math.round(cpuObj.overall ?? d.cpu ?? 0);
     document.getElementById('cpu-value').textContent = cpu + '%';
+
     const la = d.loadAvg ?? {};
     document.getElementById('cpu-load').textContent =
         `Load: ${la.oneMin ?? '—'} / ${la.fiveMin ?? '—'} / ${la.fifteenMin ?? '—'}`;
@@ -64,28 +68,77 @@ async function refreshSystem() {
 
     const temp = d.cpuTempCelsius;
     document.getElementById('cpu-temp').textContent =
-        temp > 0 ? `🌡 Temp: ${temp.toFixed(1)}°C` : 'Temp: N/A';
+        temp > 0 ? `🌡 ${temp.toFixed(1)}°C` : '';
 
+    // CPU model & core bars
+    const modelEl = document.getElementById('cpu-model');
+    if (modelEl) modelEl.textContent = cpuObj.model ?? '';
+
+    const coresEl = document.getElementById('cpu-cores');
+    if (coresEl && Array.isArray(cpuObj.cores) && cpuObj.cores.length > 0) {
+      coresEl.innerHTML = cpuObj.cores.map((pct, i) => {
+        const cls = pct > 90 ? 'crit' : pct > 75 ? 'warn' : '';
+        return `<div class="core-bar-wrap">
+          <span class="core-label">C${i}</span>
+          <div class="core-track"><div class="core-fill ${cls}" style="width:${pct}%"></div></div>
+          <span class="core-pct">${pct}%</span>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Memory ───────────────────────────────────────────────────────────────
     const mem = d.memory ?? {};
     const memPct = mem.percent ?? 0;
     document.getElementById('mem-value').textContent = memPct + '%';
     document.getElementById('mem-detail').textContent =
-        `${mem.usedMb ?? '—'} MB / ${mem.totalMb ?? '—'} MB`;
+        `${mem.usedMb ?? '—'} / ${mem.totalMb ?? '—'} MB`;
     setProgress('mem-bar', memPct);
 
+    // Memory breakdown row
+    const memBreakEl = document.getElementById('mem-breakdown');
+    if (memBreakEl) {
+      const bc = mem.buffersCacheMb ?? 0;
+      const free = mem.freeMb ?? 0;
+      const swapUsed = mem.swapUsedMb ?? 0;
+      const swapTotal = mem.swapTotalMb ?? 0;
+      memBreakEl.innerHTML =
+          `<span>Buf/Cache: ${bc} MB</span><span>Free: ${free} MB</span>` +
+          (swapTotal > 0 ? `<span>Swap: ${swapUsed}/${swapTotal} MB</span>` : '');
+    }
+
+    // ── Disk ─────────────────────────────────────────────────────────────────
     const disk = d.disk ?? {};
     const diskPct = disk.percent ?? 0;
     document.getElementById('disk-value').textContent = diskPct + '%';
     document.getElementById('disk-detail').textContent =
         `Free: ${formatBytes(disk.freeKb ?? 0)}`;
     setProgress('disk-bar', diskPct);
-    
+
+    // ── Processes ────────────────────────────────────────────────────────────
+    const procs = d.processes ?? {};
+    const procCountEl = document.getElementById('proc-count');
+    if (procCountEl && procs.total) {
+      procCountEl.textContent = `⚙ ${procs.running ?? 0} running / ${procs.total} total`;
+    }
+    const topProcsEl = document.getElementById('top-processes');
+    if (topProcsEl && Array.isArray(procs.top)) {
+      topProcsEl.innerHTML = procs.top.map(p =>
+        `<tr>
+          <td>${p.pid}</td>
+          <td><span class="proc-name">${p.name}</span></td>
+          <td><span class="${p.cpu > 50 ? 'val-warn' : ''}">${p.cpu.toFixed(1)}%</span></td>
+          <td>${p.mem.toFixed(1)}%</td>
+        </tr>`
+      ).join('');
+    }
+
     systemOk = (cpu < 90 && memPct < 90 && diskPct < 90);
   } catch (e) {
     console.warn('system refresh failed:', e);
     systemOk = false;
   }
 }
+
 
 // ── Services ──────────────────────────────────────────────────────────────────
 
