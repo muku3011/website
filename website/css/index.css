@@ -51,6 +51,13 @@ body.dark-theme {
     --dropdown-bg: rgba(18, 18, 24, 0.95);
     --dropdown-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 1px rgba(255, 255, 255, 0.1);
     --dropdown-item-border: rgba(255, 255, 255, 0.05);
+
+    /* Floating Bottom Navigation Variables */
+    --floating-nav-bg: rgba(10, 10, 10, 0.72);
+    --floating-nav-border: rgba(255, 255, 255, 0.08);
+    --floating-nav-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
+    --floating-nav-item-active-bg: rgba(255, 255, 255, 0.07);
+    --floating-nav-scrollbar-thumb: rgba(255, 255, 255, 0.45);
 }
 
 /* Light Theme */
@@ -85,6 +92,13 @@ body.light-theme {
     --dropdown-bg: rgba(255, 255, 255, 0.95);
     --dropdown-shadow: 0 10px 40px rgba(100, 110, 140, 0.15), 0 0 1px rgba(0, 0, 0, 0.08);
     --dropdown-item-border: rgba(0, 0, 0, 0.05);
+
+    /* Floating Bottom Navigation Variables */
+    --floating-nav-bg: rgba(255, 255, 255, 0.75);
+    --floating-nav-border: rgba(0, 0, 0, 0.08);
+    --floating-nav-shadow: 0 16px 40px rgba(100, 110, 140, 0.15);
+    --floating-nav-item-active-bg: rgba(0, 0, 0, 0.05);
+    --floating-nav-scrollbar-thumb: rgba(0, 0, 0, 0.25);
 }
 
 html {
@@ -2802,11 +2816,11 @@ input[type="file"].form-input::file-selector-button:hover {
         max-width: 480px !important;
         z-index: 9999 !important;
         flex-direction: row !important;
-        background: rgba(10, 10, 10, 0.72) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        background: var(--floating-nav-bg) !important;
+        border: 1px solid var(--floating-nav-border) !important;
         padding: 0.45rem 0.4rem 0.5rem 0.4rem !important;
         border-radius: 30px !important;
-        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65) !important;
+        box-shadow: var(--floating-nav-shadow) !important;
         backdrop-filter: blur(28px) !important;
         -webkit-backdrop-filter: blur(28px) !important;
         overflow: visible !important;
@@ -2829,7 +2843,7 @@ input[type="file"].form-input::file-selector-button:hover {
         padding: 0 0 6px 0 !important;
         overflow-x: auto !important;
         scrollbar-width: thin !important;
-        scrollbar-color: rgba(255, 255, 255, 0.45) transparent !important;
+        scrollbar-color: var(--floating-nav-scrollbar-thumb) transparent !important;
     }
 
     .tools-menu::-webkit-scrollbar {
@@ -2843,12 +2857,12 @@ input[type="file"].form-input::file-selector-button:hover {
     }
 
     .tools-menu::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.45) !important;
+        background: var(--floating-nav-scrollbar-thumb) !important;
         border-radius: 10px !important;
     }
 
     .tools-menu::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.65) !important;
+        background: var(--text-muted) !important;
     }
 
     .tools-menu-item {
@@ -2882,7 +2896,7 @@ input[type="file"].form-input::file-selector-button:hover {
     }
 
     .tools-menu-item.active {
-        background: rgba(255, 255, 255, 0.07) !important;
+        background: var(--floating-nav-item-active-bg) !important;
         color: var(--primary-glow) !important;
         border: none !important;
         border-radius: 18px !important;
