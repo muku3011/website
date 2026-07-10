@@ -2804,14 +2804,12 @@ input[type="file"].form-input::file-selector-button:hover {
         flex-direction: row !important;
         background: rgba(10, 10, 10, 0.72) !important;
         border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        padding: 0.45rem 0.4rem !important;
+        padding: 0.45rem 0.4rem 0.5rem 0.4rem !important;
         border-radius: 30px !important;
         box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65) !important;
         backdrop-filter: blur(28px) !important;
         -webkit-backdrop-filter: blur(28px) !important;
-        overflow-x: auto !important;
-        white-space: nowrap !important;
-        scrollbar-width: none !important;
+        overflow: visible !important;
     }
 
     .tools-sidebar::-webkit-scrollbar {
@@ -2828,7 +2826,29 @@ input[type="file"].form-input::file-selector-button:hover {
         gap: 0.25rem !important;
         width: 100% !important;
         margin: 0 !important;
-        padding: 0 !important;
+        padding: 0 0 6px 0 !important;
+        overflow-x: auto !important;
+        scrollbar-width: thin !important;
+        scrollbar-color: rgba(255, 255, 255, 0.45) transparent !important;
+    }
+
+    .tools-menu::-webkit-scrollbar {
+        display: block !important;
+        height: 5px !important;
+    }
+
+    .tools-menu::-webkit-scrollbar-track {
+        background: transparent !important;
+        margin: 0 1.5rem !important;
+    }
+
+    .tools-menu::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.45) !important;
+        border-radius: 10px !important;
+    }
+
+    .tools-menu::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.65) !important;
     }
 
     .tools-menu-item {
