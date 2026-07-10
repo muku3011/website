@@ -2787,6 +2787,90 @@ input[type="file"].form-input::file-selector-button:hover {
     .tools-content {
         padding: 1.25rem;
     }
+
+    .tools-dashboard-grid {
+        padding-bottom: 6.5rem !important;
+    }
+
+    .tools-sidebar {
+        position: fixed !important;
+        bottom: 1.25rem !important;
+        top: auto !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 92% !important;
+        max-width: 480px !important;
+        z-index: 9999 !important;
+        flex-direction: row !important;
+        background: rgba(10, 10, 10, 0.72) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        padding: 0.45rem 0.4rem !important;
+        border-radius: 30px !important;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65) !important;
+        backdrop-filter: blur(28px) !important;
+        -webkit-backdrop-filter: blur(28px) !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        scrollbar-width: none !important;
+    }
+
+    .tools-sidebar::-webkit-scrollbar {
+        display: none !important;
+    }
+
+    .tools-sidebar .sidebar-header {
+        display: none !important;
+    }
+
+    .tools-menu {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 0.25rem !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .tools-menu-item {
+        flex-shrink: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0.15rem !important;
+        padding: 0.35rem 0.6rem !important;
+        font-size: 0.65rem !important;
+        font-weight: 500 !important;
+        border-radius: 20px !important;
+        color: var(--text-muted) !important;
+        background: none !important;
+        border: none !important;
+        text-align: center !important;
+        transition: all 0.2s ease !important;
+        min-width: 65px !important;
+    }
+
+    .tools-menu-item:hover {
+        background: none !important;
+        color: var(--text-primary) !important;
+    }
+
+    .tools-menu-item svg {
+        width: 19px !important;
+        height: 19px !important;
+        margin: 0 !important;
+    }
+
+    .tools-menu-item.active {
+        background: rgba(255, 255, 255, 0.07) !important;
+        color: var(--primary-glow) !important;
+        border: none !important;
+        border-radius: 18px !important;
+    }
+
+    .tools-menu-item.active svg {
+        stroke: var(--primary-glow) !important;
+    }
 }
 
 .jwt-output-container {
