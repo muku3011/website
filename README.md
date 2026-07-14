@@ -157,7 +157,7 @@ Contains the server dashboard and portfolio site assets deployed on the Raspberr
 ### 3. [Keycloak Identity Provider (scripts/)](scripts/)
 Contains the Keycloak bare-metal installer and related setup assets:
 - `setup_all.sh` — recommended entry point for provisioning the local Keycloak environment.
-- `install_keycloak.sh` — installs Keycloak on Pi 5, configures PostgreSQL, and creates the systemd service.
+- `setup_keycloak.sh` — installs and configures Keycloak on Pi 5, configures PostgreSQL, and creates the systemd service.
 - `configure_apache.sh` — configures Apache integration points for Keycloak when needed.
 - `keycloak/` — legacy theme assets retained for reference only.
 - **Go to [scripts/setup_all.sh](scripts/setup_all.sh) for the full one-command deployment.**

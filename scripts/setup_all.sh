@@ -46,7 +46,7 @@ echo -e "${GREEN}[+] Step 1 complete${NC}"
 
 # ── Step 2: Keycloak installation & setup ─────────────────────────────────────
 echo -e "${YELLOW}[*] Step 2/4: Installing & Configuring Keycloak...${NC}"
-bash "$SCRIPT_DIR/install_keycloak.sh"
+bash "$SCRIPT_DIR/setup_keycloak.sh"
 echo -e "${GREEN}[+] Step 2 complete${NC}"
 
 # ── Step 3: Apache OIDC integration setup ───────────────────────────────────
