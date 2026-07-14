@@ -68,10 +68,9 @@ public class ActuatorService {
       Map<String, String> components = new LinkedHashMap<>();
       JsonNode comps = health.path("components");
       if (comps.isObject()) {
-        comps
-            .fields()
-            .forEachRemaining(
-                e -> components.put(e.getKey(), e.getValue().path("status").asText()));
+        for (var entry : comps.properties()) {
+          components.put(entry.getKey(), entry.getValue().path("status").asText());
+        }
       }
       out.put("healthComponents", components);
     } catch (Exception e) {
