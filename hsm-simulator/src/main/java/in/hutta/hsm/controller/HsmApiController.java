@@ -84,6 +84,27 @@ public class HsmApiController {
     return null;
   }
 
+  private String getAuthenticatedAdminRole(HttpServletRequest request) {
+    String adminUserHeader = request.getHeader("X-HSM-ADMIN-USER");
+    String adminPinHeader = request.getHeader("X-HSM-ADMIN-PIN");
+    if (adminUserHeader == null || adminPinHeader == null) {
+      return null;
+    }
+    if (!"admin".equals(adminUserHeader) && !"so".equals(adminUserHeader)) {
+      return null;
+    }
+    String configKey = "admin".equals(adminUserHeader) ? "admin_pin" : "so_pin";
+    HsmConfig config = configRepository.findById(configKey).orElse(null);
+    String actualPin =
+        config != null
+            ? config.getConfigValue()
+            : ("admin".equals(adminUserHeader) ? "admin123" : "so123");
+    if (actualPin.equals(adminPinHeader)) {
+      return adminUserHeader;
+    }
+    return null;
+  }
+
   private HsmSlot resolveSlotByPin(String pin) {
     if (pin == null || pin.isEmpty()) {
       return null;
@@ -156,7 +177,12 @@ public class HsmApiController {
   }
 
   @GetMapping("/admin/audit-logs")
-  public ResponseEntity<?> getAdminAuditLogs() {
+  public ResponseEntity<?> getAdminAuditLogs(HttpServletRequest httpRequest) {
+    String adminRole = getAuthenticatedAdminRole(httpRequest);
+    if (!"admin".equals(adminRole)) {
+      return ResponseEntity.status(403)
+          .body(Map.of("error", "Access denied: Only Appliance Admin can view global audit logs"));
+    }
     List<HsmAuditLog> logs = auditLogRepository.findTop100ByOrderByTimestampDesc();
     return ResponseEntity.ok(logs);
   }
@@ -190,6 +216,11 @@ public class HsmApiController {
     if (webUser == null) {
       return ResponseEntity.status(401)
           .body(Map.of("error", "Web user session invalid or not logged in"));
+    }
+    String adminRole = getAuthenticatedAdminRole(httpRequest);
+    if (!"admin".equals(adminRole)) {
+      return ResponseEntity.status(403)
+          .body(Map.of("error", "Access denied: Only Appliance Admin can create slots"));
     }
 
     String label = request.get("label");
@@ -227,6 +258,11 @@ public class HsmApiController {
     if (webUser == null) {
       return ResponseEntity.status(401)
           .body(Map.of("error", "Web user session invalid or not logged in"));
+    }
+    String adminRole = getAuthenticatedAdminRole(httpRequest);
+    if (!"admin".equals(adminRole)) {
+      return ResponseEntity.status(403)
+          .body(Map.of("error", "Access denied: Only Appliance Admin can delete slots"));
     }
     if (id == 1) {
       return ResponseEntity.badRequest()
@@ -279,6 +315,70 @@ public class HsmApiController {
     slot.setSlotPin(newPin);
     slotRepository.save(slot);
     cryptoService.logAudit(id, "CHANGE_SLOT_PIN", null, "SUCCESS", "Changed PIN for slot " + id);
+    return ResponseEntity.ok(Map.of("status", "SUCCESS"));
+  }
+
+  @PostMapping("/slots/{id}/initialize")
+  public ResponseEntity<?> initializeSlot(
+      @PathVariable Integer id,
+      @RequestBody Map<String, String> request,
+      HttpServletRequest httpRequest) {
+    String adminRole = getAuthenticatedAdminRole(httpRequest);
+    if (!"so".equals(adminRole)) {
+      return ResponseEntity.status(403)
+          .body(Map.of("error", "Access denied: Only Security Officer (SO) can initialize slots"));
+    }
+
+    HsmSlot slot = slotRepository.findById(id).orElse(null);
+    if (slot == null) {
+      return ResponseEntity.status(404).body(Map.of("error", "Slot not found"));
+    }
+
+    String pin = request.get("slotPin");
+    if (pin == null || pin.trim().length() < 4) {
+      return ResponseEntity.badRequest()
+          .body(Map.of("error", "Slot PIN must be at least 4 digits"));
+    }
+
+    // Cascade delete keys inside this slot
+    List<HsmObject> keys = objectRepository.findBySlotId(id);
+    objectRepository.deleteAll(keys);
+
+    slot.setSlotPin(pin);
+    slot.setStatus("INITIALIZED");
+    slotRepository.save(slot);
+
+    cryptoService.logAudit(
+        id, "FORMAT_SLOT", null, "SUCCESS", "Slot formatted & initialized by SO");
+    return ResponseEntity.ok(Map.of("status", "SUCCESS"));
+  }
+
+  @PostMapping("/slots/{id}/reset-user-pin")
+  public ResponseEntity<?> resetUserPin(
+      @PathVariable Integer id,
+      @RequestBody Map<String, String> request,
+      HttpServletRequest httpRequest) {
+    String adminRole = getAuthenticatedAdminRole(httpRequest);
+    if (!"so".equals(adminRole)) {
+      return ResponseEntity.status(403)
+          .body(Map.of("error", "Access denied: Only Security Officer (SO) can reset user PINs"));
+    }
+
+    HsmSlot slot = slotRepository.findById(id).orElse(null);
+    if (slot == null) {
+      return ResponseEntity.status(404).body(Map.of("error", "Slot not found"));
+    }
+
+    String newPin = request.get("newPin");
+    if (newPin == null || newPin.trim().length() < 4) {
+      return ResponseEntity.badRequest()
+          .body(Map.of("error", "Slot PIN must be at least 4 digits"));
+    }
+
+    slot.setSlotPin(newPin);
+    slotRepository.save(slot);
+
+    cryptoService.logAudit(id, "RESET_SLOT_PIN", null, "SUCCESS", "User PIN reset by SO");
     return ResponseEntity.ok(Map.of("status", "SUCCESS"));
   }
 

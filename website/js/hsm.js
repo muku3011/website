@@ -47,6 +47,15 @@
     const btnSubmitSlotPin = document.getElementById('btn-submit-slot-pin');
     let targetSlotAccessId = null;
 
+    // SO specific modals
+    const formatSlotModal = document.getElementById('format-slot-modal');
+    const btnRunFormatSlot = document.getElementById('btn-run-format-slot');
+    const formatSlotPinInput = document.getElementById('format-slot-pin');
+    const resetSlotPinModal = document.getElementById('reset-slot-pin-modal');
+    const btnRunResetSlotPin = document.getElementById('btn-run-reset-slot-pin');
+    const resetSlotNewPinInput = document.getElementById('reset-slot-new-pin');
+    let targetSOActionSlotId = null;
+
     // Slot Header Elements
     const slotHeaderLabel = document.getElementById('slot-header-label');
     const slotHeaderDesc = document.getElementById('slot-header-desc');
@@ -114,6 +123,10 @@
         if (activeSlotPin) {
             configHeaders['X-HSM-PIN'] = activeSlotPin;
         }
+        if (adminPin && adminUser) {
+            configHeaders['X-HSM-ADMIN-USER'] = adminUser;
+            configHeaders['X-HSM-ADMIN-PIN'] = adminPin;
+        }
 
         const config = {
             method,
@@ -153,6 +166,17 @@
         } else if (viewName === 'admin') {
             viewAdminDashboard.style.display = 'grid';
             adminRoleBadge.innerText = `Logged in as ${adminUser.toUpperCase()}`;
+
+            // Role separation UI toggling
+            const btnAuditsTab = Array.from(adminTabButtons).find(b => b.dataset.tab === 'admin-tab-audits');
+            if (adminUser === 'admin') {
+                if (btnAuditsTab) btnAuditsTab.style.display = 'flex';
+                if (btnShowCreateSlotModal) btnShowCreateSlotModal.style.display = 'inline-block';
+            } else if (adminUser === 'so') {
+                if (btnAuditsTab) btnAuditsTab.style.display = 'none';
+                if (btnShowCreateSlotModal) btnShowCreateSlotModal.style.display = 'none';
+            }
+
             loadAdminStatus();
             // Reset to status tab
             triggerTabSwitch(adminTabButtons, adminTabPanels, 'admin-tab-status');
@@ -264,6 +288,21 @@
             slots.forEach(s => {
                 const card = document.createElement('div');
                 card.className = 'slot-card';
+                
+                let actionsHtml = '';
+                if (adminUser === 'admin') {
+                    actionsHtml = `
+                        <button class="btn btn-primary btn-access-slot" data-id="${s.id}" data-label="${escapeHtml(s.label)}" style="flex:1; padding:0.4rem;">Access Slot</button>
+                        ${s.id !== 1 ? `<button class="btn btn-secondary btn-delete-slot" data-id="${s.id}" style="padding:0.4rem; border-color:#ff0070; color:#ff0070;">Delete</button>` : ''}
+                    `;
+                } else if (adminUser === 'so') {
+                    actionsHtml = `
+                        <button class="btn btn-primary btn-access-slot" data-id="${s.id}" data-label="${escapeHtml(s.label)}" style="flex:1; padding:0.4rem;">Access Slot</button>
+                        <button class="btn btn-secondary btn-init-slot" data-id="${s.id}" data-label="${escapeHtml(s.label)}" style="padding:0.4rem; border-color:var(--primary-glow); color:var(--text-primary);">Format</button>
+                        <button class="btn btn-secondary btn-reset-user-pin" data-id="${s.id}" data-label="${escapeHtml(s.label)}" style="padding:0.4rem; border-color:#60a5fa; color:#60a5fa;">Reset PIN</button>
+                    `;
+                }
+
                 card.innerHTML = `
                     <div class="slot-card-header">
                         <div class="slot-card-title">${escapeHtml(s.label)}</div>
@@ -271,8 +310,7 @@
                     </div>
                     <div class="slot-card-desc">${escapeHtml(s.description || 'No description provided')}</div>
                     <div class="slot-card-actions">
-                        <button class="btn btn-primary btn-access-slot" data-id="${s.id}" data-label="${escapeHtml(s.label)}" style="flex:1; padding:0.4rem;">Access Slot</button>
-                        ${s.id !== 1 ? `<button class="btn btn-secondary btn-delete-slot" data-id="${s.id}" style="padding:0.4rem; border-color:#ff0070; color:#ff0070;">Delete</button>` : ''}
+                        ${actionsHtml}
                     </div>
                 `;
                 slotsContainer.appendChild(card);
@@ -302,6 +340,24 @@
                             alert(e.message);
                         }
                     }
+                });
+            });
+
+            document.querySelectorAll('.btn-init-slot').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    targetSOActionSlotId = btn.dataset.id;
+                    document.getElementById('format-slot-title').innerText = `Format Slot: ${btn.dataset.label}`;
+                    formatSlotPinInput.value = '';
+                    formatSlotModal.showModal();
+                });
+            });
+
+            document.querySelectorAll('.btn-reset-user-pin').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    targetSOActionSlotId = btn.dataset.id;
+                    document.getElementById('reset-slot-pin-title').innerText = `Reset PIN for: ${btn.dataset.label}`;
+                    resetSlotNewPinInput.value = '';
+                    resetSlotPinModal.showModal();
                 });
             });
 
@@ -734,6 +790,42 @@
             changeSlotNewPin.value = '';
             activeSlotPin = newPin;
             sessionStorage.setItem('hsm_slot_pin', newPin);
+        } catch (e) {
+            alert(e.message);
+        }
+    });
+
+    // SO Format Slot Submission
+    btnRunFormatSlot.addEventListener('click', async () => {
+        const pin = formatSlotPinInput.value;
+        if (!pin || pin.trim().length < 4) {
+            alert("New Slot PIN must be at least 4 digits");
+            return;
+        }
+
+        try {
+            await apiRequest(`/api/hsm/slots/${targetSOActionSlotId}/initialize`, 'POST', { slotPin: pin });
+            alert("Slot formatted and initialized successfully with new PIN.");
+            formatSlotModal.close();
+            loadSlots();
+        } catch (e) {
+            alert(e.message);
+        }
+    });
+
+    // SO Reset Slot User PIN Submission
+    btnRunResetSlotPin.addEventListener('click', async () => {
+        const newPin = resetSlotNewPinInput.value;
+        if (!newPin || newPin.trim().length < 4) {
+            alert("New Slot PIN must be at least 4 digits");
+            return;
+        }
+
+        try {
+            await apiRequest(`/api/hsm/slots/${targetSOActionSlotId}/reset-user-pin`, 'POST', { newPin });
+            alert("Slot User PIN reset successfully.");
+            resetSlotPinModal.close();
+            loadSlots();
         } catch (e) {
             alert(e.message);
         }
