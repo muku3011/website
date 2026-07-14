@@ -26,9 +26,6 @@ apt-get update
 apt-get install -y ufw fail2ban unattended-upgrades
 
 # 3. Configure UFW (Uncomplicated Firewall)
-printf "${YELLOW}[*] Resetting UFW to clean state (clearing old rules)...${NC}\n"
-ufw --force reset
-
 printf "${YELLOW}[*] Configuring Firewall (UFW)...${NC}\n"
 # Set defaults: Deny incoming, Allow outgoing
 ufw default deny incoming
@@ -90,11 +87,11 @@ printf "${YELLOW}[*] Configuring Certbot dynamic UFW renewal hooks...${NC}\n"
 mkdir -p /etc/letsencrypt
 CLI_INI="/etc/letsencrypt/cli.ini"
 
+touch "$CLI_INI"
+
 # Ensure clean configuration without duplicate hook entries
-if [ -f "$CLI_INI" ]; then
-    sed -i '/pre-hook/d' "$CLI_INI" 2>/dev/null || true
-    sed -i '/post-hook/d' "$CLI_INI" 2>/dev/null || true
-fi
+sed -i '/pre-hook/d' "$CLI_INI"
+sed -i '/post-hook/d' "$CLI_INI"
 
 echo "pre-hook = ufw allow 80/tcp comment 'Temp open for Certbot'" >> "$CLI_INI"
 echo "post-hook = ufw delete allow 80/tcp" >> "$CLI_INI"
