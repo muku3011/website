@@ -240,8 +240,8 @@ fi
 
 # 9. Configure daily database backup cron job
 echo -e "${YELLOW}[*] Configuring daily PostgreSQL database backups...${NC}"
-BACKUP_SCRIPT_DEST="/usr/local/bin/backup_db.sh"
-cp "$SCRIPT_DIR/backup_db.sh" "$BACKUP_SCRIPT_DEST"
+BACKUP_SCRIPT_DEST="/usr/local/bin/cron_db_backup.sh"
+cp "$SCRIPT_DIR/cron_db_backup.sh" "$BACKUP_SCRIPT_DEST"
 chmod 755 "$BACKUP_SCRIPT_DEST"
 
 # Ensure the backup directory exists and is owned by postgres
@@ -253,7 +253,7 @@ chmod 750 /var/backups/postgresql
 CRON_FILE="/etc/cron.d/database-backup"
 cat << 'EOF' > "$CRON_FILE"
 # Run daily database backup at 2:00 AM as postgres user
-0 2 * * * postgres /usr/local/bin/backup_db.sh 2>&1 | logger -t postgres-backup
+0 2 * * * postgres /usr/local/bin/cron_db_backup.sh 2>&1 | logger -t postgres-backup
 EOF
 chmod 644 "$CRON_FILE"
 
