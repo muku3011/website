@@ -275,6 +275,12 @@ mkdir -p /var/backups/postgresql
 chown postgres:postgres /var/backups/postgresql
 chmod 750 /var/backups/postgresql
 
+# Ensure the monitor service running user (rbpi) has access to read status files
+if getent passwd rbpi &>/dev/null; then
+    usermod -aG postgres rbpi
+    echo -e "${GREEN}[+] Added user 'rbpi' to 'postgres' group for database backup monitoring access.${NC}"
+fi
+
 # Create cron job file to run daily at 2:00 AM as postgres user
 CRON_FILE="/etc/cron.d/database-backup"
 cat << 'EOF' > "$CRON_FILE"
