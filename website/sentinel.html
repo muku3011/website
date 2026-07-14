@@ -957,7 +957,7 @@
         <div class="sentinel-page-header">
             <div>
                 <h2>⚡ Sentinel</h2>
-                <p>Real-time monitoring for the Hutta.in (Raspberry Pi)) infrastructure</p>
+                <p>Real-time monitoring for the Hutta.in (Raspberry Pi) infrastructure</p>
             </div>
             <div class="refresh-indicator">
                 <div class="refresh-dot"></div>
@@ -1592,15 +1592,19 @@
             <div class="sentinel-tab-panel" id="panel-telemetry">
                 <div class="sentinel-card" style="margin-bottom:1.5rem;">
                     <div class="card-title">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            style="width:16px;height:16px;">
                             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                         </svg>
                         Spring Boot Application Telemetry
-                        <span style="margin-left:auto;font-size:0.75rem;opacity:0.5;">scraped from /actuator endpoints</span>
+                        <span style="margin-left:auto;font-size:0.75rem;opacity:0.5;">scraped from /actuator
+                            endpoints</span>
                     </div>
-                    <p style="font-size:0.8rem;opacity:0.6;margin:0;">Real-time JVM heap, threads, uptime, Hikari connection pool, and health status for each Spring Boot service.</p>
+                    <p style="font-size:0.8rem;opacity:0.6;margin:0;">Real-time JVM heap, threads, uptime, Hikari
+                        connection pool, and health status for each Spring Boot service.</p>
                 </div>
-                <div id="telemetry-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.5rem;">
+                <div id="telemetry-grid"
+                    style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.5rem;">
                     <div class="empty-state">Loading telemetry data...</div>
                 </div>
             </div>
