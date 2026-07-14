@@ -303,7 +303,7 @@ CLIENT_REDIRECT_URI="https://hutta.in/redirect_uri"
 
 wait_for_keycloak() {
     local attempt=0
-    while [ "$attempt" -lt 60 ]; do
+    while [ "$attempt" -lt 120 ]; do
         if curl -fsS -o /dev/null "$KC_URL/admin/" >/dev/null 2>&1; then
             return 0
         fi
@@ -332,30 +332,69 @@ get_admin_token() {
 api_get() {
     local token="$1"
     local path="$2"
-    curl -fsS -H "Authorization: Bearer ${token}" "$KC_URL${path}"
+    local response_file=$(mktemp)
+    local http_code
+    http_code=$(curl -sS -o "$response_file" -w "%{http_code}" -H "Authorization: Bearer ${token}" "$KC_URL${path}")
+    if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 400 ]; then
+        echo -e "${RED}Error: GET to ${path} failed (HTTP ${http_code})${NC}" >&2
+        cat "$response_file" >&2
+        rm -f "$response_file"
+        return 1
+    fi
+    cat "$response_file"
+    rm -f "$response_file"
 }
 
 api_post() {
     local token="$1"
     local path="$2"
     local body="$3"
-    curl -fsS -X POST -H "Authorization: Bearer ${token}" -H 'Content-Type: application/json' \
-        --data "$body" "$KC_URL${path}"
+    local response_file=$(mktemp)
+    local http_code
+    http_code=$(curl -sS -o "$response_file" -w "%{http_code}" -X POST -H "Authorization: Bearer ${token}" -H 'Content-Type: application/json' --data "$body" "$KC_URL${path}")
+    if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 400 ]; then
+        echo -e "${RED}Error: POST to ${path} failed (HTTP ${http_code})${NC}" >&2
+        cat "$response_file" >&2
+        rm -f "$response_file"
+        return 1
+    fi
+    cat "$response_file"
+    rm -f "$response_file"
 }
 
 api_put() {
     local token="$1"
     local path="$2"
     local body="$3"
-    curl -fsS -X PUT -H "Authorization: Bearer ${token}" -H 'Content-Type: application/json' \
-        --data "$body" "$KC_URL${path}"
+    local response_file=$(mktemp)
+    local http_code
+    http_code=$(curl -sS -o "$response_file" -w "%{http_code}" -X PUT -H "Authorization: Bearer ${token}" -H 'Content-Type: application/json' --data "$body" "$KC_URL${path}")
+    if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 400 ]; then
+        echo -e "${RED}Error: PUT to ${path} failed (HTTP ${http_code})${NC}" >&2
+        cat "$response_file" >&2
+        rm -f "$response_file"
+        return 1
+    fi
+    cat "$response_file"
+    rm -f "$response_file"
 }
 
 api_delete() {
     local token="$1"
     local path="$2"
-    curl -fsS -X DELETE -H "Authorization: Bearer ${token}" "$KC_URL${path}"
+    local response_file=$(mktemp)
+    local http_code
+    http_code=$(curl -sS -o "$response_file" -w "%{http_code}" -X DELETE -H "Authorization: Bearer ${token}" "$KC_URL${path}")
+    if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 400 ]; then
+        echo -e "${RED}Error: DELETE to ${path} failed (HTTP ${http_code})${NC}" >&2
+        cat "$response_file" >&2
+        rm -f "$response_file"
+        return 1
+    fi
+    cat "$response_file"
+    rm -f "$response_file"
 }
+
 
 ensure_secure_password() {
     local username="$1"

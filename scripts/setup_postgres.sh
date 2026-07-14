@@ -71,7 +71,7 @@ else
 fi
 
 generate_password() {
-    head /dev/urandom | tr -dc 'A-Za-z0-9' | head -c 24
+    openssl rand -base64 18 | tr -dc 'A-Za-z0-9' | head -c 24
 }
 
 update_secret_value() {
@@ -276,7 +276,7 @@ chmod 750 /var/backups/postgresql
 CRON_FILE="/etc/cron.d/database-backup"
 cat << 'EOF' > "$CRON_FILE"
 # Run daily database backup at 2:00 AM as postgres user
-0 2 * * * postgres /usr/local/bin/backup_db.sh >/dev/null 2>&1
+0 2 * * * postgres /usr/local/bin/backup_db.sh 2>&1 | logger -t postgres-backup
 EOF
 chmod 644 "$CRON_FILE"
 
@@ -284,6 +284,11 @@ chmod 644 "$CRON_FILE"
 echo -e "${YELLOW}[*] Executing database backup script once to seed initial status...${NC}"
 sudo -u postgres "$BACKUP_SCRIPT_DEST" || echo -e "${RED}[!] Initial database backup run returned warnings/errors (see logs).${NC}"
 echo -e "${GREEN}[+] Daily backup cron job successfully configured at ${CRON_FILE}.${NC}"
+
+if [ "$RESET_SMDP" = "true" ]; then
+    echo -e "${YELLOW}[*] Restarting smdp-plus service to trigger Flyway schema setup and seeding...${NC}"
+    systemctl start smdp-plus 2>/dev/null || echo -e "${RED}Warning: Failed to start smdp-plus service. Re-seed manually by starting smdp-plus.${NC}"
+fi
 
 echo -e "${GREEN}[+] PostgreSQL setup and verification completed successfully!${NC}"
 echo ""

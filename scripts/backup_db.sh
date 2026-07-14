@@ -27,17 +27,20 @@ for DB in "${DATABASES[@]}"; do
     TARGET="${BACKUP_DIR}/${FILE_NAME}"
     
     printf " - Backing up database %s to %s...\n" "$DB" "$TARGET"
-    if pg_dump -Fc -d "$DB" -f "$TARGET" 2>/dev/null; then
+    TMP_ERR=$(mktemp)
+    if pg_dump -Fc -d "$DB" -f "$TARGET" 2>"$TMP_ERR"; then
         chmod 640 "$TARGET"
         SIZE=$(stat -c%s "$TARGET")
         TOTAL_SIZE=$((TOTAL_SIZE + SIZE))
         # Keep only the basename in status JSON
         FILES_CREATED+=("$FILE_NAME")
     else
-        printf " [!] Error backing up database %s\n" "$DB" >&2
+        ERR_CONTENT=$(cat "$TMP_ERR" | tr '\n' ' ' | sed 's/"/\\"/g')
+        printf " [!] Error backing up database %s: %s\n" "$DB" "$ERR_CONTENT" >&2
         STATUS="FAILED"
-        ERROR_MSG="Failed to dump ${DB}"
+        ERROR_MSG="Failed to dump ${DB}: ${ERR_CONTENT}"
     fi
+    rm -f "$TMP_ERR"
 done
 
 # Prune backups older than retention days

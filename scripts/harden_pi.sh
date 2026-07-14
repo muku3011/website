@@ -109,7 +109,14 @@ MaxAuthTries 3
 X11Forwarding no
 LoginGraceTime 30
 EOF
-systemctl restart ssh
+printf "${YELLOW}[*] Validating SSH configurations...${NC}\n"
+if sshd -t; then
+    systemctl restart ssh
+    printf "${GREEN}[+] SSH Server restarted with hardened configuration.${NC}\n"
+else
+    printf "${RED}Error: Invalid SSH configuration! Skipping SSH restart to prevent lockout.${NC}\n"
+    exit 1
+fi
 
 # 7. Apply Sysctl Kernel Parameters Hardening
 printf "${YELLOW}[*] Applying network sysctl kernel security hardening...${NC}\n"
