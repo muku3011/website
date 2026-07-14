@@ -264,6 +264,13 @@ if [ -z "${SMDP_DB_ENCRYPTION_KEY:-}" ] || [ "$RESET_SMDP" = "true" ]; then
     echo -e "${YELLOW}[*] Generated a new SM-DP+ database encryption key and stored it in ${SECRETS_FILE}.${NC}"
 fi
 
+# Generate secure random password for SM-DP+ local keystore if not exists (or reset is requested)
+if [ -z "${SMDP_KEYSTORE_PASSWORD:-}" ] || [ "$RESET_SMDP" = "true" ]; then
+    SMDP_KS_PASS=$(generate_password)
+    update_secret_value "SMDP_KEYSTORE_PASSWORD" "$SMDP_KS_PASS"
+    echo -e "${YELLOW}[*] Generated a new SM-DP+ keystore password and stored it in ${SECRETS_FILE}.${NC}"
+fi
+
 # 9. Configure daily database backup cron job
 echo -e "${YELLOW}[*] Configuring daily PostgreSQL database backups...${NC}"
 BACKUP_SCRIPT_DEST="/usr/local/bin/cron_db_backup.sh"
