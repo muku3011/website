@@ -19,8 +19,6 @@
     <description>Root parent POM for Hutta.in Java Services</description>
 
     <modules>
-        <module>hsm-client</module>
-        <module>hsm-simulator</module>
         <module>smdp-plus</module>
         <module>lpa-simulator</module>
         <module>blog-service</module>

@@ -51,12 +51,11 @@ echo -e "${GREEN}[+] Step 2 complete${NC}"
 
 # ── Step 3: Apache OIDC integration setup ───────────────────────────────────
 echo -e "${YELLOW}[*] Step 3/4: Configuring Apache OIDC integration...${NC}"
-bash "$SCRIPT_DIR/configure_apache.sh"
+bash "$SCRIPT_DIR/setup_apache.sh"
 echo -e "${GREEN}[+] Step 3 complete${NC}"
 
 # ── Step 4: Systemd Service Registrations ───────────────────────────────────
 echo -e "${YELLOW}[*] Step 4/4: Registering backend Systemd services...${NC}"
-bash "$SCRIPT_DIR/setup_systemd_service.sh" hsm-simulator /home/rbpi/hsm-simulator hsm-simulator.jar "Hutta HSM Simulator Service"
 bash "$SCRIPT_DIR/setup_systemd_service.sh" smdp-plus /home/rbpi/smdp-plus smdp-plus.jar "SM-DP+ eSIM Remote Provisioning Service"
 bash "$SCRIPT_DIR/setup_systemd_service.sh" lpa-simulator /home/rbpi/lpa-simulator lpa-simulator.jar "LPA Simulator Service"
 bash "$SCRIPT_DIR/setup_systemd_service.sh" blog-service /home/rbpi/blog-service blog-service.jar "Technology Blog Backend Service"
@@ -116,9 +115,6 @@ echo ""
 check_service "postgresql"
 check_service "keycloak"
 check_service "apache2"
-if [ -f "/etc/systemd/system/hsm-simulator.service" ]; then
-    check_service "hsm-simulator"
-fi
 if [ -f "/etc/systemd/system/smdp-plus.service" ]; then
     check_service "smdp-plus"
 fi
@@ -130,7 +126,6 @@ if [ -f "/etc/systemd/system/blog-service.service" ]; then
 fi
 echo ""
 check_db "keycloakdb"
-check_db "hsmdb"
 check_db "smdpdb"
 check_db "lpadb"
 check_db "blogdb"

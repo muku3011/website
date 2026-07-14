@@ -6,7 +6,7 @@
 set -Eeuo pipefail
 
 BACKUP_DIR="/var/backups/postgresql"
-DATABASES=("smdpdb" "lpadb" "keycloakdb" "blogdb" "monitordb" "hsmdb")
+DATABASES=("smdpdb" "lpadb" "keycloakdb" "blogdb" "monitordb")
 STATUS_FILE="${BACKUP_DIR}/backup_status.json"
 RETENTION_DAYS=7
 

@@ -4,7 +4,7 @@
 # - Adds auth.hutta.in VirtualHost (reverse proxy to Keycloak on :8080)
 # - Protects /profiles.html with mod_auth_openidc
 # - Restricts Keycloak Admin Console to home network only
-# Run with: sudo ./scripts/configure_apache.sh
+# Run with: sudo ./scripts/setup_apache.sh
 # ==============================================================================
 set -e
 
@@ -203,9 +203,7 @@ cat > "$SSL_TMP" <<'APACHEEOF'
     ProxyPass /api/alert-history http://127.0.0.1:8095/api/alert-history
     ProxyPassReverse /api/alert-history http://127.0.0.1:8095/api/alert-history
 
-    # -- Reverse Proxy: HSM Simulator --
-    ProxyPass /api/hsm/ http://127.0.0.1:8096/api/hsm/
-    ProxyPassReverse /api/hsm/ http://127.0.0.1:8096/api/hsm/
+
 
     # -- OIDC: exclude redirect_uri callback from proxying --
     ProxyPass /redirect_uri !
@@ -274,27 +272,7 @@ cat >> "$SSL_TMP" <<'APACHEEOF'
         Header set Pragma "no-cache"
     </Location>
 
-    # -- hsm.html: requires authenticated Keycloak user in admins group --
-    <Location /hsm.html>
-        AuthType openid-connect
-        Require claim "groups:admins"
 
-        Header always set Set-Cookie "hutta_auth=true; Path=/; Secure; SameSite=Lax"
-        Header add Set-Cookie "hutta_user=\"%{OIDC_CLAIM_preferred_username}e\"; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_preferred_username
-        Header add Set-Cookie "hutta_name=\"%{OIDC_CLAIM_name}e\"; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_name
-        Header add Set-Cookie "hutta_email=\"%{OIDC_CLAIM_email}e\"; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_email
-        Header add Set-Cookie "hutta_groups=\"%{OIDC_CLAIM_groups}e\"; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_groups
-
-        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
-        Header set Pragma "no-cache"
-        Header set Expires "0"
-    </Location>
-
-    # -- protect HSM Simulator API endpoints --
-    <Location /api/hsm>
-        AuthType openid-connect
-        Require claim "groups:admins"
-    </Location>
 
     # -- protect write operations to technology blog service --
     <LocationMatch "^/api/blog/(posts(/.*)?|images)$">

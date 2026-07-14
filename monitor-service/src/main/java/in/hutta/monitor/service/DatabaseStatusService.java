@@ -34,9 +34,6 @@ public class DatabaseStatusService {
   @Value("${monitor.db.keycloak-password:}")
   private String keycloakPassword;
 
-  @Value("${monitor.db.hsm-password:}")
-  private String hsmPassword;
-
   record DbDef(String name, String dbName, String user, String passwordField) {}
 
   public List<Map<String, Object>> collect() {
@@ -46,8 +43,7 @@ public class DatabaseStatusService {
             new DbDef("lpadb", "lpadb", "lpa", lpaPassword),
             new DbDef("blogdb", "blogdb", "blog", blogPassword),
             new DbDef("monitordb", "monitordb", "monitor", monitorPassword),
-            new DbDef("keycloak", "keycloakdb", "keycloak", keycloakPassword),
-            new DbDef("hsmdb", "hsmdb", "hsm", hsmPassword));
+            new DbDef("keycloak", "keycloakdb", "keycloak", keycloakPassword));
 
     return databases.stream().map(this::checkDatabase).toList();
   }

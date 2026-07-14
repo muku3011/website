@@ -27,10 +27,6 @@ smdp:
   keystore-path: ${SMDP_KEYSTORE_PATH:smdp-keystore.p12}
   keystore-password: ${SMDP_KEYSTORE_PASSWORD:changeit}
   db-encryption-key: ${SMDP_DB_ENCRYPTION_KEY:}
-  hsm:
-    enabled: ${SMDP_HSM_ENABLED:false}
-    url: ${SMDP_HSM_URL:http://localhost:8096}
-    pin: ${SMDP_HSM_PIN:1234}
 
 
 

@@ -158,7 +158,7 @@
         // Belt-and-suspenders: expire hutta_* cookies client-side using the same
         // attributes Apache used to set them (Secure; SameSite=Lax; Path=/).
         // The authoritative clear happens server-side via Apache's Header directive
-        // on the /redirect_uri location (see configure_apache.sh).
+        // on the /redirect_uri location (see setup_apache.sh).
         const cookieNames = ['hutta_user', 'hutta_groups', 'hutta_auth', 'hutta_name', 'hutta_email'];
         cookieNames.forEach(name => {
             document.cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; Secure; SameSite=Lax`;

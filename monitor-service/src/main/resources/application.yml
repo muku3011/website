@@ -33,7 +33,7 @@ monitor:
     blog-password: ${BLOG_DB_PASSWORD:}
     monitor-password: ${MONITOR_DB_PASSWORD:}
     keycloak-password: ${KC_DB_PASSWORD:}
-    hsm-password: ${HSM_DB_PASSWORD:}
+
 
 management:
   endpoints:
@@ -48,8 +48,3 @@ logging:
   level:
     in.hutta.monitor: INFO
 
-smdp:
-  hsm:
-    enabled: ${SMDP_HSM_ENABLED:false}
-    url: ${SMDP_HSM_URL:http://localhost:8096}
-    pin: ${SMDP_HSM_PIN:1234}

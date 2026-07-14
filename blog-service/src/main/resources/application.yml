@@ -23,8 +23,3 @@ logging:
     root: INFO
     in.hutta.blog: DEBUG
 
-smdp:
-  hsm:
-    enabled: ${SMDP_HSM_ENABLED:false}
-    url: ${SMDP_HSM_URL:http://localhost:8096}
-    pin: ${SMDP_HSM_PIN:1234}

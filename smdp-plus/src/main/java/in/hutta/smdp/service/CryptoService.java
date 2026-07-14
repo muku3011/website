@@ -34,8 +34,6 @@ public class CryptoService {
 
   private final KeyPair smdpKeyPair;
   private final String smdpCertificateBase64;
-  private final boolean hsmEnabled;
-  private final String hsmProviderName = "HuttaPKCS11";
 
   static {
     if (Security.getProvider("BC") == null) {
@@ -55,39 +53,11 @@ public class CryptoService {
 
   public CryptoService(
       @Value("${smdp.keystore-path:smdp-keystore.p12}") String keystorePath,
-      @Value("${smdp.keystore-password:changeit}") String keystorePassword,
-      @Value("${smdp.hsm.enabled:false}") boolean hsmEnabled,
-      @Value("${smdp.hsm.url:http://localhost:8096}") String hsmUrl,
-      @Value("${smdp.hsm.pin:1234}") String hsmPin) {
-    this.hsmEnabled = hsmEnabled;
+      @Value("${smdp.keystore-password:changeit}") String keystorePassword) {
     try {
-      if (hsmEnabled) {
-        log.info("[*] HSM is enabled. Loading SM-DP+ credentials from Network HSM...");
-        if (Security.getProvider(hsmProviderName) == null) {
-          Security.addProvider(new in.hutta.hsm.provider.HuttaHsmProvider(hsmUrl, hsmPin));
-        }
-
-        KeyStore ks = KeyStore.getInstance("PKCS11", hsmProviderName);
-        ks.load(null, hsmPin.toCharArray());
-
-        PrivateKey privateKey = (PrivateKey) ks.getKey("smdp-key", null);
-        java.security.cert.X509Certificate certificate =
-            (java.security.cert.X509Certificate) ks.getCertificate("smdp-key");
-
-        if (privateKey == null || certificate == null) {
-          throw new RuntimeException(
-              "smdp-key private key or certificate not found in HSM! Please verify boot seeding.");
-        }
-
-        PublicKey publicKey = certificate.getPublicKey();
-        this.smdpKeyPair = new KeyPair(publicKey, privateKey);
-        this.smdpCertificateBase64 = Base64.getEncoder().encodeToString(certificate.getEncoded());
-        log.info("[+] Successfully loaded SM-DP+ credentials from Network HSM");
-      } else {
-        CredentialsHolder holder = loadOrGenerateCredentials(keystorePath, keystorePassword);
-        this.smdpKeyPair = holder.keyPair;
-        this.smdpCertificateBase64 = holder.certificateBase64;
-      }
+      CredentialsHolder holder = loadOrGenerateCredentials(keystorePath, keystorePassword);
+      this.smdpKeyPair = holder.keyPair;
+      this.smdpCertificateBase64 = holder.certificateBase64;
     } catch (Exception e) {
       log.error("Failed to initialize SM-DP+ Key Pair / Certificate", e);
       throw new RuntimeException(e);
@@ -251,8 +221,7 @@ public class CryptoService {
   public String generateSmdpSignature2(String smdpSigned2) {
     try {
       byte[] dataBytes = Base64.getDecoder().decode(smdpSigned2);
-      Signature ecdsa =
-          Signature.getInstance("SHA256withECDSA", hsmEnabled ? hsmProviderName : "BC");
+      Signature ecdsa = Signature.getInstance("SHA256withECDSA", "BC");
       ecdsa.initSign(this.smdpKeyPair.getPrivate());
       ecdsa.update(dataBytes);
       return Base64.getEncoder().encodeToString(ecdsa.sign());
@@ -445,8 +414,7 @@ public class CryptoService {
   public String generateSmdpSignature3(String smdpSigned3) {
     try {
       byte[] dataBytes = Base64.getDecoder().decode(smdpSigned3);
-      Signature ecdsa =
-          Signature.getInstance("SHA256withECDSA", hsmEnabled ? hsmProviderName : "BC");
+      Signature ecdsa = Signature.getInstance("SHA256withECDSA", "BC");
       ecdsa.initSign(this.smdpKeyPair.getPrivate());
       ecdsa.update(dataBytes);
       return Base64.getEncoder().encodeToString(ecdsa.sign());
@@ -458,7 +426,7 @@ public class CryptoService {
 
   public byte[] performECDH(PublicKey euiccEphemeralPublicKey) {
     try {
-      KeyAgreement ka = KeyAgreement.getInstance("ECDH", hsmEnabled ? hsmProviderName : "BC");
+      KeyAgreement ka = KeyAgreement.getInstance("ECDH", "BC");
       ka.init(this.smdpKeyPair.getPrivate());
       ka.doPhase(euiccEphemeralPublicKey, true);
       byte[] sharedSecret = ka.generateSecret();
@@ -500,8 +468,7 @@ public class CryptoService {
       byte[] signed2Bytes = smdpSigned2.getEncoded("DER");
 
       // 2. Generate real ECDSA signature over smdpSigned2 using SM-DP+ private key
-      Signature ecdsa =
-          Signature.getInstance("SHA256withECDSA", hsmEnabled ? hsmProviderName : "BC");
+      Signature ecdsa = Signature.getInstance("SHA256withECDSA", "BC");
       ecdsa.initSign(this.smdpKeyPair.getPrivate());
       ecdsa.update(signed2Bytes);
       byte[] signature2Bytes = ecdsa.sign();

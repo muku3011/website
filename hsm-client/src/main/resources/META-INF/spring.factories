@@ -1,1 +1,0 @@
-org.springframework.boot.env.EnvironmentPostProcessor=in.hutta.hsm.client.HsmDatabasePasswordConfig
