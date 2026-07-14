@@ -126,9 +126,11 @@ async function refreshSystem() {
       topProcsEl.innerHTML = procs.top.map(p =>
         `<tr>
           <td>${p.pid}</td>
-          <td><span class="proc-name">${p.name}</span></td>
+          <td><span class="proc-name" title="${p.commandLine || p.name}" style="cursor:help;border-bottom:1px dotted rgba(255,255,255,0.25);">${p.name}</span></td>
+          <td>${p.user || 'N/A'}</td>
           <td><span class="${p.cpu > 50 ? 'val-warn' : ''}">${p.cpu.toFixed(1)}%</span></td>
           <td>${p.mem.toFixed(1)}%</td>
+          <td>${p.memoryMb ? p.memoryMb.toFixed(1) + ' MB' : 'N/A'}</td>
         </tr>`
       ).join('');
     }

@@ -145,18 +145,25 @@ public class SystemMetricsService {
     try {
       // Top 5 CPU-consuming processes via ps
       String psOut =
-          runCommand("bash", "-c", "ps -eo pid,pcpu,pmem,comm --sort=-pcpu --no-headers | head -5");
+          runCommand(
+              "bash",
+              "-c",
+              "ps -eo pid,user,pcpu,pmem,rss,args --sort=-pcpu --no-headers | head -5");
       List<Map<String, Object>> topProcs = new ArrayList<>();
       for (String line : psOut.split("\n")) {
         String trimmed = line.trim();
         if (trimmed.isEmpty()) continue;
-        String[] cols = trimmed.split("\\s+", 4);
-        if (cols.length >= 4) {
+        String[] cols = trimmed.split("\\s+", 6);
+        if (cols.length >= 6) {
           Map<String, Object> p = new LinkedHashMap<>();
           p.put("pid", cols[0]);
-          p.put("cpu", Double.parseDouble(cols[1]));
-          p.put("mem", Double.parseDouble(cols[2]));
-          p.put("name", cols[3]);
+          p.put("user", cols[1]);
+          p.put("cpu", Double.parseDouble(cols[2]));
+          p.put("mem", Double.parseDouble(cols[3]));
+          double memoryMb = Double.parseDouble(cols[4]) / 1024.0;
+          p.put("memoryMb", Math.round(memoryMb * 10.0) / 10.0);
+          p.put("name", cleanCommandName(cols[5]));
+          p.put("commandLine", cols[5]);
           topProcs.add(p);
         }
       }
@@ -166,6 +173,26 @@ public class SystemMetricsService {
       procs.put("top", List.of());
     }
     return procs;
+  }
+
+  private String cleanCommandName(String args) {
+    if (args == null || args.isEmpty()) {
+      return "unknown";
+    }
+    // If it's a Java execution, find the jar name in arguments
+    if (args.contains("java") && args.contains(".jar")) {
+      String[] parts = args.split("\\s+");
+      for (String part : parts) {
+        if (part.endsWith(".jar")) {
+          int slash = part.lastIndexOf('/');
+          return slash >= 0 ? part.substring(slash + 1) : part;
+        }
+      }
+    }
+    // Otherwise, take the first token (the executable path) and get its basename
+    String firstToken = args.split("\\s+")[0];
+    int slash = firstToken.lastIndexOf('/');
+    return slash >= 0 ? firstToken.substring(slash + 1) : firstToken;
   }
 
   private Map<String, Object> memoryMetrics() {

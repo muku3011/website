@@ -12,6 +12,8 @@ RETENTION_DAYS=7
 
 mkdir -p "$BACKUP_DIR"
 chmod 750 "$BACKUP_DIR"
+cd "$BACKUP_DIR"
+
 
 printf "[*] Starting PostgreSQL database backup...\n"
 START_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
