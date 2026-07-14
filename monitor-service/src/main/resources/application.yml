@@ -2,10 +2,23 @@
 server:
   port: 8095
   address: 127.0.0.1
+  tomcat:
+    threads:
+      max: 20
+      min-spare: 4
+    max-connections: 200
+    accept-count: 50
 
 spring:
   application:
     name: monitor-service
+  main:
+    lazy-initialization: true
+  task:
+    execution:
+      pool:
+        core-size: 2
+        max-size: 4
   datasource:
     url: jdbc:postgresql://localhost:5432/monitordb
     username: monitor

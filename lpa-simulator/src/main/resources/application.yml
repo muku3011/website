@@ -2,10 +2,23 @@
 server:
   port: 8093
   address: 127.0.0.1
+  tomcat:
+    threads:
+      max: 20
+      min-spare: 4
+    max-connections: 200
+    accept-count: 50
 
 spring:
   application:
     name: lpa-simulator
+  main:
+    lazy-initialization: true
+  task:
+    execution:
+      pool:
+        core-size: 2
+        max-size: 4
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lpadb}
     username: ${SPRING_DATASOURCE_USERNAME:lpa}
