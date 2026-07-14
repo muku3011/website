@@ -260,6 +260,30 @@ if [ -z "${SMDP_DB_ENCRYPTION_KEY:-}" ] || [ "$RESET_SMDP" = "true" ]; then
     echo -e "${YELLOW}[*] Generated a new SM-DP+ database encryption key and stored it in ${SECRETS_FILE}.${NC}"
 fi
 
+# 9. Configure daily database backup cron job
+echo -e "${YELLOW}[*] Configuring daily PostgreSQL database backups...${NC}"
+BACKUP_SCRIPT_DEST="/usr/local/bin/backup_db.sh"
+cp "$SCRIPT_DIR/backup_db.sh" "$BACKUP_SCRIPT_DEST"
+chmod 755 "$BACKUP_SCRIPT_DEST"
+
+# Ensure the backup directory exists and is owned by postgres
+mkdir -p /var/backups/postgresql
+chown postgres:postgres /var/backups/postgresql
+chmod 750 /var/backups/postgresql
+
+# Create cron job file to run daily at 2:00 AM as postgres user
+CRON_FILE="/etc/cron.d/database-backup"
+cat << 'EOF' > "$CRON_FILE"
+# Run daily database backup at 2:00 AM as postgres user
+0 2 * * * postgres /usr/local/bin/backup_db.sh >/dev/null 2>&1
+EOF
+chmod 644 "$CRON_FILE"
+
+# Run it once right now as postgres to seed the backup_status.json
+echo -e "${YELLOW}[*] Executing database backup script once to seed initial status...${NC}"
+sudo -u postgres "$BACKUP_SCRIPT_DEST" || echo -e "${RED}[!] Initial database backup run returned warnings/errors (see logs).${NC}"
+echo -e "${GREEN}[+] Daily backup cron job successfully configured at ${CRON_FILE}.${NC}"
+
 echo -e "${GREEN}[+] PostgreSQL setup and verification completed successfully!${NC}"
 echo ""
 echo -e "${YELLOW}============================================================${NC}"

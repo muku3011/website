@@ -26,7 +26,7 @@ public class PostgresStatsService {
             + "  d.blks_read, "
             + "  d.blks_hit "
             + "FROM pg_stat_database d "
-            + "WHERE d.datname IN ('smdpdb', 'lpadb', 'keycloakdb', 'blogdb', 'monitordb')";
+            + "WHERE d.datname IN ('smdpdb', 'lpadb', 'keycloakdb', 'blogdb', 'monitordb', 'hsmdb')";
 
     try {
       jdbcTemplate.query(

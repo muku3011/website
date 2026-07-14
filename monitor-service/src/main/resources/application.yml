@@ -33,6 +33,7 @@ monitor:
     blog-password: ${BLOG_DB_PASSWORD:}
     monitor-password: ${MONITOR_DB_PASSWORD:}
     keycloak-password: ${KC_DB_PASSWORD:}
+    hsm-password: ${HSM_DB_PASSWORD:}
 
 management:
   endpoints:
