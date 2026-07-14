@@ -11,8 +11,27 @@ NC='\033[0m' # No Color
 
 echo -e "${YELLOW}[*] Starting PostgreSQL Setup and Verification Script...${NC}"
 
+RESET_SMDP=false
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --reset-smdp)
+            RESET_SMDP=true
+            shift
+            ;;
+        --help)
+            echo "Usage: $0 [--reset-smdp] [--help]"
+            exit 0
+            ;;
+        *)
+            echo "Unknown argument: $1"
+            exit 1
+            ;;
+    esac
+done
+
 # Ensure root check
-if [ "$EUID" -ne 0 ] && [ "$1" != "--help" ]; then
+if [ "$EUID" -ne 0 ]; then
     echo -e "${RED}Error: Please run this script as root (use sudo).${NC}"
     exit 1
 fi
@@ -140,6 +159,17 @@ else
     echo -e "${YELLOW}[*] Generated a new SM-DP+ database password and stored it in ${SECRETS_FILE}.${NC}"
 fi
 
+if [ "$RESET_SMDP" = "true" ]; then
+    echo -e "${RED}[!] WARNING: Dropping and recreating smdpdb database as requested...${NC}"
+    # Stop smdp-plus service if it exists to release active connections
+    systemctl stop smdp-plus 2>/dev/null || true
+    # Terminate any remaining active connections
+    run_pg_cmd "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = 'smdpdb' AND pid <> pg_backend_pid();" >/dev/null || true
+    # Drop database
+    run_pg_cmd "DROP DATABASE IF EXISTS smdpdb;"
+    echo -e "${GREEN}[+] Database smdpdb dropped successfully.${NC}"
+fi
+
 provision_service_database "SM-DP+" "smdp" "smdpdb" "$SMDP_DB_PASS"
 
 # 5. Setup LPA Simulator User & Database
@@ -187,6 +217,16 @@ fi
 
 provision_service_database "Monitor (Sentinel)" "monitor" "monitordb" "$MONITOR_DB_PASS"
 
+# 7.5. Setup HSM User & Database
+if [ -n "${HSM_DB_PASSWORD:-}" ]; then
+    HSM_DB_PASS="$HSM_DB_PASSWORD"
+else
+    HSM_DB_PASS=$(generate_password)
+    echo -e "${YELLOW}[*] Generated a new HSM database password and stored it in ${SECRETS_FILE}.${NC}"
+fi
+
+provision_service_database "HSM" "hsm" "hsmdb" "$HSM_DB_PASS"
+
 # 8. Persist consolidated secrets without overwriting unrelated values
 chmod 600 "$SECRETS_FILE"
 update_secret_value "SMDP_DB_PASSWORD" "$SMDP_DB_PASS"
@@ -194,6 +234,21 @@ update_secret_value "LPA_DB_PASSWORD" "$LPA_DB_PASS"
 update_secret_value "KC_DB_PASSWORD" "$KC_DB_PASS"
 update_secret_value "BLOG_DB_PASSWORD" "$BLOG_DB_PASS"
 update_secret_value "MONITOR_DB_PASSWORD" "$MONITOR_DB_PASS"
+update_secret_value "HSM_DB_PASSWORD" "$HSM_DB_PASS"
+
+# Generate secure random HSM PIN if not exists
+if [ -z "${HSM_PIN:-}" ]; then
+    HSM_PIN_VAL="1234"
+    update_secret_value "HSM_PIN" "$HSM_PIN_VAL"
+    echo -e "${YELLOW}[*] Stored HSM PIN in ${SECRETS_FILE}.${NC}"
+fi
+
+# Generate secure random AES-256 key for eSIM database encryption if not exists (or reset is requested)
+if [ -z "${SMDP_DB_ENCRYPTION_KEY:-}" ] || [ "$RESET_SMDP" = "true" ]; then
+    SMDP_ENC_KEY=$(openssl rand -base64 32)
+    update_secret_value "SMDP_DB_ENCRYPTION_KEY" "$SMDP_ENC_KEY"
+    echo -e "${YELLOW}[*] Generated a new SM-DP+ database encryption key and stored it in ${SECRETS_FILE}.${NC}"
+fi
 
 echo -e "${GREEN}[+] PostgreSQL setup and verification completed successfully!${NC}"
 echo ""

@@ -82,8 +82,15 @@ else
     echo "[*] Reusing existing OIDC crypto passphrase"
 fi
 
-# ── Write hutta.in VirtualHost ────────────────────────────────────────────────
+# ── Set global ServerName to suppress FQDN warning ────────────────────────────
 APACHE_RELOAD_REQUIRED=false
+SERVERNAME_CONF="/etc/apache2/conf-available/servername.conf"
+if [ ! -f "$SERVERNAME_CONF" ] || ! grep -q "ServerName" "$SERVERNAME_CONF"; then
+    echo "[*] Setting global ServerName to suppress FQDN warning..."
+    echo "ServerName localhost" > "$SERVERNAME_CONF"
+    a2enconf servername || true
+    APACHE_RELOAD_REQUIRED=true
+fi
 
 SSL_TMP=$(mktemp)
 echo "[*] Ensuring ${SSL_CONF}..."
@@ -103,6 +110,13 @@ cat > "$SSL_TMP" <<'APACHEEOF'
 
     # Forward the protocol so mod_auth_openidc uses the correct redirect URL
     RequestHeader set X-Forwarded-Proto "https"
+
+    # Strip OIDC/Auth headers injected by clients to prevent spoofing
+    RequestHeader unset OIDC_CLAIM_preferred_username
+    RequestHeader unset OIDC_CLAIM_name
+    RequestHeader unset OIDC_CLAIM_email
+    RequestHeader unset OIDC_CLAIM_groups
+    RequestHeader unset X-Forwarded-User
 
     # -- Reverse Proxy: SM-DP+ backend --
     ProxyPreserveHost On
@@ -124,6 +138,10 @@ cat > "$SSL_TMP" <<'APACHEEOF'
     ProxyPassReverse /api/alert-rules http://127.0.0.1:8095/api/alert-rules
     ProxyPass /api/alert-history http://127.0.0.1:8095/api/alert-history
     ProxyPassReverse /api/alert-history http://127.0.0.1:8095/api/alert-history
+
+    # -- Reverse Proxy: HSM Simulator --
+    ProxyPass /api/hsm/ http://127.0.0.1:8096/api/hsm/
+    ProxyPassReverse /api/hsm/ http://127.0.0.1:8096/api/hsm/
 
     # -- OIDC: exclude redirect_uri callback from proxying --
     ProxyPass /redirect_uri !
@@ -190,7 +208,28 @@ cat >> "$SSL_TMP" <<'APACHEEOF'
 
         Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
         Header set Pragma "no-cache"
+    </Location>
+
+    # -- hsm.html: requires authenticated Keycloak user in admins group --
+    <Location /hsm.html>
+        AuthType openid-connect
+        Require claim "groups:admins"
+
+        Header always set Set-Cookie "hutta_auth=true; Path=/; Secure; SameSite=Lax"
+        Header add Set-Cookie "hutta_user=\"%{OIDC_CLAIM_preferred_username}e\"; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_preferred_username
+        Header add Set-Cookie "hutta_name=\"%{OIDC_CLAIM_name}e\"; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_name
+        Header add Set-Cookie "hutta_email=\"%{OIDC_CLAIM_email}e\"; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_email
+        Header add Set-Cookie "hutta_groups=\"%{OIDC_CLAIM_groups}e\"; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_groups
+
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
         Header set Expires "0"
+    </Location>
+
+    # -- protect HSM Simulator API endpoints --
+    <Location /api/hsm>
+        AuthType openid-connect
+        Require claim "groups:admins"
     </Location>
 
     # -- protect write operations to technology blog service --
@@ -198,6 +237,44 @@ cat >> "$SSL_TMP" <<'APACHEEOF'
         <LimitExcept GET>
             AuthType openid-connect
             Require valid-user
+        </LimitExcept>
+    </LocationMatch>
+
+    # -- protect eSIM admin endpoints --
+    <Location /gsma/rsp/v2/admin>
+        AuthType openid-connect
+        Require claim "groups:admins" "groups:operators"
+    </Location>
+
+    # -- protect LPA Simulator endpoints --
+    <Location /lpa>
+        AuthType openid-connect
+        Require valid-user
+    </Location>
+
+    # -- protect Sentinel API endpoints (general read-only) --
+    <LocationMatch "^/api/(sentinel|alert-rules|alert-history)">
+        AuthType openid-connect
+        Require valid-user
+    </LocationMatch>
+
+    # -- restrict Sentinel service control to admins and operators --
+    <Location /api/sentinel/services/control>
+        AuthType openid-connect
+        Require claim "groups:admins" "groups:operators"
+    </Location>
+
+    # -- restrict Sentinel log retrieval to admins only --
+    <Location /api/sentinel/logs>
+        AuthType openid-connect
+        Require claim "groups:admins"
+    </Location>
+
+    # -- restrict Sentinel alert rules modifications to admins and operators --
+    <LocationMatch "^/api/alert-rules.*">
+        <LimitExcept GET>
+            AuthType openid-connect
+            Require claim "groups:admins" "groups:operators"
         </LimitExcept>
     </LocationMatch>
 

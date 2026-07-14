@@ -26,7 +26,7 @@ public class CryptoConverterTest {
     for (int i = 0; i < 32; i++) {
       customKey[i] = (byte) (i + 10);
     }
-    CryptoConverter.setKey(customKey);
+    CryptoConverter.setKey(new javax.crypto.spec.SecretKeySpec(customKey, "AES"), null);
 
     CryptoConverter converter = new CryptoConverter();
     String plaintext = "Secret payload 12345";
@@ -43,6 +43,6 @@ public class CryptoConverterTest {
     for (int i = 0; i < 32; i++) {
       defaultKey[i] = (byte) (i * 7);
     }
-    CryptoConverter.setKey(defaultKey);
+    CryptoConverter.setKey(new javax.crypto.spec.SecretKeySpec(defaultKey, "AES"), null);
   }
 }

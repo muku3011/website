@@ -46,3 +46,9 @@ management:
 logging:
   level:
     in.hutta.monitor: INFO
+
+smdp:
+  hsm:
+    enabled: ${SMDP_HSM_ENABLED:false}
+    url: ${SMDP_HSM_URL:http://localhost:8096}
+    pin: ${SMDP_HSM_PIN:1234}

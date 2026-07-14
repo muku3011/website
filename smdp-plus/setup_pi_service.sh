@@ -16,7 +16,7 @@ After=network.target
 User=rbpi
 WorkingDirectory=/home/rbpi/smdp-plus
 EnvironmentFile=/etc/hutta/secrets.env
-ExecStart=/usr/bin/java -Dspring.datasource.password=${SMDP_DB_PASSWORD} -jar /home/rbpi/smdp-plus/smdp-plus.jar
+ExecStart=/usr/bin/java -jar /home/rbpi/smdp-plus/smdp-plus.jar
 SuccessExitStatus=143
 StandardOutput=journal
 StandardError=journal

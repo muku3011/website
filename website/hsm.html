@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hutta.in | HSM — Hardware Security Module</title>
+    <meta name="description"
+        content="Hardware Security Module: Manage cryptographic keys, perform token operations, and view audit logs for Hutta.in security systems.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/index.css?v=7">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <style>
+        .hsm-grid {
+            width: 100%;
+            max-width: 1650px;
+            margin: 0 auto;
+            padding: 2.5rem 1.5rem;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .hsm-page-header {
+            grid-column: span 2;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .hsm-page-header h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.85rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .hsm-page-header p {
+            color: var(--text-secondary);
+            margin-top: 0.35rem;
+            font-size: 0.95rem;
+        }
+
+        .hsm-sidebar {
+            position: sticky;
+            top: 110px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius-md);
+            padding: 1.25rem;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
+        }
+
+        .hsm-menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.8rem 1.1rem;
+            border-radius: var(--border-radius-sm);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 1px solid transparent;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-family: inherit;
+            position: relative;
+        }
+
+        .hsm-menu-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-primary);
+            padding-left: 1.35rem;
+        }
+
+        .hsm-menu-item.active {
+            background: linear-gradient(90deg, hsla(var(--hue-primary), 100%, 60%, 0.1) 0%, transparent 100%);
+            color: var(--primary-glow);
+            border-color: transparent;
+            border-left: 3px solid var(--primary-glow);
+            border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
+            padding-left: 1.35rem;
+        }
+
+        .hsm-menu-label {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .hsm-menu-label svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            transition: color 0.3s;
+        }
+
+        .hsm-menu-item.active .hsm-menu-label svg {
+            color: var(--primary-glow);
+        }
+
+        .hsm-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            min-width: 0;
+            width: 100%;
+        }
+
+        .hsm-tab-panel {
+            display: none;
+            flex-direction: column;
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        .hsm-tab-panel.active {
+            display: flex;
+        }
+
+        .hsm-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius-md);
+            padding: 1.75rem;
+            box-shadow: var(--shadow-sm);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .hsm-card h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .badge-attr {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            font-size: 0.72rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            display: inline-block;
+            margin: 2px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .badge-attr.true {
+            background: rgba(0, 224, 150, 0.1);
+            border-color: rgba(0, 224, 150, 0.2);
+            color: #00e096;
+        }
+
+        .badge-attr.false {
+            background: rgba(255, 0, 112, 0.1);
+            border-color: rgba(255, 0, 112, 0.2);
+            color: #ff0070;
+        }
+
+        .hsm-status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .status-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            padding: 1.25rem;
+            border-radius: var(--border-radius-sm);
+            text-align: center;
+        }
+
+        .status-card h4 {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-card p {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .status-card p.online {
+            color: #00e096;
+            text-shadow: 0 0 10px rgba(0, 224, 150, 0.3);
+        }
+
+        .slot-card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .slot-card {
+            background: rgba(255, 255, 255, 0.015);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius-sm);
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            transition: var(--transition-smooth);
+        }
+
+        .slot-card:hover {
+            border-color: var(--primary-glow);
+            box-shadow: 0 0 15px rgba(0, 112, 243, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .slot-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .slot-card-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+
+        .slot-card-id {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .slot-card-desc {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            line-height: 1.4;
+            min-height: 2.8rem;
+        }
+
+        .slot-card-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .badge-role {
+            background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* Responsive Layout Rules */
+        @media (max-width: 992px) {
+            .hsm-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+                padding: 1.5rem 1rem;
+            }
+            .hsm-page-header {
+                grid-column: span 1;
+            }
+            .hsm-sidebar {
+                position: relative;
+                top: 0;
+                flex-direction: row;
+                overflow-x: auto;
+                padding: 0.6rem;
+                gap: 0.4rem;
+            }
+            .hsm-menu-item {
+                white-space: nowrap;
+                width: auto;
+                padding: 0.55rem 0.85rem;
+                font-size: 0.85rem;
+            }
+            .hsm-menu-item:hover {
+                padding-left: 0.85rem;
+            }
+            .hsm-menu-item.active {
+                border-left: none;
+                border-bottom: 2.5px solid var(--primary-glow);
+                border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0;
+                padding-left: 0.85rem;
+            }
+        }
+    </style>
+</head>
+
+<body class="dark-theme">
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme && savedTheme !== 'dark') {
+                document.body.classList.remove('dark-theme');
+                document.body.classList.add(savedTheme + '-theme');
+            }
+        })();
+    </script>
+
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <a href="index.html" class="brand-link">
+                    <div class="logo-orb"></div>
+                    <h1>hutta.in</h1>
+                </a>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="blog.html" class="nav-link" id="nav-blog">Blog</a>
+                <a href="tools.html" class="nav-link" id="nav-tools">Tools</a>
+                <a href="profiles.html" class="nav-link" id="nav-profiles" style="display: none;">Profiles</a>
+                <a href="sentinel.html" class="nav-link" id="nav-sentinel" style="display: none;">Sentinel</a>
+                <a href="hsm.html" class="nav-link active" id="nav-hsm" style="display: none;">HSM</a>
+            </nav>
+
+            <div class="header-actions">
+                <div id="auth-header-container" style="display: flex; align-items: center;"></div>
+                <button id="theme-toggle" class="btn-icon" aria-label="Toggle light and dark theme"
+                    title="Toggle Theme">
+                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="4"></circle>
+                        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+                    </svg>
+                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- VIEW 1: ADMIN/SO LOGIN -->
+    <div id="view-admin-login" style="display: flex; min-height: calc(100vh - 88px); align-items: center; justify-content: center; padding: 2rem;">
+        <div class="hsm-card" style="width: 440px; text-align: center; border: 1px solid var(--primary-glow); box-shadow: 0 0 40px rgba(0,112,243,0.15);">
+            <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(0, 112, 243, 0.08); border: 1px solid var(--primary-glow); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--primary-glow)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <h3 style="margin-bottom: 0.5rem; justify-content: center;">Appliance Administrator Login</h3>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">Enter Admin or Security Officer (SO) username and PIN to log in.</p>
+            
+            <div class="form-group" style="margin-bottom: 1rem; text-align: left;">
+                <label for="admin-username-input">Username</label>
+                <select class="form-control" id="admin-username-input" style="width: 100%;">
+                    <option value="admin">Admin (Appliance Administrator)</option>
+                    <option value="so">SO (Security Officer)</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 1.5rem; text-align: left;">
+                <label for="admin-pin-input">Administrative PIN</label>
+                <input type="password" class="form-control" id="admin-pin-input" placeholder="Enter Admin/SO PIN" style="text-align: center; font-size: 1.1rem; letter-spacing: 4px;">
+            </div>
+            
+            <div id="admin-login-error" style="color: #ff0070; font-size: 0.82rem; margin-bottom: 1.25rem; display: none;"></div>
+            <button class="btn btn-primary" id="btn-admin-login" style="width: 100%; padding: 0.65rem;">Authenticate to Appliance</button>
+        </div>
+    </div>
+
+    <!-- VIEW 2: ADMIN DASHBOARD -->
+    <div id="view-admin-dashboard" class="hsm-grid" style="display: none;">
+        <div class="hsm-page-header">
+            <div>
+                <h2>HSM Appliance Console</h2>
+                <p>Global appliance-level status, partition/slot allocations, and security management.</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <span class="badge-role" id="admin-role-badge">Logged in as Admin</span>
+                <button class="btn btn-secondary" id="btn-admin-logout" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Logout Admin</button>
+            </div>
+        </div>
+
+        <!-- Sidebar Navigation -->
+        <aside class="hsm-sidebar">
+            <button class="hsm-menu-item active" data-tab="admin-tab-status">
+                <span class="hsm-menu-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
+                    <span>Appliance Status</span>
+                </span>
+            </button>
+            <button class="hsm-menu-item" data-tab="admin-tab-slots">
+                <span class="hsm-menu-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <span>Slot Management</span>
+                </span>
+            </button>
+            <button class="hsm-menu-item" data-tab="admin-tab-audits">
+                <span class="hsm-menu-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+                    <span>Appliance Audit Logs</span>
+                </span>
+            </button>
+            <button class="hsm-menu-item" data-tab="admin-tab-settings">
+                <span class="hsm-menu-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <span>Security Settings</span>
+                </span>
+            </button>
+        </aside>
+
+        <!-- Dynamic Panels -->
+        <section class="hsm-content">
+            <!-- PANEL: Appliance Status -->
+            <div class="hsm-tab-panel active" id="admin-tab-status">
+                <div class="hsm-card">
+                    <h3>Appliance Hardware Status</h3>
+                    <div class="hsm-status-grid">
+                        <div class="status-card">
+                            <h4>HSM Daemon</h4>
+                            <p class="online" id="admin-status-val">ONLINE</p>
+                        </div>
+                        <div class="status-card">
+                            <h4>Hardware Model</h4>
+                            <p id="admin-model-val">Hutta-Network-HSM-Sim-v1</p>
+                        </div>
+                        <div class="status-card">
+                            <h4>Total Configured Slots</h4>
+                            <p id="admin-slots-val">Loading...</p>
+                        </div>
+                        <div class="status-card">
+                            <h4>Active Sessions</h4>
+                            <p id="admin-sessions-val">1</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hsm-card">
+                    <h3>Global HSM Configurations</h3>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Parameter</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>HSM Appliance Status</td>
+                                    <td><code>ONLINE (Operational)</code></td>
+                                </tr>
+                                <tr>
+                                    <td>Admin username</td>
+                                    <td><code>admin</code></td>
+                                </tr>
+                                <tr>
+                                    <td>SO username</td>
+                                    <td><code>so</code></td>
+                                </tr>
+                                <tr>
+                                    <td>Default Slot ID</td>
+                                    <td><code>1 (Default Slot, PIN: 1234)</code></td>
+                                </tr>
+                                <tr>
+                                    <td>System-level Access Control</td>
+                                    <td><code>Enforced via Database Config</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL: Slot Management -->
+            <div class="hsm-tab-panel" id="admin-tab-slots">
+                <div class="hsm-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h3 style="margin-bottom: 0.25rem;">Configured Slots & Partitions</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.85rem;">Manage secure hardware partitions (slots). Access token slots or initialize new slots.</p>
+                    </div>
+                    <button class="btn btn-primary" id="btn-show-create-slot-modal">Create New Slot</button>
+                </div>
+
+                <div class="slot-card-grid" id="slots-container">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+
+            <!-- PANEL: Appliance Audit Logs -->
+            <div class="hsm-tab-panel" id="admin-tab-audits">
+                <div class="hsm-card">
+                    <h3>Appliance Global Audit Logs</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">Global logs recording administrative actions, logins, and slot changes.</p>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Slot ID</th>
+                                    <th>Operation</th>
+                                    <th>Key Alias</th>
+                                    <th>Status</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-audit-table-body">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading audit logs...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL: Security Settings -->
+            <div class="hsm-tab-panel" id="admin-tab-settings">
+                <div class="hsm-card">
+                    <h3>Change Appliance Administrative PIN</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">Modify the PIN for either the appliance admin or Security Officer (SO) user.</p>
+                    
+                    <div class="form-group" style="margin-bottom: 1rem; max-width: 400px;">
+                        <label for="change-admin-username">Username</label>
+                        <select class="form-control" id="change-admin-username" style="width: 100%;">
+                            <option value="admin">admin</option>
+                            <option value="so">so</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 1rem; max-width: 400px;">
+                        <label for="change-admin-old-pin">Current PIN</label>
+                        <input type="password" class="form-control" id="change-admin-old-pin" placeholder="Enter old PIN">
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 1.5rem; max-width: 400px;">
+                        <label for="change-admin-new-pin">New PIN</label>
+                        <input type="password" class="form-control" id="change-admin-new-pin" placeholder="Enter new PIN">
+                    </div>
+                    
+                    <button class="btn btn-primary" id="btn-submit-change-admin-pin">Update Admin PIN</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- VIEW 3: SLOT KEY MANAGEMENT DASHBOARD -->
+    <div id="view-slot-dashboard" class="hsm-grid" style="display: none;">
+        <div class="hsm-page-header">
+            <div>
+                <h2 id="slot-header-label">Slot: Default Slot</h2>
+                <p id="slot-header-desc">Managing cryptographic token and keys inside this slot.</p>
+            </div>
+            <button class="btn btn-secondary" id="btn-back-to-slots">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.25rem;"><line x1="19" x2="5" y1="12" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                Back to Appliance Console
+            </button>
+        </div>
+
+        <!-- Sidebar Navigation -->
+        <aside class="hsm-sidebar">
+            <button class="hsm-menu-item active" data-tab="slot-tab-status">
+                <span class="hsm-menu-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
+                    <span>Slot Info</span>
+                </span>
+            </button>
+            <button class="hsm-menu-item" data-tab="slot-tab-keys">
+                <span class="hsm-menu-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    <span>Key Objects</span>
+                </span>
+            </button>
+            <button class="hsm-menu-item" data-tab="slot-tab-diagnostics">
+                <span class="hsm-menu-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10 2 6 6-6 6-6-6z"/><path d="M12 14v8"/><path d="M19 14v8"/><path d="M5 14v8"/></svg>
+                    <span>Crypto Playground</span>
+                </span>
+            </button>
+            <button class="hsm-menu-item" data-tab="slot-tab-audits">
+                <span class="hsm-menu-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+                    <span>Slot Audit Logs</span>
+                </span>
+            </button>
+            <button class="hsm-menu-item" data-tab="slot-tab-settings">
+                <span class="hsm-menu-label">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <span>Change Slot PIN</span>
+                </span>
+            </button>
+        </aside>
+
+        <!-- Dynamic Panels -->
+        <section class="hsm-content">
+            <!-- PANEL: Slot Status -->
+            <div class="hsm-tab-panel active" id="slot-tab-status">
+                <div class="hsm-card">
+                    <h3>Cryptographic Provider Details</h3>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Parameter</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>JCA Provider Name</td>
+                                    <td><code>HuttaPKCS11</code></td>
+                                </tr>
+                                <tr>
+                                    <td>KeyStore Type</td>
+                                    <td><code>PKCS11</code></td>
+                                </tr>
+                                <tr>
+                                    <td>Active Token Label</td>
+                                    <td><code id="slot-lbl-val">Hutta Cryptographic Token</code></td>
+                                </tr>
+                                <tr>
+                                    <td>Symmetric Algorithm Support</td>
+                                    <td><code>AES/GCM/NoPadding (256-bit)</code></td>
+                                </tr>
+                                <tr>
+                                    <td>Asymmetric Algorithm Support</td>
+                                    <td><code>ECDSA (SHA256withECDSA), ECDH (secp256r1)</code></td>
+                                </tr>
+                                <tr>
+                                    <td>Slot PIN Enforced</td>
+                                    <td><code>Yes (Required at Keystore load)</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL: Key Objects -->
+            <div class="hsm-tab-panel" id="slot-tab-keys">
+                <div class="hsm-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h3 style="margin-bottom: 0.25rem;">Slot Token Keys</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.85rem;">Manage standard PKCS#11 keys generated inside this secure partition.</p>
+                    </div>
+                    <button class="btn btn-primary" id="btn-show-gen-modal">Generate New Key</button>
+                </div>
+
+                <div class="hsm-card">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Alias (Label)</th>
+                                    <th>Type</th>
+                                    <th>Algorithm</th>
+                                    <th>Size</th>
+                                    <th>Attributes</th>
+                                    <th style="text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="keys-table-body">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading HSM key objects...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL: Crypto Playground -->
+            <div class="hsm-tab-panel" id="slot-tab-diagnostics">
+                <div class="hsm-card">
+                    <h3>Cryptographic Playground</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">Select an active HSM key and perform operations dynamically. Operations are executed inside the simulated secure token.</p>
+                    
+                    <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                        <div class="form-group">
+                            <label for="play-key-select">Select HSM Key Alias</label>
+                            <select class="form-control" id="play-key-select" style="width: 100%;">
+                                <option value="">Select a key...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="play-operation">Select Operation</label>
+                            <select class="form-control" id="play-operation" style="width: 100%;">
+                                <option value="ENCRYPT">Symmetric Encrypt (AES-GCM)</option>
+                                <option value="DECRYPT">Symmetric Decrypt (AES-GCM)</option>
+                                <option value="SIGN">ECDSA Signature Generation</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="group-iv" style="margin-bottom: 1.5rem;">
+                        <label for="play-iv">IV (Base64-encoded) <span style="color: var(--text-muted); font-weight: normal; font-size: 0.8rem;">(Required for encryption/decryption)</span></label>
+                        <div style="display: flex; gap: 0.75rem;">
+                            <input class="form-control" id="play-iv" placeholder="e.g. 12-byte IV in Base64" style="flex: 1;">
+                            <button class="btn btn-secondary" id="btn-gen-iv">Generate IV</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
+                        <label for="play-input">Input Data (Plaintext or Base64 Ciphertext)</label>
+                        <textarea class="form-control" id="play-input" rows="4" placeholder="Enter plaintext to encrypt/sign, or ciphertext in Base64 to decrypt..."></textarea>
+                    </div>
+
+                    <button class="btn btn-primary" id="btn-run-play" style="padding: 0.6rem 1.5rem;">Execute Operation</button>
+                </div>
+
+                <div class="hsm-card" id="card-play-result" style="display: none;">
+                    <h3>Execution Result</h3>
+                    <div style="background:#0c0f12; color:#d3d7de; padding:1.25rem; border-radius:6px; font-family:'JetBrains Mono', monospace; font-size:0.8rem; border:1px solid rgba(255,255,255,0.05); overflow-x:auto; word-break:break-all;" id="play-result-box"></div>
+                </div>
+            </div>
+
+            <!-- PANEL: Slot Audits -->
+            <div class="hsm-tab-panel" id="slot-tab-audits">
+                <div class="hsm-card">
+                    <h3>Token Audit Records (Slot Specific)</h3>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Operation</th>
+                                    <th>Key Alias</th>
+                                    <th>Status</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="slot-audit-table-body">
+                                <tr>
+                                    <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading audit logs...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL: Slot Settings -->
+            <div class="hsm-tab-panel" id="slot-tab-settings">
+                <div class="hsm-card">
+                    <h3>Change Slot Token PIN</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">Modify the PIN used by clients to authenticate and load this cryptographic slot.</p>
+                    
+                    <div class="form-group" style="margin-bottom: 1rem; max-width: 400px;">
+                        <label for="change-slot-old-pin">Current Slot PIN</label>
+                        <input type="password" class="form-control" id="change-slot-old-pin" placeholder="Enter old PIN">
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 1.5rem; max-width: 400px;">
+                        <label for="change-slot-new-pin">New Slot PIN</label>
+                        <input type="password" class="form-control" id="change-slot-new-pin" placeholder="Enter new PIN (min 4 digits)">
+                    </div>
+                    
+                    <button class="btn btn-primary" id="btn-submit-change-slot-pin">Update Slot PIN</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Modals (Native HTML5 Dialogs) -->
+    
+    <!-- Create Slot Modal -->
+    <dialog class="modal-dialog" id="create-slot-modal">
+        <div class="dialog-header">
+            <h3>Create Partition Slot</h3>
+            <button class="btn-icon" onclick="document.getElementById('create-slot-modal').close()" style="border:none; background:none; cursor:pointer; color:var(--text-muted);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="dialog-body dialog-form">
+            <p id="create-slot-web-warning" style="color: #ff0070; font-size: 0.85rem; margin-bottom: 1rem; display: none;">Warning: You must log in to the portal to create slots.</p>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="new-slot-label">Slot Label</label>
+                <input class="form-input" id="new-slot-label" placeholder="e.g. keycloak-token">
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="new-slot-desc">Description</label>
+                <input class="form-input" id="new-slot-desc" placeholder="e.g. Keys for Auth realm">
+            </div>
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label for="new-slot-pin">Slot PIN</label>
+                <input type="password" class="form-input" id="new-slot-pin" placeholder="e.g. 4+ digits user PIN">
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+                <button class="btn btn-secondary" id="btn-cancel-create-slot" style="flex: 1;">Cancel</button>
+                <button class="btn btn-primary" id="btn-run-create-slot" style="flex: 1;">Create Slot</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Key Gen Modal -->
+    <dialog class="modal-dialog" id="gen-key-modal" style="max-width: 500px;">
+        <div class="dialog-header">
+            <h3>Generate HSM Key</h3>
+            <button class="btn-icon" onclick="document.getElementById('gen-key-modal').close()" style="border:none; background:none; cursor:pointer; color:var(--text-muted);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="dialog-body dialog-form">
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="new-key-alias">Key Alias (Label)</label>
+                <input class="form-input" id="new-key-alias" placeholder="e.g. keycloak-realm-key">
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="new-key-algo">Algorithm</label>
+                <select class="form-input" id="new-key-algo">
+                    <option value="AES">AES (Symmetric Encryption)</option>
+                    <option value="EC">EC (Asymmetric Signing & Key Agreement)</option>
+                    <option value="GENERIC_SECRET">GENERIC SECRET (Sensitive Password)</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="new-key-size">Key Size / Curve</label>
+                <select class="form-input" id="new-key-size">
+                    <option value="256">256-bit (AES-256 / secp256r1)</option>
+                    <option value="128">128-bit (AES-128)</option>
+                </select>
+            </div>
+            <div class="form-group" style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; margin-bottom: 1.5rem;">
+                <label style="font-weight: 600; margin-bottom: 0.25rem;">PKCS#11 Key Attributes</label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: normal; cursor: pointer; color: var(--text-secondary);">
+                    <input type="checkbox" id="attr-sensitive" checked>
+                    <span>CKA_SENSITIVE (Key material cannot be extracted in plaintext)</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: normal; cursor: pointer; color: var(--text-secondary);">
+                    <input type="checkbox" id="attr-extractable">
+                    <span>CKA_EXTRACTABLE (Key material can be exported - e.g. for db passwords)</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: normal; cursor: pointer; color: var(--text-secondary);">
+                    <input type="checkbox" id="attr-encrypt" checked>
+                    <span>CKA_ENCRYPT (Allows encryption operations)</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: normal; cursor: pointer; color: var(--text-secondary);">
+                    <input type="checkbox" id="attr-decrypt" checked>
+                    <span>CKA_DECRYPT (Allows decryption operations)</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: normal; cursor: pointer; color: var(--text-secondary);">
+                    <input type="checkbox" id="attr-sign" checked>
+                    <span>CKA_SIGN (Allows digital signatures creation)</span>
+                </label>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+                <button class="btn btn-secondary" id="btn-cancel-gen" style="flex: 1;">Cancel</button>
+                <button class="btn btn-primary" id="btn-run-gen" style="flex: 1;">Generate</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Slot Access Overlay (Login) -->
+    <dialog class="modal-dialog" id="slot-pin-modal">
+        <div class="dialog-header">
+            <h3 id="slot-pin-title">Access Slot</h3>
+            <button class="btn-icon" onclick="document.getElementById('slot-pin-modal').close()" style="border:none; background:none; cursor:pointer; color:var(--text-muted);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="dialog-body dialog-form" style="text-align: center;">
+            <div style="width: 50px; height: 50px; border-radius: 50%; background: rgba(0, 112, 243, 0.08); border: 1px solid var(--primary-glow); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary-glow)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">Enter the Slot PIN to manage key objects and run operations.</p>
+            <div class="form-group" style="margin-bottom: 1.25rem;">
+                <input type="password" class="form-input" id="slot-pin-input" placeholder="Enter Slot PIN" style="text-align: center; font-size: 1.2rem; letter-spacing: 4px; padding: 0.6rem;">
+            </div>
+            <div id="slot-pin-error" style="color: #ff0070; font-size: 0.82rem; margin-bottom: 1rem; display: none;"></div>
+            <div style="display: flex; gap: 0.75rem;">
+                <button class="btn btn-secondary" id="btn-cancel-slot-access" style="flex: 1;">Cancel</button>
+                <button class="btn btn-primary" id="btn-submit-slot-pin" style="flex: 1;">Open Slot</button>
+            </div>
+        </div>
+    </dialog>
+
+    <script src="js/auth-nav.js"></script>
+    <script src="js/hsm.js"></script>
+</body>
+
+</html>

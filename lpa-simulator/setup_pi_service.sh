@@ -16,7 +16,7 @@ After=network.target
 User=rbpi
 WorkingDirectory=/home/rbpi/lpa-simulator
 EnvironmentFile=/etc/hutta/secrets.env
-ExecStart=/usr/bin/java -Dspring.datasource.password=${LPA_DB_PASSWORD} -jar /home/rbpi/lpa-simulator/lpa-simulator.jar
+ExecStart=/usr/bin/java -jar /home/rbpi/lpa-simulator/lpa-simulator.jar
 SuccessExitStatus=143
 StandardOutput=journal
 StandardError=journal

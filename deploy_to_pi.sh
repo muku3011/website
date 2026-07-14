@@ -16,11 +16,13 @@ LOCAL_WEBSITE_DIR="website"
 LOCAL_SMDP_JAR="smdp-plus/target/smdp-plus-1.0.0.jar"
 LOCAL_LPA_JAR="lpa-simulator/target/lpa-simulator-1.0.0.jar"
 LOCAL_BLOG_JAR="blog-service/target/blog-service-1.0.0.jar"
+LOCAL_HSM_JAR="hsm-simulator/target/hsm-simulator-1.0.0.jar"
 
 # Remote Paths for Jars
 REMOTE_SMDP_DIR="/home/rbpi/smdp-plus"
 REMOTE_LPA_DIR="/home/rbpi/lpa-simulator"
 REMOTE_BLOG_DIR="/home/rbpi/blog-service"
+REMOTE_HSM_DIR="/home/rbpi/hsm-simulator"
 
 # Formatting Colors (Local macOS terminal)
 GREEN='\033[0;32m'
@@ -86,6 +88,27 @@ ssh -t "${TARGET_USER}@${TARGET_IP}" \
 echo -e "\n${BLUE}============================================================${NC}"
 echo -e "${BLUE}   Optional Asset Deployments                               ${NC}"
 echo -e "${BLUE}============================================================${NC}"
+
+# --- 0. HSM Simulator Jar Deployment ---
+if ask_yes_no "Do you want to deploy the HSM Simulator Jar file ($(basename "$LOCAL_HSM_JAR"))?"; then
+    if [ -f "$LOCAL_HSM_JAR" ]; then
+        echo -e "${YELLOW}[*] Syncing HSM Simulator backend jar and setup script...${NC}"
+        ssh "${TARGET_USER}@${TARGET_IP}" "mkdir -p '${REMOTE_HSM_DIR}'"
+        rsync -avz "$LOCAL_HSM_JAR" "${TARGET_USER}@${TARGET_IP}:${REMOTE_HSM_DIR}/hsm-simulator.jar"
+
+        if [ -f "hsm-simulator/setup_pi_service.sh" ]; then
+            rsync -avz "hsm-simulator/setup_pi_service.sh" "${TARGET_USER}@${TARGET_IP}:${REMOTE_HSM_DIR}/setup_pi_service.sh"
+            ssh "${TARGET_USER}@${TARGET_IP}" "chmod +x '${REMOTE_HSM_DIR}/setup_pi_service.sh'"
+            echo -e "${YELLOW}[*] Registering HSM systemd service on remote target...${NC}"
+            ssh -t "${TARGET_USER}@${TARGET_IP}" "sudo '${REMOTE_HSM_DIR}/setup_pi_service.sh'"
+        fi
+
+        echo -e "${GREEN}[+] HSM Simulator jar and setup script deployed successfully.${NC}"
+        ssh -t "${TARGET_USER}@${TARGET_IP}" "sudo systemctl restart hsm-simulator 2>/dev/null || echo -e '${YELLOW}Note: Failed to restart hsm-simulator.${NC}'"
+    else
+        echo -e "${RED}Warning: Local file '${LOCAL_HSM_JAR}' not found. Skipping HSM Simulator deployment.${NC}"
+    fi
+fi
 
 # --- 1. Static Website Files Deployment ---
 if ask_yes_no "Do you want to deploy the static website files to Apache (/var/www/html)?"; then
@@ -223,6 +246,9 @@ ssh "${TARGET_USER}@${TARGET_IP}" bash << 'EOF'
     check_service "postgresql"
     check_service "keycloak"
     check_service "apache2"
+    if [ -f "/etc/systemd/system/hsm-simulator.service" ]; then
+        check_service "hsm-simulator"
+    fi
     if [ -f "/etc/systemd/system/smdp-plus.service" ]; then
         check_service "smdp-plus"
     fi
@@ -234,6 +260,7 @@ ssh "${TARGET_USER}@${TARGET_IP}" bash << 'EOF'
     fi
     echo ""
     check_db "keycloakdb"
+    check_db "hsmdb"
     check_db "smdpdb"
     check_db "lpadb"
     check_db "blogdb"

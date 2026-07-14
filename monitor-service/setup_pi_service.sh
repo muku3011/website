@@ -16,14 +16,7 @@ After=network.target postgresql.service
 User=rbpi
 WorkingDirectory=/home/rbpi/monitor-service
 EnvironmentFile=/etc/hutta/secrets.env
-ExecStart=/usr/bin/java \
-  -Dspring.datasource.password=${MONITOR_DB_PASSWORD} \
-  -Dmonitor.db.smdp-password=${SMDP_DB_PASSWORD} \
-  -Dmonitor.db.lpa-password=${LPA_DB_PASSWORD} \
-  -Dmonitor.db.blog-password=${BLOG_DB_PASSWORD} \
-  -Dmonitor.db.monitor-password=${MONITOR_DB_PASSWORD} \
-  -Dmonitor.db.keycloak-password=${KC_DB_PASSWORD} \
-  -jar /home/rbpi/monitor-service/monitor-service.jar
+ExecStart=/usr/bin/java -jar /home/rbpi/monitor-service/monitor-service.jar
 SuccessExitStatus=143
 StandardOutput=journal
 StandardError=journal

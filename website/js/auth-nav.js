@@ -55,6 +55,12 @@
         if (navSentinel) {
             navSentinel.style.display = isLoggedIn ? 'inline-block' : 'none';
         }
+        
+        // HSM tab: visible to admins only
+        const navHsm = document.getElementById('nav-hsm');
+        if (navHsm) {
+            navHsm.style.display = (isLoggedIn && window.userRole === 'admin') ? 'inline-block' : 'none';
+        }
         // Admin tab has been removed — user management is done in Keycloak console
     }
 

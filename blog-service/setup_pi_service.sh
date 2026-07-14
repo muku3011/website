@@ -16,7 +16,7 @@ After=network.target
 User=rbpi
 WorkingDirectory=/home/rbpi/blog-service
 EnvironmentFile=/etc/hutta/secrets.env
-ExecStart=/usr/bin/java -Dspring.datasource.password=${BLOG_DB_PASSWORD} -jar /home/rbpi/blog-service/blog-service.jar
+ExecStart=/usr/bin/java -jar /home/rbpi/blog-service/blog-service.jar
 SuccessExitStatus=143
 StandardOutput=journal
 StandardError=journal

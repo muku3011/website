@@ -8,7 +8,7 @@ spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lpadb}
     username: ${SPRING_DATASOURCE_USERNAME:lpa}
-    password: ${SPRING_DATASOURCE_PASSWORD:lpa_password}
+    password: ${LPA_DB_PASSWORD:lpa_password}
     driver-class-name: org.postgresql.Driver
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -22,3 +22,9 @@ logging:
   level:
     root: INFO
     in.hutta.lpa: DEBUG
+
+smdp:
+  hsm:
+    enabled: ${SMDP_HSM_ENABLED:false}
+    url: ${SMDP_HSM_URL:http://localhost:8096}
+    pin: ${SMDP_HSM_PIN:1234}

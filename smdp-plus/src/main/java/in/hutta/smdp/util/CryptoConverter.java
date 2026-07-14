@@ -15,19 +15,16 @@ public class CryptoConverter implements AttributeConverter<String, String> {
   private static final int GCM_IV_LENGTH = 12;
   private static final int GCM_TAG_LENGTH = 128;
 
-  private static SecretKeySpec secretKey;
+  private static java.security.Key secretKey;
+  private static String providerName;
   private final SecureRandom random = new SecureRandom();
 
-  public static void setKey(byte[] keyBytes) {
-    if (keyBytes.length != 32) {
-      throw new IllegalArgumentException("Key must be a 256-bit (32 bytes) AES key");
-    }
-    secretKey = new SecretKeySpec(keyBytes, "AES");
+  public static void setKey(java.security.Key key, String provider) {
+    secretKey = key;
+    providerName = provider;
   }
 
   public CryptoConverter() {
-    // If not configured by the application lifecycle, initialize with a safe default key for
-    // testing/dev
     if (secretKey == null) {
       byte[] keyBytes = new byte[32];
       for (int i = 0; i < 32; i++) {
@@ -46,7 +43,10 @@ public class CryptoConverter implements AttributeConverter<String, String> {
       byte[] iv = new byte[GCM_IV_LENGTH];
       random.nextBytes(iv);
 
-      Cipher cipher = Cipher.getInstance(ALGORITHM);
+      Cipher cipher =
+          providerName != null
+              ? Cipher.getInstance(ALGORITHM, providerName)
+              : Cipher.getInstance(ALGORITHM);
       GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
       cipher.init(Cipher.ENCRYPT_MODE, secretKey, parameterSpec);
 
@@ -78,10 +78,13 @@ public class CryptoConverter implements AttributeConverter<String, String> {
       System.arraycopy(encrypted, 0, iv, 0, GCM_IV_LENGTH);
       System.arraycopy(encrypted, GCM_IV_LENGTH, ciphertext, 0, ciphertext.length);
 
-      Cipher cipher = Cipher.getInstance(ALGORITHM);
+      Cipher cipher =
+          providerName != null
+              ? Cipher.getInstance(ALGORITHM, providerName)
+              : Cipher.getInstance(ALGORITHM);
       GCMParameterSpec parameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
-      cipher.init(Cipher.DECRYPT_MODE, secretKey, parameterSpec);
 
+      cipher.init(Cipher.DECRYPT_MODE, secretKey, parameterSpec);
       byte[] plaintextBytes = cipher.doFinal(ciphertext);
       return new String(plaintextBytes, java.nio.charset.StandardCharsets.UTF_8);
     } catch (Exception e) {

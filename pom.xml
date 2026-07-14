@@ -19,6 +19,8 @@
     <description>Root parent POM for Hutta.in Java Services</description>
 
     <modules>
+        <module>hsm-client</module>
+        <module>hsm-simulator</module>
         <module>smdp-plus</module>
         <module>lpa-simulator</module>
         <module>blog-service</module>
@@ -42,6 +44,21 @@
 
     <build>
         <plugins>
+            <!-- Maven Compiler Plugin to explicitly enable Lombok Annotation Processing -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <parameters>true</parameters>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
             <!-- Spotless Plugin for consistent code formatting -->
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>

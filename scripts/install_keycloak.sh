@@ -236,6 +236,12 @@ else
 fi
 
 # Reset ownership after build
+SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+if [ -f "$SCRIPT_DIR/keycloak-hsm-wrapper.sh" ]; then
+    cp "$SCRIPT_DIR/keycloak-hsm-wrapper.sh" "$KC_DIR/bin/keycloak-hsm-wrapper.sh"
+    chmod 755 "$KC_DIR/bin/keycloak-hsm-wrapper.sh"
+    echo -e "${GREEN}[+] keycloak-hsm-wrapper.sh copied and configured${NC}"
+fi
 chown -R "$KC_USER:$KC_USER" "$KC_DIR"
 
 # ── 10. Install systemd service ───────────────────────────────────────────────
@@ -257,7 +263,7 @@ WorkingDirectory=${KC_DIR}
 # JVM tuning for Pi 5 — heap 768 MB + ~300 MB non-heap ≈ 1.1 GB total
 Environment="JAVA_OPTS=-Xms256m -Xmx768m -XX:MetaspaceSize=96m -XX:MaxMetaspaceSize=256m -XX:+UseG1GC -XX:+UseStringDeduplication"
 
-ExecStart=${KC_DIR}/bin/kc.sh start --optimized --bootstrap-admin-username=${KC_ADMIN_USERNAME} --bootstrap-admin-password=${KC_ADMIN_PASSWORD}
+ExecStart=${KC_DIR}/bin/keycloak-hsm-wrapper.sh start --optimized --bootstrap-admin-username=${KC_ADMIN_USERNAME} --bootstrap-admin-password=${KC_ADMIN_PASSWORD}
 Restart=on-failure
 RestartSec=10
 
