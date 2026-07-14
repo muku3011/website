@@ -30,7 +30,7 @@ echo -e "${BLUE}   hutta.in Full Stack Setup                                ${NC
 echo -e "${BLUE}============================================================${NC}"
 
 # ── Step 1: PostgreSQL setup ──────────────────────────────────────────────────
-echo -e "${YELLOW}[*] Step 1/5: Setting up PostgreSQL...${NC}"
+echo -e "${YELLOW}[*] Step 1/4: Setting up PostgreSQL...${NC}"
 bash "$SCRIPT_DIR/setup_postgres.sh"
 
 # Load the latest secrets from disk so later steps can read the database passwords securely.
@@ -44,23 +44,18 @@ BLOG_DB_PASS="${BLOG_DB_PASSWORD:-}"
 
 echo -e "${GREEN}[+] Step 1 complete${NC}"
 
-# ── Step 2: Keycloak installation ─────────────────────────────────────────────
-echo -e "${YELLOW}[*] Step 2/5: Installing Keycloak...${NC}"
+# ── Step 2: Keycloak installation & setup ─────────────────────────────────────
+echo -e "${YELLOW}[*] Step 2/4: Installing & Configuring Keycloak...${NC}"
 bash "$SCRIPT_DIR/install_keycloak.sh"
 echo -e "${GREEN}[+] Step 2 complete${NC}"
 
-# ── Step 3: Keycloak realm and OIDC client setup ────────────────────────────
-echo -e "${YELLOW}[*] Step 3/5: Configuring Keycloak realm, clients, groups and users...${NC}"
-bash "$SCRIPT_DIR/setup_keycloak.sh"
+# ── Step 3: Apache OIDC integration setup ───────────────────────────────────
+echo -e "${YELLOW}[*] Step 3/4: Configuring Apache OIDC integration...${NC}"
+bash "$SCRIPT_DIR/configure_apache.sh"
 echo -e "${GREEN}[+] Step 3 complete${NC}"
 
-# ── Step 4: Apache OIDC integration setup ───────────────────────────────────
-echo -e "${YELLOW}[*] Step 4/5: Configuring Apache OIDC integration...${NC}"
-bash "$SCRIPT_DIR/configure_apache.sh"
-echo -e "${GREEN}[+] Step 4 complete${NC}"
-
-# ── Step 5: Systemd Service Registrations ───────────────────────────────────
-echo -e "${YELLOW}[*] Step 5/5: Registering backend Systemd services...${NC}"
+# ── Step 4: Systemd Service Registrations ───────────────────────────────────
+echo -e "${YELLOW}[*] Step 4/4: Registering backend Systemd services...${NC}"
 bash "$SCRIPT_DIR/setup_systemd_service.sh" hsm-simulator /home/rbpi/hsm-simulator hsm-simulator.jar "Hutta HSM Simulator Service"
 bash "$SCRIPT_DIR/setup_systemd_service.sh" smdp-plus /home/rbpi/smdp-plus smdp-plus.jar "SM-DP+ eSIM Remote Provisioning Service"
 bash "$SCRIPT_DIR/setup_systemd_service.sh" lpa-simulator /home/rbpi/lpa-simulator lpa-simulator.jar "LPA Simulator Service"
