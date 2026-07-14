@@ -184,8 +184,8 @@ fi
 provision_service_database "LPA simulator" "lpa" "lpadb" "$LPA_DB_PASS"
 
 # 6. Setup Keycloak User & Database
-KC_DB_NAME="keycloakdb"
-KC_DB_USER="keycloak"
+KC_DB_NAME="${KC_DB_NAME:-keycloakdb}"
+KC_DB_USER="${KC_DB_USER:-keycloak}"
 
 if [ -n "${KC_DB_PASSWORD:-}" ]; then
     KC_DB_PASS="$KC_DB_PASSWORD"
