@@ -16,8 +16,7 @@ jobs:
 
       - name: Build Spring Boot JAR
         run: |
-          cd monitor-service
-          mvn clean package -DskipTests
+          mvn -pl monitor-service -am clean package -DskipTests
 
       - name: Copy JAR to App Directory
         run: |

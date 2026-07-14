@@ -16,8 +16,7 @@ jobs:
 
       - name: Build Spring Boot JAR
         run: |
-          cd lpa-simulator
-          mvn clean package -DskipTests
+          mvn -pl lpa-simulator -am clean package -DskipTests
 
       - name: Copy JAR to App Directory
         run: |
