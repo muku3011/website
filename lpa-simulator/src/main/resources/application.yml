@@ -8,7 +8,7 @@ spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lpadb}
     username: ${SPRING_DATASOURCE_USERNAME:lpa}
-    password: ${LPA_DB_PASSWORD:lpa_password}
+    password: ${LPA_DB_PASSWORD:}
     driver-class-name: org.postgresql.Driver
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect

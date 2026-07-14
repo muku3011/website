@@ -53,7 +53,7 @@ public class CryptoService {
 
   public CryptoService(
       @Value("${smdp.keystore-path:smdp-keystore.p12}") String keystorePath,
-      @Value("${smdp.keystore-password:changeit}") String keystorePassword) {
+      @Value("${smdp.keystore-password:}") String keystorePassword) {
     try {
       CredentialsHolder holder = loadOrGenerateCredentials(keystorePath, keystorePassword);
       this.smdpKeyPair = holder.keyPair;

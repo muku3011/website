@@ -8,7 +8,7 @@ spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/smdpdb}
     username: ${SPRING_DATASOURCE_USERNAME:smdp}
-    password: ${SMDP_DB_PASSWORD:smdp_password}
+    password: ${SMDP_DB_PASSWORD:}
     driver-class-name: org.postgresql.Driver
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -25,7 +25,7 @@ logging:
 
 smdp:
   keystore-path: ${SMDP_KEYSTORE_PATH:smdp-keystore.p12}
-  keystore-password: ${SMDP_KEYSTORE_PASSWORD:changeit}
+  keystore-password: ${SMDP_KEYSTORE_PASSWORD:}
   db-encryption-key: ${SMDP_DB_ENCRYPTION_KEY:}
 
 
