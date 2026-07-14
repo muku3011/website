@@ -1,3 +1,4 @@
+# Technology Blog Backend Service — Spring Boot configuration
 server:
   port: 8094
   address: 127.0.0.1

@@ -1,3 +1,4 @@
+# LPA Simulator Service — Spring Boot configuration
 server:
   port: 8093
   address: 127.0.0.1
