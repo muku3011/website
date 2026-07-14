@@ -13,7 +13,7 @@ NC='\033[0m'
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 
 # ── Root check ────────────────────────────────────────────────────────────────
-if [ "$EUID" -ne 0 ]; then
+if [ "$(id -u)" -ne 0 ]; then
     echo -e "${RED}Error: Please run as root (use sudo).${NC}"
     exit 1
 fi
@@ -22,7 +22,7 @@ fi
 SECRETS_FILE="/etc/hutta/secrets.env"
 if [ -f "$SECRETS_FILE" ]; then
     # shellcheck disable=SC1090
-    source "$SECRETS_FILE"
+    . "$SECRETS_FILE"
 fi
 
 echo -e "${BLUE}============================================================${NC}"
@@ -35,7 +35,7 @@ bash "$SCRIPT_DIR/setup_postgres.sh"
 
 # Load the latest secrets from disk so later steps can read the database passwords securely.
 # shellcheck disable=SC1090
-source "$SECRETS_FILE"
+. "$SECRETS_FILE"
 
 KC_DB_PASS="$KC_DB_PASSWORD"
 SMDP_DB_PASS="$SMDP_DB_PASSWORD"
@@ -65,7 +65,7 @@ echo -e "${GREEN}[+] Step 5 complete${NC}"
 # ── Final Summary & Verification ──────────────────────────────────────────────
 if [ -f "$SECRETS_FILE" ]; then
     # shellcheck disable=SC1090
-    source "$SECRETS_FILE"
+    . "$SECRETS_FILE"
 fi
 
 echo ""

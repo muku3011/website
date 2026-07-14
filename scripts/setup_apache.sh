@@ -8,7 +8,7 @@
 # ==============================================================================
 set -e
 
-if [ "$EUID" -ne 0 ]; then
+if [ "$(id -u)" -ne 0 ]; then
     echo "Error: Please run as root (use sudo)."
     exit 1
 fi
@@ -107,7 +107,7 @@ done
 
 if [ -z "$KC_CLIENT_SECRET" ] && [ -f "$SECRETS_FILE" ]; then
     # shellcheck disable=SC1090
-    source "$SECRETS_FILE"
+    . "$SECRETS_FILE"
     KC_CLIENT_SECRET="${KC_CLIENT_SECRET:-${OIDC_CLIENT_SECRET:-}}"
 fi
 

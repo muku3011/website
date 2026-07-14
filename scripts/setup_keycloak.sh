@@ -16,7 +16,7 @@ echo -e "${BLUE}   Keycloak Bare-Metal Installer for Raspberry Pi 5         ${NC
 echo -e "${BLUE}============================================================${NC}"
 
 # ── 1. Root check ─────────────────────────────────────────────────────────────
-if [ "$EUID" -ne 0 ]; then
+if [ "$(id -u)" -ne 0 ]; then
     echo -e "${RED}Error: Please run this script as root (use sudo).${NC}"
     exit 1
 fi
@@ -79,7 +79,7 @@ chmod 700 /etc/hutta
 
 if [ -f "$SECRETS_FILE" ]; then
     # shellcheck disable=SC1090
-    source "$SECRETS_FILE"
+    . "$SECRETS_FILE"
 fi
 
 KC_ADMIN_USERNAME="${KC_ADMIN_USERNAME_ARG:-${KC_ADMIN_USERNAME:-admin}}"

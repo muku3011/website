@@ -21,7 +21,7 @@ JAR_NAME="$3"
 DESCRIPTION="${4:-Hutta $SERVICE_NAME Service}"
 
 # Ensure root check
-if [ "$EUID" -ne 0 ]; then
+if [ "$(id -u)" -ne 0 ]; then
     echo "Error: Please run this script as root (use sudo)."
     exit 1
 fi

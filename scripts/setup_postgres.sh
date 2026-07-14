@@ -32,7 +32,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Ensure root check
-if [ "$EUID" -ne 0 ]; then
+if [ "$(id -u)" -ne 0 ]; then
     echo -e "${RED}Error: Please run this script as root (use sudo).${NC}"
     exit 1
 fi
@@ -47,7 +47,7 @@ if [ -f "$SECRETS_FILE" ]; then
     echo -e "${YELLOW}[*] Loading existing credentials from ${SECRETS_FILE}...${NC}"
     # Suppress check warnings for sourcing
     # shellcheck disable=SC1090
-    source "$SECRETS_FILE"
+    . "$SECRETS_FILE"
 fi
 
 # 2. Verify and Install/Update PostgreSQL
