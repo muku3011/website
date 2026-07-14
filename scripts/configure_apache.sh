@@ -13,12 +13,76 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
+# ── Install/Upgrade Apache if missing or upgrade available ────────────────────
+echo "[*] Ensuring Apache2 is installed and up to date..."
+apt-get update -y
+apt-get install -y apache2 apache2-utils
+
 # ── Install OIDC module if missing ────────────────────────────────────────────
 if ! dpkg -s libapache2-mod-auth-openidc &>/dev/null; then
     echo "[*] Installing libapache2-mod-auth-openidc..."
-    apt-get update -y
     apt-get install -y libapache2-mod-auth-openidc
 fi
+
+# ── Configure Certbot if missing ──────────────────────────────────────────────
+if ! command -v certbot &>/dev/null; then
+    echo "[*] Installing Certbot and Apache plugin..."
+    apt-get install -y certbot python3-certbot-apache
+fi
+
+# Ensure Let's Encrypt directories and options files exist
+mkdir -p /etc/letsencrypt/live/hutta.in
+
+if [ ! -f "/etc/letsencrypt/live/hutta.in/fullchain.pem" ]; then
+    echo "[*] Let's Encrypt certificates not found. Setting up Certbot..."
+    # Ensure port 80 is temporarily open in UFW if firewall is installed
+    UFW_OPENED=false
+    if command -v ufw &>/dev/null && ufw status | grep -q "Status: active"; then
+        ufw allow 80/tcp comment 'Temp open for Certbot'
+        UFW_OPENED=true
+    fi
+
+    # Run certbot to obtain certificate
+    echo "[*] Requesting SSL certificate from Let's Encrypt..."
+    if certbot --apache -d hutta.in -d auth.hutta.in --non-interactive --agree-tos --email contact@hutta.in; then
+        echo "[+] Let's Encrypt certificates successfully obtained!"
+    else
+        echo "[-] Warning: Failed to obtain Let's Encrypt certificates automatically."
+        echo "[-] Generating self-signed certificates as a temporary fallback to prevent Apache restart failure..."
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+            -keyout /etc/letsencrypt/live/hutta.in/privkey.pem \
+            -out /etc/letsencrypt/live/hutta.in/fullchain.pem \
+            -subj "/CN=hutta.in"
+        
+        if [ ! -f "/etc/letsencrypt/options-ssl-apache.conf" ]; then
+            cat << 'EOF' > /etc/letsencrypt/options-ssl-apache.conf
+SSLEngine on
+SSLProtocol             all -SSLv2 -SSLv3 -TLSv1 -TLSv1.1
+SSLCipherSuite          ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA256:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA256
+SSLHonorCipherOrder     off
+SSLSessionTickets       off
+EOF
+        fi
+    fi
+
+    # Clean up UFW rule if we opened it
+    if [ "$UFW_OPENED" = "true" ]; then
+        ufw delete allow 80/tcp || true
+    fi
+fi
+
+# Ensure certbot renewal cron job is registered
+CRON_RENEW_FILE="/etc/cron.d/certbot-renew"
+if [ ! -f "$CRON_RENEW_FILE" ]; then
+    echo "[*] Creating Certbot renewal cron job..."
+    cat << 'EOF' > "$CRON_RENEW_FILE"
+# Run Certbot renew twice daily at 3:15 AM and 3:15 PM and reload apache on successful renewal
+15 3,15 * * * root certbot renew --post-hook "systemctl reload apache2" >/dev/null 2>&1
+EOF
+    chmod 644 "$CRON_RENEW_FILE"
+    echo "[+] Certbot renewal cron job successfully registered."
+fi
+
 
 # ── Enable required modules ───────────────────────────────────────────────────
 echo "[*] Enabling Apache modules..."
