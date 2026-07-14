@@ -40,11 +40,6 @@ jobs:
         run: |
           cp ${{ inputs.module-name }}/target/${{ inputs.jar-name }} ${{ inputs.remote-dir }}/${{ inputs.service-name }}.jar
 
-      - name: Register / Verify Systemd Service
-        run: |
-          sudo chmod +x scripts/setup_systemd_service.sh
-          sudo ./scripts/setup_systemd_service.sh ${{ inputs.service-name }} ${{ inputs.remote-dir }} ${{ inputs.service-name }}.jar "${{ inputs.description }}"
-
       - name: Restart Service
         run: |
           sudo systemctl restart ${{ inputs.service-name }}.service
