@@ -241,7 +241,17 @@ if [ -z "${HSM_PIN:-}" ]; then
     HSM_PIN_VAL="1234"
     update_secret_value "HSM_PIN" "$HSM_PIN_VAL"
     echo -e "${YELLOW}[*] Stored HSM PIN in ${SECRETS_FILE}.${NC}"
+else
+    HSM_PIN_VAL="$HSM_PIN"
 fi
+
+# Enable HSM integration for microservices
+if [ -z "${SMDP_HSM_ENABLED:-}" ]; then
+    update_secret_value "SMDP_HSM_ENABLED" "true"
+    echo -e "${YELLOW}[*] Enabled HSM client integration in ${SECRETS_FILE}.${NC}"
+fi
+update_secret_value "SMDP_HSM_URL" "http://localhost:8096"
+update_secret_value "SMDP_HSM_PIN" "$HSM_PIN_VAL"
 
 # Generate secure random AES-256 key for eSIM database encryption if not exists (or reset is requested)
 if [ -z "${SMDP_DB_ENCRYPTION_KEY:-}" ] || [ "$RESET_SMDP" = "true" ]; then
