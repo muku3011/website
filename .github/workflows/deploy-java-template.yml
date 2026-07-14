@@ -1,0 +1,50 @@
+name: Reusable Deploy Java Service
+
+on:
+  workflow_call:
+    inputs:
+      module-name:
+        required: true
+        type: string
+      service-name:
+        required: true
+        type: string
+      jar-name:
+        required: true
+        type: string
+      remote-dir:
+        required: true
+        type: string
+      description:
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Spring Boot JAR
+        run: |
+          mvn -pl hsm-client install -DskipTests
+          mvn -pl ${{ inputs.module-name }} clean package -DskipTests
+
+      - name: Ensure App Directory
+        run: |
+          sudo mkdir -p ${{ inputs.remote-dir }}
+          sudo chown -R rbpi:rbpi ${{ inputs.remote-dir }}
+
+      - name: Copy JAR to App Directory
+        run: |
+          cp ${{ inputs.module-name }}/target/${{ inputs.jar-name }} ${{ inputs.remote-dir }}/${{ inputs.service-name }}.jar
+
+      - name: Register / Verify Systemd Service
+        run: |
+          sudo chmod +x scripts/setup_systemd_service.sh
+          sudo ./scripts/setup_systemd_service.sh ${{ inputs.service-name }} ${{ inputs.remote-dir }} ${{ inputs.service-name }}.jar "${{ inputs.description }}"
+
+      - name: Restart Service
+        run: |
+          sudo systemctl restart ${{ inputs.service-name }}.service

@@ -9,20 +9,10 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Build Spring Boot JAR
-        run: |
-          mvn -pl hsm-client install -DskipTests
-          mvn -pl lpa-simulator clean package -DskipTests
-
-      - name: Copy JAR to App Directory
-        run: |
-          cp lpa-simulator/target/lpa-simulator-1.0.0.jar /home/rbpi/lpa-simulator/lpa-simulator.jar
-
-      - name: Restart LPA Simulator Service
-        run: |
-          sudo systemctl restart lpa-simulator.service
+    uses: ./.github/workflows/deploy-java-template.yml
+    with:
+      module-name: lpa-simulator
+      service-name: lpa-simulator
+      jar-name: lpa-simulator-1.0.0.jar
+      remote-dir: /home/rbpi/lpa-simulator
+      description: "LPA Simulator Service"

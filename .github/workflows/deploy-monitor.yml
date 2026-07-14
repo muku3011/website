@@ -9,20 +9,10 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Build Spring Boot JAR
-        run: |
-          mvn -pl hsm-client install -DskipTests
-          mvn -pl monitor-service clean package -DskipTests
-
-      - name: Copy JAR to App Directory
-        run: |
-          cp monitor-service/target/monitor-service-1.0.0.jar /home/rbpi/monitor-service/monitor-service.jar
-
-      - name: Restart Monitor Service
-        run: |
-          sudo systemctl restart monitor-service.service
+    uses: ./.github/workflows/deploy-java-template.yml
+    with:
+      module-name: monitor-service
+      service-name: monitor-service
+      jar-name: monitor-service-1.0.0.jar
+      remote-dir: /home/rbpi/monitor-service
+      description: "Sentinel — System Monitoring & Alerting Service"

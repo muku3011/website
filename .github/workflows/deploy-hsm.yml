@@ -9,19 +9,10 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Build Spring Boot JAR
-        run: |
-          mvn -pl hsm-simulator -am clean package -DskipTests
-
-      - name: Copy JAR to App Directory
-        run: |
-          cp hsm-simulator/target/hsm-simulator-1.0.0.jar /home/rbpi/hsm-simulator/hsm-simulator.jar
-
-      - name: Restart HSM Simulator Service
-        run: |
-          sudo systemctl restart hsm-simulator.service
+    uses: ./.github/workflows/deploy-java-template.yml
+    with:
+      module-name: hsm-simulator
+      service-name: hsm-simulator
+      jar-name: hsm-simulator-1.0.0.jar
+      remote-dir: /home/rbpi/hsm-simulator
+      description: "Hutta HSM Simulator Service"

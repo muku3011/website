@@ -9,20 +9,10 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Build Spring Boot JAR
-        run: |
-          mvn -pl hsm-client install -DskipTests
-          mvn -pl smdp-plus clean package -DskipTests
-
-      - name: Copy JAR to App Directory
-        run: |
-          cp smdp-plus/target/smdp-plus-1.0.0.jar /home/rbpi/smdp-plus/smdp-plus.jar
-
-      - name: Restart SM-DP+ Service
-        run: |
-          sudo systemctl restart smdp-plus.service
+    uses: ./.github/workflows/deploy-java-template.yml
+    with:
+      module-name: smdp-plus
+      service-name: smdp-plus
+      jar-name: smdp-plus-1.0.0.jar
+      remote-dir: /home/rbpi/smdp-plus
+      description: "SM-DP+ eSIM Remote Provisioning Service"
