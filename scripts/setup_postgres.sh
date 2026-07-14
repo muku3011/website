@@ -50,15 +50,41 @@ if [ -f "$SECRETS_FILE" ]; then
     . "$SECRETS_FILE"
 fi
 
-# 2. Verify and Install/Update PostgreSQL
-if ! command -v psql &> /dev/null; then
-    echo -e "${YELLOW}[*] PostgreSQL not found. Installing PostgreSQL and database tools...${NC}"
-    apt-get update
-    apt-get install -y postgresql postgresql-contrib
-    echo -e "${GREEN}[+] PostgreSQL installed successfully!${NC}"
-else
-    echo -e "${GREEN}[+] PostgreSQL is already installed. Checking status...${NC}"
+# 2. Configure official PostgreSQL APT Repository and Install/Upgrade to the latest version
+echo -e "${YELLOW}[*] Configuring PostgreSQL official APT repository...${NC}"
+apt-get update
+apt-get install -y gnupg2 wget lsb-release
+
+# Add PostgreSQL official signing key
+if [ ! -f /etc/apt/trusted.gpg.d/apt.postgresql.org.gpg ]; then
+    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/apt.postgresql.org.gpg
 fi
+
+# Detect OS codename (with specific Raspbian-to-Debian mapping support)
+OS_CODENAME=$(lsb_release -cs 2>/dev/null || echo "")
+if [ -f /etc/os-release ]; then
+    if grep -q -i "raspbian" /etc/os-release; then
+        DEBIAN_VERSION=$(cat /etc/debian_version 2>/dev/null | cut -d'.' -f1 || echo "")
+        case "$DEBIAN_VERSION" in
+            12) OS_CODENAME="bookworm" ;;
+            11) OS_CODENAME="bullseye" ;;
+            10) OS_CODENAME="buster" ;;
+            *) OS_CODENAME="bookworm" ;;
+        esac
+    fi
+fi
+
+if [ -z "$OS_CODENAME" ] || [ "$OS_CODENAME" = "n/a" ]; then
+    OS_CODENAME="bookworm"
+fi
+
+# Write official sources list entry
+echo "deb http://apt.postgresql.org/pub/repos/apt ${OS_CODENAME}-pgdg main" > /etc/apt/sources.list.d/pgdg.list
+
+echo -e "${YELLOW}[*] Updating package index and installing/upgrading PostgreSQL to the latest version...${NC}"
+apt-get update
+apt-get install -y postgresql postgresql-contrib
+echo -e "${GREEN}[+] PostgreSQL configured and updated to the latest version successfully!${NC}"
 
 # 3. Verify PostgreSQL Service is Running
 if ! systemctl is-active --quiet postgresql; then
