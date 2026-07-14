@@ -120,6 +120,7 @@ public class HsmCryptoService {
     auditLogRepository.save(auditLog);
   }
 
+  @SuppressWarnings("unchecked")
   private Map<String, Object> parseAttributes(String attributesJson) {
     try {
       return objectMapper.readValue(attributesJson, Map.class);

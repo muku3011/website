@@ -34,6 +34,7 @@ public class SecretExtractor {
       if (key == null) {
         System.err.println("Error: Secret '" + alias + "' not found in HSM.");
         System.exit(1);
+        return;
       }
 
       byte[] encoded = key.getEncoded();

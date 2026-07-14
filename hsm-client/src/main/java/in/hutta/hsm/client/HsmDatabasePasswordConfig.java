@@ -13,6 +13,7 @@ import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 
+@SuppressWarnings("removal")
 public class HsmDatabasePasswordConfig implements EnvironmentPostProcessor {
   private static final Logger log = LoggerFactory.getLogger(HsmDatabasePasswordConfig.class);
 

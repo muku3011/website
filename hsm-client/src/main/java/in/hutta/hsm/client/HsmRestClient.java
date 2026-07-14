@@ -16,6 +16,7 @@ public class HsmRestClient {
       HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
+  @SuppressWarnings("unchecked")
   private static Map<String, Object> post(String path, Map<String, Object> body) {
     try {
       String json = objectMapper.writeValueAsString(body);
@@ -43,6 +44,7 @@ public class HsmRestClient {
     }
   }
 
+  @SuppressWarnings("unchecked")
   private static Map<String, Object> get(String path) {
     try {
       HttpRequest request =

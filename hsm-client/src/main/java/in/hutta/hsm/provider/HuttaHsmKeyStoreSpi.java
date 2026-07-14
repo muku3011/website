@@ -16,6 +16,7 @@ import java.util.Map;
 public class HuttaHsmKeyStoreSpi extends KeyStoreSpi {
 
   @Override
+  @SuppressWarnings("unchecked")
   public Key engineGetKey(String alias, char[] password) {
     try {
       Map<String, Object> metadata = HsmRestClient.getKeyMetadata(alias);

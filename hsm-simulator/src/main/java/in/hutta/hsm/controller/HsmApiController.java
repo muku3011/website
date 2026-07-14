@@ -16,8 +16,6 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,8 +29,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/hsm")
 public class HsmApiController {
-  private static final Logger log = LoggerFactory.getLogger(HsmApiController.class);
-
   private final HsmCryptoService cryptoService;
   private final HsmObjectRepository objectRepository;
   private final HsmAuditLogRepository auditLogRepository;
@@ -328,6 +324,7 @@ public class HsmApiController {
   }
 
   @GetMapping("/keys/{alias}")
+  @SuppressWarnings("unchecked")
   public ResponseEntity<?> getKey(
       @PathVariable String alias,
       @RequestHeader(value = "X-HSM-PIN", required = false) String pin) {
@@ -366,6 +363,7 @@ public class HsmApiController {
   }
 
   @PostMapping("/keys/generate")
+  @SuppressWarnings("unchecked")
   public ResponseEntity<?> generateKey(
       @RequestBody Map<String, Object> request,
       @RequestHeader(value = "X-HSM-PIN", required = false) String pin) {
