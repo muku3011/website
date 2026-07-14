@@ -1032,6 +1032,15 @@
                 </span>
                 <div class="sidebar-status-dot" id="dot-logs"></div>
             </button>
+            <button class="sentinel-menu-item" data-target="panel-telemetry">
+                <span class="sentinel-menu-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                    </svg>
+                    App Telemetry
+                </span>
+                <div class="sidebar-status-dot" id="dot-telemetry"></div>
+            </button>
         </aside>
 
 
@@ -1576,6 +1585,23 @@
                     <div id="logs-terminal"
                         style="background:#0c0f12;color:#d3d7de;padding:1rem;border-radius:6px;font-family:'JetBrains Mono', 'Courier New', monospace;font-size:0.75rem;line-height:1.5;height:450px;overflow-y:auto;white-space:pre-wrap;border:1px solid rgba(255,255,255,0.05);box-shadow:inset 0 4px 20px rgba(0,0,0,0.5);text-align:left;">
                         Select a service and click Tail Logs...</div>
+                </div>
+            </div>
+
+            <!-- PANEL 7: App Telemetry -->
+            <div class="sentinel-tab-panel" id="panel-telemetry">
+                <div class="sentinel-card" style="margin-bottom:1.5rem;">
+                    <div class="card-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                        </svg>
+                        Spring Boot Application Telemetry
+                        <span style="margin-left:auto;font-size:0.75rem;opacity:0.5;">scraped from /actuator endpoints</span>
+                    </div>
+                    <p style="font-size:0.8rem;opacity:0.6;margin:0;">Real-time JVM heap, threads, uptime, Hikari connection pool, and health status for each Spring Boot service.</p>
+                </div>
+                <div id="telemetry-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.5rem;">
+                    <div class="empty-state">Loading telemetry data...</div>
                 </div>
             </div>
 

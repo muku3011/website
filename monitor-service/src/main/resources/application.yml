@@ -39,10 +39,17 @@ management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,info,metrics,loggers
   endpoint:
     health:
-      show-details: never
+      show-details: always
+  info:
+    java:
+      enabled: true
+    os:
+      enabled: true
+    build:
+      enabled: true
 
 logging:
   level:

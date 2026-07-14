@@ -36,6 +36,7 @@ public class SentinelController {
   private final PostgresStatsService postgresStats;
   private final IoMetricsService ioMetrics;
   private final BackupMonitorService backupMonitor;
+  private final ActuatorService actuatorService;
 
   private static final Set<String> ALLOWED_SERVICES =
       Set.of(
@@ -102,6 +103,11 @@ public class SentinelController {
   @GetMapping("/backups")
   public Map<String, Object> backups() {
     return backupMonitor.collect();
+  }
+
+  @GetMapping("/actuator")
+  public List<Map<String, Object>> actuator() {
+    return actuatorService.collect();
   }
 
   @PostMapping("/services/control")

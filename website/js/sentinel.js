@@ -795,11 +795,115 @@ document.querySelectorAll('.sentinel-menu-item').forEach(btn => {
     // Immediately load traffic data when tab is first opened
     if (activePanel === 'panel-traffic') refreshTraffic();
     if (activePanel === 'panel-logs') tailLogs();
+    if (activePanel === 'panel-telemetry') refreshTelemetry();
   });
 });
 
 // Bind log tail button
 document.getElementById('btn-refresh-logs')?.addEventListener('click', tailLogs);
+
+// ── App Telemetry ─────────────────────────────────────────────────────────────
+
+async function refreshTelemetry() {
+  try {
+    const services = await fetchJson(`${BASE}/actuator`);
+    const grid = document.getElementById('telemetry-grid');
+    if (!grid) return;
+
+    if (!services || services.length === 0) {
+      grid.innerHTML = '<div class="empty-state">No telemetry data available.</div>';
+      return;
+    }
+
+    grid.innerHTML = services.map(svc => {
+      const m = svc.metrics ?? {};
+      const info = svc.info ?? {};
+      const comps = svc.healthComponents ?? {};
+
+      const heapPct = m.heapPercent ?? 0;
+      const heapUsed = m.heapUsedMb ?? '—';
+      const heapMax = m.heapMaxMb ?? '—';
+      const threads = m['jvm.threads.live'] ?? '—';
+      const daemonThreads = m['jvm.threads.daemon'] ?? '—';
+      const uptime = m.uptimeHuman ?? '—';
+      const hikariActive = m['hikaricp.connections.active'] ?? null;
+      const hikariIdle = m['hikaricp.connections.idle'] ?? null;
+      const hikariMax = m['hikaricp.connections.max'] ?? null;
+      const gcPause = m['jvm.gc.pause'] != null ? m['jvm.gc.pause'].toFixed(1) + 'ms' : '—';
+      const httpActive = m['http.server.requests.active'] ?? '—';
+
+      const health = svc.healthStatus ?? 'UNKNOWN';
+      const healthColor = health === 'UP' ? '#34d399' : health === 'UNREACHABLE' ? '#6b7280' : '#f87171';
+
+      const heapBarClass = heapPct > 85 ? 'crit' : heapPct > 70 ? 'warn' : '';
+
+      const compRows = Object.entries(comps).map(([k, v]) => {
+        const c = v === 'UP' ? '#34d399' : '#f87171';
+        return `<div style="display:flex;justify-content:space-between;padding:0.15rem 0;font-size:0.73rem;">
+          <span style="opacity:0.7;">${k}</span>
+          <span style="color:${c};font-weight:600;">${v}</span>
+        </div>`;
+      }).join('');
+
+      const hikariRow = hikariMax != null ? `
+        <div style="margin-top:0.75rem;">
+          <div style="display:flex;justify-content:space-between;font-size:0.73rem;margin-bottom:0.25rem;">
+            <span style="opacity:0.7;">Hikari Pool</span>
+            <span style="opacity:0.9;">${hikariActive ?? 0} active / ${hikariIdle ?? 0} idle / ${hikariMax} max</span>
+          </div>
+          <div class="progress-track" style="height:3px;">
+            <div class="progress-fill" style="width:${hikariMax > 0 ? Math.round(((hikariActive ?? 0) / hikariMax) * 100) : 0}%;"></div>
+          </div>
+        </div>` : '';
+
+      return `<div class="sentinel-card">
+        <div class="card-title" style="margin-bottom:0.75rem;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="${healthColor}" stroke-width="2" style="width:14px;height:14px;flex-shrink:0;">
+            <circle cx="12" cy="12" r="10" />
+          </svg>
+          <span style="font-weight:700;">${svc.name}</span>
+          <span style="margin-left:auto;font-size:0.7rem;color:${healthColor};font-weight:600;">${health}</span>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;font-size:0.72rem;opacity:0.6;margin-bottom:0.5rem;">
+          <span>⏱ Up ${uptime}</span>
+          <span>:${svc.port}</span>
+          ${info.javaVersion ? `<span>Java ${info.javaVersion}</span>` : ''}
+          ${info.buildVersion ? `<span>v${info.buildVersion}</span>` : ''}
+        </div>
+
+        <div style="margin-bottom:0.6rem;">
+          <div style="display:flex;justify-content:space-between;font-size:0.73rem;margin-bottom:0.25rem;">
+            <span style="opacity:0.7;">JVM Heap</span>
+            <span>${heapUsed} / ${heapMax} MB <span style="opacity:0.6;">(${heapPct}%)</span></span>
+          </div>
+          <div class="progress-track" style="height:5px;">
+            <div class="progress-fill ${heapBarClass}" style="width:${heapPct}%;"></div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem 0.75rem;font-size:0.73rem;margin-bottom:0.75rem;">
+          <div><span style="opacity:0.6;">Threads</span> <strong>${threads}</strong></div>
+          <div><span style="opacity:0.6;">Daemon</span> <strong>${daemonThreads}</strong></div>
+          <div><span style="opacity:0.6;">GC Pause</span> <strong>${gcPause}</strong></div>
+          <div><span style="opacity:0.6;">HTTP Active</span> <strong>${httpActive}</strong></div>
+        </div>
+
+        ${hikariRow}
+
+        ${compRows ? `<div style="margin-top:0.75rem;border-top:1px solid rgba(255,255,255,0.06);padding-top:0.5rem;">${compRows}</div>` : ''}
+      </div>`;
+    }).join('');
+
+    // Update sidebar dot: red if any service is not UP
+    const allUp = services.every(s => s.healthStatus === 'UP');
+    const dotTelemetry = document.getElementById('dot-telemetry');
+    if (dotTelemetry) dotTelemetry.className = 'sidebar-status-dot' + (allUp ? '' : ' warn');
+
+  } catch (e) {
+    console.warn('telemetry refresh failed:', e);
+  }
+}
 
 // ── Logs Tailer ──────────────────────────────────────────────────────────────
 
@@ -988,6 +1092,7 @@ async function refreshAll() {
     refreshSecurityIncidents(),
     refreshRules(),
     refreshHistory(),
+    refreshTelemetry(),
   ]);
   // Only poll traffic when that tab is visible (log parsing is expensive)
   if (activePanel === 'panel-traffic') refreshTraffic();
