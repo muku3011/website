@@ -24,6 +24,7 @@ public class ServiceStatusService {
       List.of(
           new ServiceDef("smdp-plus", "smdp-plus", 8092, "/actuator/health"),
           new ServiceDef("lpa-simulator", "lpa-simulator", 8093, "/actuator/health"),
+          new ServiceDef("hsm-simulator", "hsm-simulator", 8096, "/actuator/health"),
           new ServiceDef("blog-service", "blog-service", 8094, "/actuator/health"),
           new ServiceDef("monitor-service", "monitor-service", 8095, "/actuator/health"),
           new ServiceDef(

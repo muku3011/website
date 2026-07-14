@@ -44,6 +44,7 @@ public class SentinelController {
           "apache2",
           "smdp-plus",
           "lpa-simulator",
+          "hsm-simulator",
           "blog-service",
           "monitor-service");
 
