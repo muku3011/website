@@ -16,7 +16,8 @@ jobs:
 
       - name: Build Spring Boot JAR
         run: |
-          mvn -pl smdp-plus -am clean package -DskipTests
+          mvn -pl hsm-client install -DskipTests
+          mvn -pl smdp-plus clean package -DskipTests
 
       - name: Copy JAR to App Directory
         run: |
