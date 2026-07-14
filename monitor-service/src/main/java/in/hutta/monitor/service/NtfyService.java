@@ -21,11 +21,16 @@ public class NtfyService {
 
   public void send(String title, String message, String priority, String tags) {
     try {
+      String encodedTitle =
+          "=?utf-8?B?"
+              + java.util.Base64.getEncoder()
+                  .encodeToString(title.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+              + "?=";
       HttpRequest req =
           HttpRequest.newBuilder()
               .uri(URI.create("https://ntfy.sh/" + topic))
               .timeout(Duration.ofSeconds(8))
-              .header("Title", title)
+              .header("Title", encodedTitle)
               .header("Priority", priority)
               .header("Tags", tags)
               .POST(HttpRequest.BodyPublishers.ofString(message))
