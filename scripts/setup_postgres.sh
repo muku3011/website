@@ -160,9 +160,6 @@ provision_service_database "Monitor (Sentinel)" "monitor" "monitordb" "$MONITOR_
 
 
 # 8. Persist consolidated secrets without overwriting unrelated values
-# Explicitly disable HSM integration for microservices if not set
-get_or_create_secret "SMDP_HSM_ENABLED" "password" "false" >/dev/null
-
 # Generate secure random AES-256 key for eSIM database encryption if not exists
 get_or_create_secret "SMDP_DB_ENCRYPTION_KEY" "base64_key" >/dev/null
 
