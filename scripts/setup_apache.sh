@@ -285,8 +285,20 @@ cat >> "$SSL_TMP" <<'APACHEEOF'
         </LimitExcept>
     </LocationMatch>
 
-    # -- protect eSIM admin endpoints --
+    # -- protect eSIM admin endpoints (metadata reading, lists) --
     <Location /gsma/rsp/v2/admin>
+        AuthType openid-connect
+        Require claim "groups:admins" "groups:operators"
+    </Location>
+ 
+    # -- restrict profile import and deletion to admins only --
+    <LocationMatch "^/gsma/rsp/v2/admin/(importProfile|profiles/[^/]+)$">
+        AuthType openid-connect
+        Require claim "groups:admins"
+    </LocationMatch>
+
+    # -- protect eSIM operator order endpoints (ES2+) --
+    <Location /gsma/rsp/v2/es2plus>
         AuthType openid-connect
         Require claim "groups:admins" "groups:operators"
     </Location>
