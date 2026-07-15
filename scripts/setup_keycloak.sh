@@ -213,8 +213,8 @@ Group=${KC_USER}
 WorkingDirectory=${KC_DIR}
 EnvironmentFile=/etc/hutta/secrets.env
 
-# JVM tuning for Pi 5 — heap 768 MB + ~300 MB non-heap ≈ 1.1 GB total
-Environment="JAVA_OPTS=-Xms256m -Xmx768m -XX:MetaspaceSize=96m -XX:MaxMetaspaceSize=256m -XX:+UseG1GC -XX:+UseStringDeduplication"
+# JVM tuning to minimize memory footprint on Raspberry Pi (Serial GC, Level 1 compilation, 512MB heap limit)
+Environment="JAVA_OPTS=-Xms64m -Xmx512m -XX:MetaspaceSize=96m -XX:MaxMetaspaceSize=160m -XX:+UseSerialGC -XX:+TieredCompilation -XX:TieredStopAtLevel=1"
 
 ExecStart=${KC_DIR}/bin/kc.sh start --optimized --bootstrap-admin-username=${KC_ADMIN_USERNAME} --bootstrap-admin-password=${KC_ADMIN_PASSWORD}
 Restart=on-failure
