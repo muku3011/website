@@ -79,7 +79,7 @@ flowchart TD
     subgraph RPi ["Raspberry Pi Gateway"]
         direction TB
         subgraph Proxy ["Apache Reverse Proxy (Port 443)"]
-            Static["Static Web Assets (index, tools, profiles, blog)"]
+            Static["Static Web Assets (index, tools, profiles, blog, sentinel)"]
             OIDC["mod_auth_openidc (profiles.html, /api/blog/ write methods)"]
         end
 
@@ -91,6 +91,7 @@ flowchart TD
             SMDP["SM-DP+ eSIM Server (Port 8092)"]
             LPA_Sim["LPA Simulator (Port 8093)"]
             BlogService["Blog Service (Port 8094)"]
+            MonitorService["Monitor Service (Port 8095)"]
         end
 
         subgraph DB ["Database Tier"]
@@ -99,6 +100,7 @@ flowchart TD
             lpadb[(Database: lpadb)]
             keycloakdb[(Database: keycloakdb)]
             blogdb[(Database: blogdb)]
+            monitordb[(Database: monitordb)]
         end
     end
 
@@ -113,6 +115,7 @@ flowchart TD
     Proxy -->|Proxy /gsma/rsp/v2/| SMDP
     Proxy -->|Proxy /lpa/| LPA_Sim
     Proxy -->|Proxy /api/blog/| BlogService
+    Proxy -->|Proxy /api/sentinel/| MonitorService
 
     %% Authentication
     Keycloak <-->|JPA / Flyway| keycloakdb
@@ -122,15 +125,18 @@ flowchart TD
     SMDP <-->|JPA / Flyway| smdpdb
     LPA_Sim <-->|JPA / Flyway| lpadb
     BlogService <-->|JPA / Flyway| blogdb
+    MonitorService <-->|JPA / Flyway| monitordb
     smdpdb -.->|Part of| PostgreSQL
     lpadb -.->|Part of| PostgreSQL
     keycloakdb -.->|Part of| PostgreSQL
     blogdb -.->|Part of| PostgreSQL
+    monitordb -.->|Part of| PostgreSQL
 ```
 
-* **Apache HTTP Server**: Serves the website frontend assets and acts as a secure reverse proxy with OIDC integration (`mod_auth_openidc`) for private routes and write methods.
+* **Apache HTTP Server**: Serves the website frontend assets (including Sentinel service dashboard) and acts as a secure reverse proxy with OIDC integration (`mod_auth_openidc`) for private routes and write methods.
 * **Keycloak**: Identity provider running on `auth.hutta.in` (bare metal, HTTP on loopback, Apache terminates TLS). Manages users natively and provides OIDC/OAuth2 for the site. Admin console is restricted to home network; Account console is public.
 * **Blog Service**: Exposes backend endpoints for publishing, reading, and deleting technology articles, with database-backed image uploads, persisting to the `blogdb` database.
+* **Monitor Service (Sentinel)**: Aggregates systemd service health status and queries installed software versions dynamically, persisting state history to the `monitordb` database.
 * **SM-DP+ eSIM Server**: Implements the standard GSMA SGP.22 endpoints (ES2+ and ES9+), backed by a persistent PostgreSQL database (`smdpdb`) and Flyway database migration controller.
 * **LPA Simulator**: Simulates eUICC operations and triggers remote SIM provisioning downloads, storing downloaded profiles in a persistent PostgreSQL database (`lpadb`).
 
@@ -260,3 +266,10 @@ Contains a lightweight, database-backed blogging backend module:
 - Persistent PostgreSQL database backend and Flyway schema versioning.
 - Systemd service daemon and automated deployment setup for Raspberry Pi.
 - **Go to [blog-service/README.md](blog-service/README.md) for build, testing, and deployment instructions.**
+
+### 7. [Sentinel Monitor Service (monitor-service/)](monitor-service/README.md)
+Contains a service monitoring and health aggregation backend:
+- REST API controller for public service health checks and active software version queries.
+- Dynamically retrieves software versions from JAR maven properties, Keycloak filesystem, Apache version prompts, and Postgres utilities.
+- Persistent PostgreSQL database backend (`monitordb`) and Flyway schema versioning.
+- **Go to [monitor-service/README.md](monitor-service/README.md) for setup and configuration details.**
