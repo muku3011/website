@@ -379,9 +379,9 @@ else
     echo -e "${GREEN}[+] Realm '${REALM_NAME}' already exists${NC}"
 fi
 
-# Configure secure Password Policy and custom HTML banner branding for the realm
-echo -e "${YELLOW}[*] Configuring realm settings (branding & password policy) for '${REALM_NAME}'...${NC}"
-api_put "$TOKEN" "/admin/realms/${REALM_NAME}" '{"realm":"hutta","displayName":"hutta.in","displayNameHtml":"<div style=\"font-family: '\''Outfit'\'', '\''Inter'\'', sans-serif; font-weight: 700; font-size: 26px; text-align: center; letter-spacing: -0.5px;\"><span style=\"background: linear-gradient(135deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;\">hutta.in</span></div>","passwordPolicy":"length(12) and digits(1) and lowerCase(1) and upperCase(1) and specialChars(1) and notUsername(true) and notEmail(true)"}' >/dev/null
+# Configure secure Password Policy and settings for the realm
+echo -e "${YELLOW}[*] Configuring realm settings (password policy) for '${REALM_NAME}'...${NC}"
+api_put "$TOKEN" "/admin/realms/${REALM_NAME}" '{"realm":"hutta","displayName":"hutta.in","passwordPolicy":"length(12) and digits(1) and lowerCase(1) and upperCase(1) and specialChars(1) and notUsername(true) and notEmail(true)"}' >/dev/null
 
 # Clean up stale/old groups from previous setup versions
 for old_group_name in hutta-admins hutta-operators hutta-users; do
