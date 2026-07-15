@@ -51,6 +51,33 @@ public class ServiceStatusService {
       result.put("httpStatus", httpStatus);
       result.put("httpOk", httpStatus >= 200 && httpStatus < 400);
     }
+
+    // Version detection
+    String version = "unknown";
+    if ("active".equals(systemdStatus)) {
+      if ("postgresql".equals(svc.name())) {
+        version = getPostgresVersion();
+      } else if ("apache2".equals(svc.name())) {
+        version = getApacheVersion();
+      } else if ("keycloak".equals(svc.name())) {
+        version = getKeycloakVersion();
+      } else {
+        version = getCustomServiceVersion(svc.name());
+      }
+    } else {
+      // If service is inactive, we can still try to get the version from files
+      if ("postgresql".equals(svc.name())) {
+        version = getPostgresVersion();
+      } else if ("apache2".equals(svc.name())) {
+        version = getApacheVersion();
+      } else if ("keycloak".equals(svc.name())) {
+        version = getKeycloakVersion();
+      } else {
+        version = getCustomServiceVersion(svc.name());
+      }
+    }
+    result.put("version", version);
+
     return result;
   }
 
@@ -63,6 +90,90 @@ public class ServiceStatusService {
     } catch (Exception e) {
       return "unknown";
     }
+  }
+
+  private String runCommand(String... cmd) {
+    try {
+      ProcessBuilder pb = new ProcessBuilder(cmd);
+      Process p = pb.start();
+      p.waitFor();
+      return new String(p.getInputStream().readAllBytes()).trim();
+    } catch (Exception e) {
+      return "";
+    }
+  }
+
+  private String getPostgresVersion() {
+    String output = runCommand("pg_config", "--version");
+    if (output.startsWith("PostgreSQL ")) {
+      return output.substring("PostgreSQL ".length()).trim();
+    }
+    return output.isEmpty() ? "unknown" : output;
+  }
+
+  private String getApacheVersion() {
+    String output = runCommand("/usr/sbin/apache2", "-v");
+    for (String line : output.split("\n")) {
+      if (line.startsWith("Server version:")) {
+        String ver = line.substring("Server version:".length()).trim();
+        if (ver.startsWith("Apache/")) {
+          return ver.substring("Apache/".length());
+        }
+        return ver;
+      }
+    }
+    return "unknown";
+  }
+
+  private String getKeycloakVersion() {
+    try {
+      java.io.File dir = new java.io.File("/opt/keycloak/lib/lib/main");
+      if (dir.exists() && dir.isDirectory()) {
+        java.io.File[] files =
+            dir.listFiles(
+                (d, name) ->
+                    name.startsWith("org.keycloak.keycloak-core-") && name.endsWith(".jar"));
+        if (files != null && files.length > 0) {
+          String name = files[0].getName();
+          java.util.regex.Pattern p =
+              java.util.regex.Pattern.compile("org\\.keycloak\\.keycloak-core-(.+)\\.jar");
+          java.util.regex.Matcher m = p.matcher(name);
+          if (m.find()) {
+            return m.group(1);
+          }
+        }
+      }
+    } catch (Exception e) {
+      log.warn("Failed to detect Keycloak version: {}", e.getMessage());
+    }
+    return "unknown";
+  }
+
+  private String getCustomServiceVersion(String name) {
+    String jarPath = "/home/rbpi/" + name + "/" + name + ".jar";
+    java.io.File jarFile = new java.io.File(jarPath);
+    if (!jarFile.exists()) {
+      // Fallback for local development environment
+      java.io.File localPom = new java.io.File("../" + name + "/pom.xml");
+      if (localPom.exists()) {
+        return "1.0.0-DEV";
+      }
+      return "unknown";
+    }
+    try (java.util.jar.JarFile jar = new java.util.jar.JarFile(jarFile)) {
+      java.util.zip.ZipEntry entry =
+          jar.getEntry("META-INF/maven/in.hutta/" + name + "/pom.properties");
+      if (entry != null) {
+        try (java.io.InputStream is = jar.getInputStream(entry)) {
+          java.util.Properties props = new java.util.Properties();
+          props.load(is);
+          return props.getProperty("version", "unknown");
+        }
+      }
+    } catch (Exception e) {
+      // Ignore
+    }
+    return "unknown";
   }
 
   private int httpCheck(String url) {

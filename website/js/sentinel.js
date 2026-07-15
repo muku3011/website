@@ -155,15 +155,22 @@ async function refreshServices() {
       const httpBadge = s.httpStatus
           ? `<span class="service-tile-port">HTTP ${s.httpStatus}</span>` : '';
       
-      // Determine the systemd service name mapping
-      let systemdName = s.name;
-      if (s.name === 'Apache') systemdName = 'apache2';
-      if (s.name === 'PostgreSQL') systemdName = 'postgresql';
-      if (s.name === 'Keycloak') systemdName = 'keycloak';
+      let displayName = s.name;
+      if (s.name === 'apache2') displayName = 'Apache';
+      else if (s.name === 'postgresql') displayName = 'PostgreSQL';
+      else if (s.name === 'keycloak') displayName = 'Keycloak';
+      
+      const systemdName = s.name;
+      
+      const versionBadge = s.version && s.version !== 'unknown'
+          ? `<span style="margin-left: 0.4rem; opacity: 0.75; font-size: 0.68rem; font-weight: normal; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 3px; padding: 1px 4px; font-family: monospace; color: var(--text-muted);">v${s.version}</span>` : '';
 
       return `
         <div class="service-tile ${stateClass}" style="padding-bottom: 0.8rem;">
-          <div class="service-tile-name">${s.name}</div>
+          <div class="service-tile-name" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <span>${displayName}</span>
+            ${versionBadge}
+          </div>
           <div class="service-tile-port">:${s.port}</div>
           <div class="status-pill ${status}">
             <div class="status-dot ${status}"></div>${status}
