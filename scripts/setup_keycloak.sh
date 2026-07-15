@@ -72,27 +72,15 @@ KC_USER="keycloak"
 KC_DB_NAME="keycloakdb"
 KC_DB_USER="keycloak"
 
-# Resolve DB password and bootstrap admin credentials from secrets or existing config
-SECRETS_FILE="/etc/hutta/secrets.env"
-mkdir -p /etc/hutta
-chmod 700 /etc/hutta
+# Resolve SCRIPT_DIR
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 
-if [ -f "$SECRETS_FILE" ]; then
-    # shellcheck disable=SC1090
-    . "$SECRETS_FILE"
-fi
+# Load centralized secrets manager
+. "$SCRIPT_DIR/secrets_manager.sh"
 
-KC_ADMIN_USERNAME="${KC_ADMIN_USERNAME_ARG:-${KC_ADMIN_USERNAME:-admin}}"
-KC_ADMIN_PASSWORD="${KC_ADMIN_PASSWORD_ARG:-${KC_ADMIN_PASSWORD:-}}"
-
-if [ -z "$KC_ADMIN_PASSWORD" ]; then
-    KC_ADMIN_PASSWORD=$(openssl rand -hex 24)
-    echo -e "${YELLOW}[*] Generated bootstrap admin password${NC}"
-fi
-
-if [ -z "$KC_ADMIN_USERNAME" ]; then
-    KC_ADMIN_USERNAME="admin"
-fi
+# Resolve DB password and bootstrap admin credentials
+KC_ADMIN_USERNAME=$(get_or_create_secret "KC_ADMIN_USERNAME" "password" "${KC_ADMIN_USERNAME_ARG:-admin}")
+KC_ADMIN_PASSWORD=$(get_or_create_secret "KC_ADMIN_PASSWORD" "hex_32" "${KC_ADMIN_PASSWORD_ARG:-}")
 
 if [ -f "$KC_DIR/conf/keycloak.conf" ] && grep -q "db-password=" "$KC_DIR/conf/keycloak.conf"; then
     KC_DB_PASS=$(grep "^db-password=" "$KC_DIR/conf/keycloak.conf" | cut -d'=' -f2-)
@@ -104,36 +92,6 @@ else
     echo -e "${RED}Run setup_postgres.sh first so /etc/hutta/secrets.env contains KC_DB_PASSWORD.${NC}"
     exit 1
 fi
-
-write_secret_entry() {
-    local key="$1"
-    local value="$2"
-    python3 - "$SECRETS_FILE" "$key" "$value" <<'PY'
-import os, sys
-path, key, value = sys.argv[1], sys.argv[2], sys.argv[3]
-lines = []
-updated = False
-if os.path.exists(path):
-    with open(path, 'r', encoding='utf-8') as fh:
-        lines = fh.readlines()
-for idx, line in enumerate(lines):
-    if line.startswith(f"{key}="):
-        lines[idx] = f'{key}="{value.replace("\\", "\\\\").replace("\"", "\\\"")}"\n'
-        updated = True
-        break
-if not updated:
-    lines.append(f'{key}="{value.replace("\\", "\\\\").replace("\"", "\\\"")}"\n')
-with open(path, 'w', encoding='utf-8') as fh:
-    fh.writelines(lines)
-PY
-}
-
-if [ ! -f "$SECRETS_FILE" ]; then
-    touch "$SECRETS_FILE"
-fi
-chmod 600 "$SECRETS_FILE"
-write_secret_entry "KC_ADMIN_USERNAME" "$KC_ADMIN_USERNAME"
-write_secret_entry "KC_ADMIN_PASSWORD" "$KC_ADMIN_PASSWORD"
 
 # ── 5. System user ────────────────────────────────────────────────────────────
 echo -e "${YELLOW}[*] Creating system user '${KC_USER}'...${NC}"
@@ -487,17 +445,21 @@ fi
 api_put "$TOKEN" "/admin/realms/${REALM_NAME}/clients/${CLIENT_ID_VALUE}" "{\"clientId\":\"${CLIENT_ID}\",\"name\":\"Apache Portal OIDC Client\",\"enabled\":true,\"protocol\":\"openid-connect\",\"publicClient\":false,\"standardFlowEnabled\":true,\"implicitFlowEnabled\":false,\"directAccessGrantsEnabled\":false,\"serviceAccountsEnabled\":false,\"fullScopeAllowed\":true,\"redirectUris\":[\"${CLIENT_REDIRECT_URI}\"],\"attributes\":{\"post.logout.redirect.uris\":\"https://hutta.in/\"},\"webOrigins\":[\"https://hutta.in\",\"https://auth.hutta.in\"]}" >/dev/null 2>&1 || true
 
 echo -e "${YELLOW}[*] Resolving client secret from Keycloak for '${CLIENT_ID}'...${NC}"
-CLIENT_SECRET=$(api_get "$TOKEN" "/admin/realms/${REALM_NAME}/clients/${CLIENT_ID_VALUE}/client-secret" 2>/dev/null | python3 -c 'import sys, json; data=json.load(sys.stdin); print(data.get("value", ""))')
+if [ -z "${KC_CLIENT_SECRET:-}" ]; then
+    CLIENT_SECRET=$(api_get "$TOKEN" "/admin/realms/${REALM_NAME}/clients/${CLIENT_ID_VALUE}/client-secret" 2>/dev/null | python3 -c 'import sys, json; data=json.load(sys.stdin); print(data.get("value", ""))')
 
-if [ -z "$CLIENT_SECRET" ]; then
-    echo -e "${YELLOW}[*] Creating client secret for '${CLIENT_ID}'...${NC}"
-    CLIENT_SECRET=$(api_post "$TOKEN" "/admin/realms/${REALM_NAME}/clients/${CLIENT_ID_VALUE}/client-secret" '' 2>/dev/null | python3 -c 'import sys, json; data=json.load(sys.stdin); print(data.get("value", ""))')
-fi
+    if [ -z "$CLIENT_SECRET" ]; then
+        echo -e "${YELLOW}[*] Creating client secret for '${CLIENT_ID}'...${NC}"
+        CLIENT_SECRET=$(api_post "$TOKEN" "/admin/realms/${REALM_NAME}/clients/${CLIENT_ID_VALUE}/client-secret" '' 2>/dev/null | python3 -c 'import sys, json; data=json.load(sys.stdin); print(data.get("value", ""))')
+    fi
 
-if [ -z "$CLIENT_SECRET" ]; then
-    CLIENT_SECRET="${KC_CLIENT_SECRET:-$(openssl rand -hex 24)}"
+    if [ -z "$CLIENT_SECRET" ]; then
+        CLIENT_SECRET=$(generate_hex_32)
+    fi
+    set_secret "KC_CLIENT_SECRET" "$CLIENT_SECRET"
+else
+    CLIENT_SECRET="$KC_CLIENT_SECRET"
 fi
-write_secret_entry "KC_CLIENT_SECRET" "$CLIENT_SECRET"
 
 # Ensure groups claim mapper exists for the Apache client
 MAPPER_JSON=$(api_get "$TOKEN" "/admin/realms/${REALM_NAME}/clients/${CLIENT_ID_VALUE}/protocol-mappers/models" 2>/dev/null || true)
@@ -516,13 +478,9 @@ for old_username in hutta-admin hutta-operator; do
     fi
 done
 
-ADMIN_PASSWORD=$(ensure_secure_password "admin" "${ADMIN_PASSWORD:-}")
-OPERATOR_PASSWORD=$(ensure_secure_password "operator" "${OPERATOR_PASSWORD:-}")
-VIEWER_PASSWORD=$(ensure_secure_password "viewer" "${VIEWER_PASSWORD:-}")
-
-write_secret_entry "ADMIN_PASSWORD" "$ADMIN_PASSWORD"
-write_secret_entry "OPERATOR_PASSWORD" "$OPERATOR_PASSWORD"
-write_secret_entry "VIEWER_PASSWORD" "$VIEWER_PASSWORD"
+ADMIN_PASSWORD=$(get_or_create_secret "ADMIN_PASSWORD" "user_password")
+OPERATOR_PASSWORD=$(get_or_create_secret "OPERATOR_PASSWORD" "user_password")
+VIEWER_PASSWORD=$(get_or_create_secret "VIEWER_PASSWORD" "user_password")
 
 # Create or reuse default users
 for user_data in \
@@ -557,9 +515,9 @@ for user_data in \
     fi
 done
 
-write_secret_entry "ADMIN_USERNAME" "admin"
-write_secret_entry "OPERATOR_USERNAME" "operator"
-write_secret_entry "VIEWER_USERNAME" "viewer"
+get_or_create_secret "ADMIN_USERNAME" "password" "admin" >/dev/null
+get_or_create_secret "OPERATOR_USERNAME" "password" "operator" >/dev/null
+get_or_create_secret "VIEWER_USERNAME" "password" "viewer" >/dev/null
 
 echo -e "${GREEN}[+] Keycloak provisioning completed successfully${NC}"
 

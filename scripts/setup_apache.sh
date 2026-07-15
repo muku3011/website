@@ -90,38 +90,51 @@ a2enmod proxy proxy_http auth_openidc ssl headers substitute || true
 
 # ── Read Keycloak client secret ───────────────────────────────────────────────
 SSL_CONF="/etc/apache2/sites-available/000-default-le-ssl.conf"
-SECRETS_FILE="/etc/hutta/secrets.env"
+
+# Resolve SCRIPT_DIR
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+
+# Load centralized secrets manager
+. "$SCRIPT_DIR/secrets_manager.sh"
+
+# ── Read Keycloak client secret ───────────────────────────────────────────────
+KC_CLIENT_SECRET_ARG=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --oidc-client-secret)
-            KC_CLIENT_SECRET="$2"
+            KC_CLIENT_SECRET_ARG="$2"
             shift 2
             ;;
         *)
-            echo "Unknown argument: $1"
-            exit 1
+            # Apache setup script specific args
+            shift
             ;;
     esac
 done
 
-if [ -z "$KC_CLIENT_SECRET" ] && [ -f "$SECRETS_FILE" ]; then
-    # shellcheck disable=SC1090
-    . "$SECRETS_FILE"
-    KC_CLIENT_SECRET="${KC_CLIENT_SECRET:-${OIDC_CLIENT_SECRET:-}}"
+if [ -n "$KC_CLIENT_SECRET_ARG" ]; then
+    set_secret "KC_CLIENT_SECRET" "$KC_CLIENT_SECRET_ARG"
 fi
+
+KC_CLIENT_SECRET=$(get_or_create_secret "KC_CLIENT_SECRET" "hex_32" "${KC_CLIENT_SECRET_ARG:-}")
 
 if [ -z "$KC_CLIENT_SECRET" ] && [ -f "$SSL_CONF" ]; then
     KC_CLIENT_SECRET=$(grep -E '^[[:space:]]*OIDCClientSecret[[:space:]]+' "$SSL_CONF" | head -n 1 | sed -E 's/.*OIDCClientSecret[[:space:]]+"?([^\"]+)"?.*/\1/' | tr -d '"')
+    if [ -n "$KC_CLIENT_SECRET" ]; then
+        set_secret "KC_CLIENT_SECRET" "$KC_CLIENT_SECRET"
+    fi
 fi
 
 if [ -z "$KC_CLIENT_SECRET" ]; then
     if [ -t 0 ]; then
-        echo ""
         echo "Paste the OIDC client secret for 'apache-portal' from Keycloak Admin Console"
         echo "(Clients → apache-portal → Credentials → Client secret):"
         read -rsp "Client Secret: " KC_CLIENT_SECRET
         echo ""
+        if [ -n "$KC_CLIENT_SECRET" ]; then
+            set_secret "KC_CLIENT_SECRET" "$KC_CLIENT_SECRET"
+        fi
     else
         echo "Error: Client secret cannot be empty."
         exit 1
@@ -133,18 +146,8 @@ if [ -z "$KC_CLIENT_SECRET" ]; then
     exit 1
 fi
 
-# Extract existing passphrase from Apache config (keeps session cookies active!)
-OIDC_PASSPHRASE=""
-if [ -f "$SSL_CONF" ]; then
-    OIDC_PASSPHRASE=$(grep -E '^\s*OIDCCryptoPassphrase\s+' "$SSL_CONF" | awk '{print $2}' | tr -d '"' | tr -d "'")
-fi
-
-if [ -z "$OIDC_PASSPHRASE" ]; then
-    OIDC_PASSPHRASE=$(openssl rand -hex 32)
-    echo "[*] Generated new OIDC crypto passphrase"
-else
-    echo "[*] Reusing existing OIDC crypto passphrase"
-fi
+# Extract existing passphrase or generate and save it centrally
+OIDC_PASSPHRASE=$(get_or_create_secret "OIDC_PASSPHRASE" "hex_32")
 
 # ── Set global ServerName to suppress FQDN warning ────────────────────────────
 APACHE_RELOAD_REQUIRED=false
