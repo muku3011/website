@@ -34,16 +34,28 @@ public class BlogController {
   // --------------------------------------------------------------------------
 
   @GetMapping("/posts")
-  public ResponseEntity<List<BlogPost>> getAllPosts() {
-    return ResponseEntity.ok(blogPostRepository.findAllByOrderByCreatedAtDesc());
+  public ResponseEntity<List<BlogPost>> getAllPosts(HttpServletRequest request) {
+    String username = getAuthenticatedUser(request);
+    if (username != null) {
+      return ResponseEntity.ok(blogPostRepository.findAllByOrderByCreatedAtDesc());
+    } else {
+      return ResponseEntity.ok(blogPostRepository.findByPublishedTrueOrderByCreatedAtDesc());
+    }
   }
 
   @GetMapping("/posts/{slug}")
-  public ResponseEntity<BlogPost> getPostBySlug(@PathVariable("slug") String slug) {
-    return blogPostRepository
-        .findBySlug(slug)
-        .map(ResponseEntity::ok)
-        .orElse(ResponseEntity.notFound().build());
+  public ResponseEntity<?> getPostBySlug(
+      @PathVariable("slug") String slug, HttpServletRequest request) {
+    Optional<BlogPost> postOpt = blogPostRepository.findBySlug(slug);
+    if (postOpt.isEmpty()) {
+      return ResponseEntity.notFound().build();
+    }
+    BlogPost post = postOpt.get();
+    if (!post.isPublished() && getAuthenticatedUser(request) == null) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN)
+          .body("Error: This article is a draft and requires authentication.");
+    }
+    return ResponseEntity.ok(post);
   }
 
   // --------------------------------------------------------------------------
@@ -103,6 +115,7 @@ public class BlogController {
               existingPost.setContent(postDetails.getContent());
               existingPost.setImageUrl(postDetails.getImageUrl());
               existingPost.setTags(postDetails.getTags());
+              existingPost.setPublished(postDetails.isPublished());
 
               // Regenerate slug if title changed
               String baseSlug = slugify(postDetails.getTitle());

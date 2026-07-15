@@ -32,6 +32,9 @@ public class BlogPost {
 
   private String tags;
 
+  @Column(nullable = false)
+  private boolean published = false;
+
   @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt;
 

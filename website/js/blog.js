@@ -69,10 +69,40 @@ function initBlog() {
         });
     }
 
-    // Edit Form Submission
-    const editForm = document.getElementById('blog-edit-form');
-    if (editForm) {
-        editForm.addEventListener('submit', handleFormSubmit);
+    // Live Preview real-time keyup/input listeners
+    const editTitle = document.getElementById('edit-title');
+    const editSummary = document.getElementById('edit-summary');
+    const editTags = document.getElementById('edit-tags');
+    const editContent = document.getElementById('edit-content');
+    if (editTitle) editTitle.addEventListener('input', updateLivePreview);
+    if (editSummary) editSummary.addEventListener('input', updateLivePreview);
+    if (editTags) editTags.addEventListener('input', updateLivePreview);
+    if (editContent) editContent.addEventListener('input', updateLivePreview);
+
+    // Inline image uploader binding
+    const insertImageBtn = document.getElementById('btn-insert-image');
+    const inlineImageFile = document.getElementById('inline-image-file');
+    if (insertImageBtn && inlineImageFile) {
+        insertImageBtn.addEventListener('click', () => {
+            inlineImageFile.click();
+        });
+        inlineImageFile.addEventListener('change', handleInlineImageUpload);
+    }
+
+    // Edit Form Submission buttons
+    const saveDraftBtn = document.getElementById('btn-save-draft');
+    const savePublishBtn = document.getElementById('btn-save-publish');
+    if (saveDraftBtn) {
+        saveDraftBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleFormSubmit(false);
+        });
+    }
+    if (savePublishBtn) {
+        savePublishBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleFormSubmit(true);
+        });
     }
 
     // URL Routing event listeners
@@ -236,6 +266,12 @@ function filterAndRenderPosts() {
             year: 'numeric', month: 'long', day: 'numeric'
         });
 
+        // Draft badge
+        let draftBadgeHtml = '';
+        if (post.published === false || !post.published) {
+            draftBadgeHtml = `<span class="blog-tag" style="background: var(--warning-glow); color: black; border: none; font-size: 0.7rem; padding: 0.1rem 0.35rem; font-weight: bold; margin-left: 0.5rem; text-shadow: none;">Draft</span>`;
+        }
+
         // Admin action row
         let adminActionHtml = '';
         if (isLoggedIn) {
@@ -254,6 +290,7 @@ function filterAndRenderPosts() {
                     <span style="font-weight:600; color:var(--primary-glow)">${escapeHtml(post.author)}</span>
                     <span>•</span>
                     <span>${dateStr}</span>
+                    ${draftBadgeHtml}
                 </div>
                 <h3 class="blog-title">${escapeHtml(post.title)}</h3>
                 <p class="blog-summary">${escapeHtml(post.summary || '')}</p>
@@ -421,6 +458,9 @@ function parseInlineMarkdown(text) {
     if (!text) return '';
     let escaped = escapeHtml(text);
     
+    // Images: ![alt](url)
+    escaped = escaped.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" style="max-width:100%; height:auto; display:block; margin:1rem auto; border-radius:var(--border-radius-sm); box-shadow:0 4px 12px rgba(0,0,0,0.15);">');
+
     // Bold: **text**
     escaped = escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     
@@ -447,12 +487,19 @@ function openPostEditor(post) {
     
     const previewImg = document.getElementById('image-upload-preview');
     const previewPlaceholder = document.getElementById('image-upload-preview-placeholder');
-    previewImg.src = '';
-    previewImg.style.display = 'none';
+    if (previewImg) {
+        previewImg.src = '';
+        previewImg.style.display = 'none';
+    }
     if (previewPlaceholder) previewPlaceholder.style.display = 'block';
 
+    // Reset Live Preview banner
+    const livePreviewBanner = document.getElementById('preview-post-banner');
+    const livePreviewBannerContainer = document.getElementById('preview-post-banner-container');
+    if (livePreviewBanner) livePreviewBanner.src = '';
+    if (livePreviewBannerContainer) livePreviewBannerContainer.style.display = 'none';
+
     document.getElementById('edit-dialog-title').textContent = post ? 'Edit Technology Article' : 'Write New Technology Article';
-    document.getElementById('btn-save-blog').textContent = post ? 'Save Changes' : 'Publish Article';
 
     if (post) {
         document.getElementById('edit-post-id').value = post.id;
@@ -463,11 +510,18 @@ function openPostEditor(post) {
         
         if (post.imageUrl) {
             const fullImgUrl = post.imageUrl.startsWith('/') ? `${BLOG_BACKEND_BASE}${post.imageUrl}` : post.imageUrl;
-            previewImg.src = fullImgUrl;
-            previewImg.style.display = 'block';
+            if (previewImg) {
+                previewImg.src = fullImgUrl;
+                previewImg.style.display = 'block';
+            }
             if (previewPlaceholder) previewPlaceholder.style.display = 'none';
+            if (livePreviewBanner) livePreviewBanner.src = fullImgUrl;
+            if (livePreviewBannerContainer) livePreviewBannerContainer.style.display = 'block';
         }
     }
+
+    // Trigger initial preview build
+    updateLivePreview();
 
     dialog.showModal();
 }
@@ -488,11 +542,12 @@ async function loadAndOpenEditor(id) {
     }
 }
 
-async function handleFormSubmit(event) {
-    event.preventDefault();
-    const saveBtn = document.getElementById('btn-save-blog');
-    saveBtn.disabled = true;
-    saveBtn.textContent = 'Saving...';
+async function handleFormSubmit(published) {
+    const saveDraftBtn = document.getElementById('btn-save-draft');
+    const savePublishBtn = document.getElementById('btn-save-publish');
+    
+    if (saveDraftBtn) saveDraftBtn.disabled = true;
+    if (savePublishBtn) savePublishBtn.disabled = true;
 
     const id = document.getElementById('edit-post-id').value;
     const title = document.getElementById('edit-title').value;
@@ -510,7 +565,7 @@ async function handleFormSubmit(event) {
 
     try {
         // Upload new image if chosen
-        if (fileInput.files.length > 0) {
+        if (fileInput && fileInput.files.length > 0) {
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
 
@@ -530,7 +585,7 @@ async function handleFormSubmit(event) {
         }
 
         // Post body payload
-        const postPayload = { title, summary, tags, content, imageUrl };
+        const postPayload = { title, summary, tags, content, imageUrl, published };
         const url = id 
             ? `${BLOG_BACKEND_BASE}/api/blog/posts/${id}` 
             : `${BLOG_BACKEND_BASE}/api/blog/posts`;
@@ -546,11 +601,14 @@ async function handleFormSubmit(event) {
         });
 
         if (!response.ok) {
+            if (response.status === 401) {
+                throw new Error("Authentication required. Your session may have expired or you may be logged in as a guest. Please sign in via the Sign In button at the top, or log in in another tab to preserve your edits.");
+            }
             const errorMsg = await response.text();
             throw new Error(errorMsg || `Server responded with HTTP ${response.status}`);
         }
 
-        showToast(id ? 'Article updated successfully!' : 'Article published successfully!', 'success');
+        showToast(published ? 'Article published successfully!' : 'Article saved as draft successfully!', 'success');
         document.getElementById('dialog-edit-post').close();
         
         // Refresh post list
@@ -558,8 +616,8 @@ async function handleFormSubmit(event) {
     } catch (err) {
         showToast(err.message, 'error');
     } finally {
-        saveBtn.disabled = false;
-        saveBtn.textContent = id ? 'Save Changes' : 'Publish Article';
+        if (saveDraftBtn) saveDraftBtn.disabled = false;
+        if (savePublishBtn) savePublishBtn.disabled = false;
     }
 }
 
@@ -640,11 +698,14 @@ function escapeHtml(str) {
 // -------------------------------------------------------------
 
 function showToast(message, type = 'info', duration = 4000) {
-    let container = document.getElementById('toast-container');
+    const openDialog = document.querySelector('dialog[open]');
+    const parent = openDialog || document.body;
+
+    let container = parent.querySelector('#toast-container');
     if (!container) {
         container = document.createElement('div');
         container.id = 'toast-container';
-        document.body.appendChild(container);
+        parent.appendChild(container);
     }
 
     const toast = document.createElement('div');
@@ -789,3 +850,110 @@ function handlePopState(event) {
         filterAndRenderPosts();
     }
 }
+
+async function handleInlineImageUpload(e) {
+    const fileInput = e.target;
+    if (fileInput.files.length === 0) return;
+    
+    const file = fileInput.files[0];
+    const textarea = document.getElementById('edit-content');
+    if (!textarea) return;
+    
+    // Upload image
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+        showToast('Uploading image...', 'info');
+        const uploadResp = await fetch(`${BLOG_BACKEND_BASE}/api/blog/images`, {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+        });
+        
+        if (!uploadResp.ok) {
+            if (uploadResp.status === 401) {
+                throw new Error("Authentication required to upload images. Please sign in via the Sign In button at the top, or log in in another tab.");
+            }
+            const errMsg = await uploadResp.text();
+            throw new Error(`Upload failed: ${errMsg}`);
+        }
+        
+        const uploadData = await uploadResp.json();
+        const imageUrl = uploadData.imageUrl;
+        
+        // Insert Markdown syntax at cursor position
+        const cursor = textarea.selectionStart;
+        const text = textarea.value;
+        const before = text.substring(0, cursor);
+        const after = text.substring(textarea.selectionEnd, text.length);
+        const imageMarkdown = `\n![${escapeHtml(file.name)}](${imageUrl})\n`;
+        
+        textarea.value = before + imageMarkdown + after;
+        
+        // Put cursor after the inserted text
+        textarea.selectionStart = textarea.selectionEnd = cursor + imageMarkdown.length;
+        textarea.focus();
+        
+        showToast('Image inserted successfully!', 'success');
+        
+        // Reset file input so same file can be selected again
+        fileInput.value = '';
+        
+        // Trigger live preview update
+        updateLivePreview();
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
+}
+
+function updateLivePreview() {
+    const title = document.getElementById('edit-title').value;
+    const summary = document.getElementById('edit-summary').value;
+    const tags = document.getElementById('edit-tags').value;
+    const content = document.getElementById('edit-content').value;
+
+    const previewTitle = document.getElementById('preview-post-title');
+    const previewSummary = document.getElementById('preview-post-summary');
+    const previewTags = document.getElementById('preview-post-tags');
+    const previewBody = document.getElementById('preview-post-body');
+    const previewAuthor = document.getElementById('preview-post-author');
+    const previewDate = document.getElementById('preview-post-date');
+
+    if (previewTitle) previewTitle.textContent = title || 'Untitled Article';
+    if (previewSummary) {
+        previewSummary.textContent = summary || '';
+        previewSummary.style.display = summary ? 'block' : 'none';
+    }
+    
+    // Author & Date
+    if (previewAuthor) {
+        const huttaName = getCookie('hutta_name');
+        const huttaUser = getCookie('hutta_user');
+        previewAuthor.textContent = huttaName ? decodeURIComponent(huttaName).replace(/"/g, '') : (huttaUser ? decodeURIComponent(huttaUser).replace(/"/g, '') : 'Mukesh Joshi');
+    }
+    if (previewDate) {
+        previewDate.textContent = new Date().toLocaleDateString(undefined, {
+            year: 'numeric', month: 'long', day: 'numeric'
+        });
+    }
+
+    // Render tags
+    if (previewTags) {
+        previewTags.innerHTML = '';
+        if (tags) {
+            tags.split(',').forEach(t => {
+                const cleaned = t.trim();
+                if (cleaned) {
+                    previewTags.innerHTML += `<span class="blog-tag" style="pointer-events:none;">${escapeHtml(cleaned)}</span>`;
+                }
+            });
+        }
+    }
+
+    // Render Content
+    if (previewBody) {
+        previewBody.innerHTML = convertMarkdownToHtml(content);
+    }
+}
+

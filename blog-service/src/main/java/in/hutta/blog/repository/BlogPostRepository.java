@@ -11,4 +11,6 @@ public interface BlogPostRepository extends JpaRepository<BlogPost, Long> {
   Optional<BlogPost> findBySlug(String slug);
 
   List<BlogPost> findAllByOrderByCreatedAtDesc();
+
+  List<BlogPost> findByPublishedTrueOrderByCreatedAtDesc();
 }

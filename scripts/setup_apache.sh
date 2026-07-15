@@ -278,12 +278,16 @@ cat >> "$SSL_TMP" <<'APACHEEOF'
 
 
     # -- protect write operations to technology blog service --
-    <LocationMatch "^/api/blog/(posts(/.*)?|images)$">
+    <Location /api/blog>
+        AuthType openid-connect
+        OIDCUnAuthAction pass
         <LimitExcept GET>
-            AuthType openid-connect
             Require valid-user
         </LimitExcept>
-    </LocationMatch>
+        <Limit GET>
+            Require all granted
+        </Limit>
+    </Location>
 
     # -- protect eSIM admin endpoints (metadata reading, lists) --
     <Location /gsma/rsp/v2/admin>
