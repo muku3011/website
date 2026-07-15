@@ -190,10 +190,6 @@ cat << 'EOF' > "$CRON_FILE"
 0 2 * * * postgres /usr/local/bin/cron_db_backup.sh 2>&1 | logger -t postgres-backup
 EOF
 chmod 644 "$CRON_FILE"
-
-# Run it once right now as postgres to seed the backup_status.json
-echo -e "${YELLOW}[*] Executing database backup script once to seed initial status...${NC}"
-sudo -u postgres "$BACKUP_SCRIPT_DEST" || echo -e "${RED}[!] Initial database backup run returned warnings/errors (see logs).${NC}"
 echo -e "${GREEN}[+] Daily backup cron job successfully configured at ${CRON_FILE}.${NC}"
 
 
