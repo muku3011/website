@@ -106,7 +106,12 @@ public class ServiceStatusService {
   private String getPostgresVersion() {
     String output = runCommand("pg_config", "--version");
     if (output.startsWith("PostgreSQL ")) {
-      return output.substring("PostgreSQL ".length()).trim();
+      String ver = output.substring("PostgreSQL ".length()).trim();
+      int spaceIdx = ver.indexOf(' ');
+      if (spaceIdx > 0) {
+        return ver.substring(0, spaceIdx);
+      }
+      return ver;
     }
     return output.isEmpty() ? "unknown" : output;
   }

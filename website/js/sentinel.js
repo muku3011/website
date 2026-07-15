@@ -163,7 +163,7 @@ async function refreshServices() {
       const systemdName = s.name;
       
       const versionBadge = s.version && s.version !== 'unknown'
-          ? `<span style="margin-left: 0.4rem; opacity: 0.75; font-size: 0.68rem; font-weight: normal; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 3px; padding: 1px 4px; font-family: monospace; color: var(--text-muted);">v${s.version}</span>` : '';
+          ? `<span class="version-badge" title="v${s.version}">v${s.version}</span>` : '';
 
       return `
         <div class="service-tile ${stateClass}" style="padding-bottom: 0.8rem;">

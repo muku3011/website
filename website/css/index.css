@@ -52,6 +52,13 @@ body.dark-theme {
     --dropdown-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 1px rgba(255, 255, 255, 0.1);
     --dropdown-item-border: rgba(255, 255, 255, 0.05);
 
+    /* Service Status tile properties */
+    --service-tile-bg: hsla(222, 24%, 10%, 0.4);
+    --service-tile-hover-bg: hsla(222, 24%, 14%, 0.6);
+    --service-tile-hover-border: rgba(255, 255, 255, 0.15);
+    --version-badge-bg: rgba(255, 255, 255, 0.06);
+    --version-badge-border: rgba(255, 255, 255, 0.1);
+
     /* Floating Bottom Navigation Variables */
     --floating-nav-bg: rgba(10, 10, 10, 0.72);
     --floating-nav-border: rgba(255, 255, 255, 0.08);
@@ -92,6 +99,13 @@ body.light-theme {
     --dropdown-bg: rgba(255, 255, 255, 0.95);
     --dropdown-shadow: 0 10px 40px rgba(100, 110, 140, 0.15), 0 0 1px rgba(0, 0, 0, 0.08);
     --dropdown-item-border: rgba(0, 0, 0, 0.05);
+
+    /* Service Status tile properties */
+    --service-tile-bg: hsla(210, 30%, 90%, 0.35);
+    --service-tile-hover-bg: hsla(210, 30%, 85%, 0.6);
+    --service-tile-hover-border: hsla(210, 30%, 75%, 0.5);
+    --version-badge-bg: rgba(0, 0, 0, 0.05);
+    --version-badge-border: rgba(0, 0, 0, 0.08);
 
     /* Floating Bottom Navigation Variables */
     --floating-nav-bg: rgba(255, 255, 255, 0.75);

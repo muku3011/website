@@ -545,7 +545,7 @@
         }
 
         .service-tile {
-            background: hsla(222, 24%, 10%, 0.4);
+            background: var(--service-tile-bg, hsla(222, 24%, 10%, 0.4));
             border: 1px solid var(--card-border);
             border-radius: var(--border-radius-sm);
             padding: 1.15rem;
@@ -558,9 +558,28 @@
         }
 
         .service-tile:hover {
-            border-color: rgba(255, 255, 255, 0.15);
-            background: hsla(222, 24%, 14%, 0.6);
+            border-color: var(--service-tile-hover-border, rgba(255, 255, 255, 0.15));
+            background: var(--service-tile-hover-bg, hsla(222, 24%, 14%, 0.6));
             transform: translateY(-2px);
+        }
+
+        .version-badge {
+            margin-left: 0.4rem;
+            font-size: 0.68rem;
+            font-weight: normal;
+            background: var(--version-badge-bg, rgba(255, 255, 255, 0.06));
+            border: 1px solid var(--version-badge-border, rgba(255, 255, 255, 0.1));
+            border-radius: 3px;
+            padding: 1px 4px;
+            font-family: monospace;
+            color: var(--text-muted);
+            display: inline-block;
+            max-width: 110px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            vertical-align: middle;
+            transition: all 0.3s ease;
         }
 
         .service-tile.active-state:hover {
