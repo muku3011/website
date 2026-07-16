@@ -883,6 +883,18 @@ body {
     color: var(--text-primary);
 }
 
+#theme-toggle {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#theme-toggle:hover {
+    transform: scale(1.1) rotate(15deg);
+}
+
+#theme-toggle:active {
+    transform: scale(0.9) rotate(-15deg);
+}
+
 .btn-text {
     background: none;
     border: none;
@@ -3060,11 +3072,13 @@ input[type="file"].form-input::file-selector-button:hover {
 }
 
 /* ── Scroll-driven fade-up entrance animations ─────────────────────────────── */
-@supports (animation-timeline: view()) {
-    .scroll-animate {
-        animation: fade-up-section linear both;
-        animation-timeline: view();
-        animation-range: entry 5% entry 35%;
+@media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+        .scroll-animate {
+            animation: fade-up-section linear both;
+            animation-timeline: view();
+            animation-range: entry 5% entry 35%;
+        }
     }
 }
 
@@ -3905,8 +3919,21 @@ input[type="file"].form-input::file-selector-button:hover {
 @media (max-width: 768px) {
     /* Hero section centering and optimization */
     .portfolio-hero {
-        padding: 6rem 1rem 3rem 1rem !important;
+        padding: 6rem 1.25rem 3rem 1.25rem !important;
         min-height: auto !important;
+    }
+    
+    .portfolio-section {
+        padding: 0 1.25rem !important;
+        margin: 3rem auto !important;
+    }
+
+    @media (max-width: 380px) {
+        .profile-photo-wrap,
+        .profile-photo {
+            width: 220px !important;
+            height: 220px !important;
+        }
     }
     .hero-container-inner {
         grid-template-columns: 1fr !important;
@@ -4035,5 +4062,161 @@ input[type="file"].form-input::file-selector-button:hover {
     }
     .timeline-role-org h3 {
         font-size: 1.15rem !important;
+    }
+    .nav-menu {
+        gap: 0.85rem !important;
+    }
+    .nav-link {
+        font-size: 0.8rem !important;
+        padding: 0.2rem 0.35rem !important;
+    }
+}
+
+/* ── Contact Dialog Modal ─────────────────────────────────────────────────── */
+.contact-dialog-modal {
+    border: 1px solid var(--card-border);
+    background: var(--card-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--border-radius-md);
+    padding: 0;
+    max-width: 500px;
+    width: 90%;
+    color: var(--text-primary);
+    box-shadow: 0 20px 80px var(--shadow-color);
+    z-index: 10000;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.contact-dialog-modal::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: fade-in 0.3s ease forwards;
+}
+
+.contact-dialog-modal[open] {
+    animation: zoom-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes zoom-in {
+    from { transform: translate(-50%, -50%) scale(0.95); opacity: 0; }
+    to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.dialog-content {
+    padding: 2rem;
+}
+
+.dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+}
+
+.dialog-header h2 {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    background: linear-gradient(135deg, var(--text-primary) 30%, var(--primary-glow));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.close-dialog-btn {
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.3rem;
+    border-radius: 50%;
+    border: 1.5px solid transparent;
+    background: transparent;
+    transition: var(--transition-smooth);
+}
+
+.close-dialog-btn:hover {
+    color: var(--warning-glow);
+    background: rgba(240, 70, 70, 0.1);
+    border-color: rgba(240, 70, 70, 0.2);
+}
+
+.contact-form-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: left;
+}
+
+.form-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.form-input {
+    background: var(--console-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--border-radius-sm);
+    padding: 0.75rem 1rem;
+    color: var(--text-primary);
+    font-family: var(--font-primary);
+    font-size: 0.95rem;
+    transition: var(--transition-smooth);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--primary-glow);
+    box-shadow: 0 0 8px hsla(var(--hue-primary), 100%, 60%, 0.2);
+}
+
+.form-textarea {
+    resize: vertical;
+}
+
+.form-submit-btn {
+    align-self: flex-end;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: var(--border-radius-sm);
+    border: none;
+    cursor: pointer;
+}
+
+@media (max-width: 480px) {
+    .dialog-content {
+        padding: 1.25rem;
+    }
+    .dialog-header h2 {
+        font-size: 1.25rem;
+    }
+    .form-submit-btn {
+        width: 100%;
+        justify-content: center;
     }
 }

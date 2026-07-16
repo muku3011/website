@@ -260,6 +260,99 @@
                 localStorage.setItem('theme', nextTheme);
             });
         }
+
+        // Listen for system preference changes (only if user hasn't explicitly set a preference)
+        if (window.matchMedia) {
+            window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
+                if (!localStorage.getItem('theme')) {
+                    document.body.classList.remove('light-theme', 'dark-theme');
+                    document.body.classList.add(e.matches ? 'light-theme' : 'dark-theme');
+                }
+            });
+        }
+    }
+
+    function initContactDialog() {
+        const contactTrigger = document.getElementById('contact-trigger');
+        const contactDialog = document.getElementById('contact-dialog');
+        const closeDialogBtn = document.getElementById('close-contact-dialog');
+        const contactForm = document.getElementById('contact-form');
+
+        if (!contactDialog) return;
+
+        if (contactTrigger) {
+            contactTrigger.addEventListener('click', () => {
+                contactDialog.showModal();
+                document.body.style.overflow = 'hidden';
+            });
+        }
+
+        const closeDialog = () => {
+            contactDialog.close();
+            document.body.style.overflow = '';
+        };
+
+        if (closeDialogBtn) {
+            closeDialogBtn.addEventListener('click', closeDialog);
+        }
+
+        // Close when clicking outside modal box
+        contactDialog.addEventListener('click', (e) => {
+            const rect = contactDialog.getBoundingClientRect();
+            const isInDialog = (
+                rect.top <= e.clientY &&
+                e.clientY <= rect.top + rect.height &&
+                rect.left <= e.clientX &&
+                e.clientX <= rect.left + rect.width
+            );
+            if (!isInDialog) {
+                closeDialog();
+            }
+        });
+
+        // Handle escape cancel scroll lock release
+        contactDialog.addEventListener('cancel', () => {
+            document.body.style.overflow = '';
+        });
+
+        if (contactForm) {
+            contactForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const name = document.getElementById('contact-name').value;
+                const email = document.getElementById('contact-email').value;
+                const subject = document.getElementById('contact-subject').value;
+                const message = document.getElementById('contact-message').value;
+
+                if (!name || !email || !subject || !message) {
+                    return;
+                }
+
+                // Trigger mail client fallback
+                const mailtoUrl = `mailto:muku3011@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent("Name: " + name + "\nEmail: " + email + "\n\n" + message)}`;
+                window.location.href = mailtoUrl;
+
+                const submitBtn = contactForm.querySelector('.form-submit-btn');
+                const originalContent = submitBtn.innerHTML;
+                
+                submitBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.25rem;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Mail Client Opened!
+                `;
+                submitBtn.style.backgroundColor = 'var(--success-glow)';
+                submitBtn.style.color = 'white';
+                submitBtn.disabled = true;
+
+                setTimeout(() => {
+                    closeDialog();
+                    contactForm.reset();
+                    submitBtn.innerHTML = originalContent;
+                    submitBtn.style.backgroundColor = '';
+                    submitBtn.style.color = '';
+                    submitBtn.disabled = false;
+                }, 2000);
+            });
+        }
     }
 
     // Trigger DOM Initializations
@@ -268,5 +361,6 @@
         initNavigation();
         initHeaderActions();
         initIdleTimer();
+        initContactDialog();
     });
 })();

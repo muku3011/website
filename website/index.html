@@ -33,9 +33,14 @@
     <script>
         (function () {
             const savedTheme = localStorage.getItem('theme');
-            if (savedTheme && savedTheme !== 'dark') {
+            if (savedTheme) {
+                if (savedTheme !== 'dark') {
+                    document.body.classList.remove('dark-theme');
+                    document.body.classList.add(savedTheme + '-theme');
+                }
+            } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
                 document.body.classList.remove('dark-theme');
-                document.body.classList.add(savedTheme + '-theme');
+                document.body.classList.add('light-theme');
             }
         })();
     </script>
@@ -98,8 +103,7 @@
                         sandbox—hence this website.
                     </p>
                     <div class="hero-actions-row">
-                        <a href="https://docs.google.com/forms/d/1g8IGg8LnpvICuxjdndDDExVUX3EVCE1hmidVeWzfuk4"
-                            target="_blank" class="btn btn-primary">
+                        <button id="contact-trigger" class="btn btn-primary">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                 stroke-linejoin="round" style="margin-right: 0.25rem;">
@@ -107,9 +111,9 @@
                                 <polygon points="22 2 15 22 11 13 2 9 22 2" />
                             </svg>
                             Contact Me
-                        </a>
-                        <a href="blog.html" class="btn btn-secondary">
-                            Read Blog
+                        </button>
+                        <a href="#projects" class="btn btn-secondary">
+                            View Projects
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
                                 stroke-linejoin="round" style="margin-left: 0.25rem;">
@@ -766,6 +770,40 @@
         <p>&copy; 2026 hutta.in. Created by Mukesh Joshi. Built with HTML5, CSS Grid, and vanilla JS. Powered by
             Raspberry Pi, GCP &amp; Certbot.</p>
     </footer>
+
+    <!-- Contact Modal Dialog -->
+    <dialog id="contact-dialog" class="contact-dialog-modal">
+        <div class="dialog-content">
+            <div class="dialog-header">
+                <h2>Send a Message</h2>
+                <button id="close-contact-dialog" class="btn-icon close-dialog-btn" aria-label="Close dialog">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <form id="contact-form" class="contact-form-body">
+                <div class="form-group">
+                    <label for="contact-name">Your Name</label>
+                    <input type="text" id="contact-name" name="name" required placeholder="John Doe" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="contact-email">Email Address</label>
+                    <input type="email" id="contact-email" name="email" required placeholder="john@example.com" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="contact-subject">Subject</label>
+                    <input type="text" id="contact-subject" name="subject" required placeholder="Inquiry about eSIM services" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="contact-message">Message</label>
+                    <textarea id="contact-message" name="message" required placeholder="Write your message here..." rows="5" class="form-input form-textarea"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary form-submit-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.25rem;"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    Send Message
+                </button>
+            </form>
+        </div>
+    </dialog>
 
     <script src="js/auth-nav.js?v=2"></script>
     <script src="js/index.js"></script>
