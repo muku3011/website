@@ -34,7 +34,7 @@ public class SecurityMonitoringService {
 
   private static final Pattern FAIL2BAN_PATTERN =
       Pattern.compile(
-          "^(\\S+) \\S+ fail2ban\\.actions\\[\\d+\\]: WARNING \\[sshd\\] (Ban|Unban) (\\S+)",
+          "^(\\S+) \\S+ fail2ban\\.actions\\[\\d+\\]: WARNING \\[([^\\s\\]]+)\\] (Ban|Unban) (\\S+)",
           Pattern.MULTILINE);
 
   @Scheduled(fixedDelay = 30_000)
@@ -118,8 +118,9 @@ public class SecurityMonitoringService {
     Matcher matcher = FAIL2BAN_PATTERN.matcher(output);
     while (matcher.find()) {
       String timeStr = matcher.group(1);
-      String action = matcher.group(2); // Ban or Unban
-      String ip = matcher.group(3);
+      String jail = matcher.group(2);
+      String action = matcher.group(3); // Ban or Unban
+      String ip = matcher.group(4);
       String type = "Ban".equalsIgnoreCase(action) ? "FAIL2BAN_BAN" : "FAIL2BAN_UNBAN";
 
       try {
@@ -145,21 +146,25 @@ public class SecurityMonitoringService {
         incident.setCountry(geo.country);
         incident.setCountryCode(geo.countryCode);
         incident.setCity(geo.city);
-        incident.setDetails("Fail2ban " + action.toLowerCase() + "ned IP " + ip);
+        incident.setDetails(
+            "Fail2ban " + action.toLowerCase() + "ned IP " + ip + " in jail [" + jail + "]");
         incident.setTimestamp(timestamp);
         incident.setBlocked("FAIL2BAN_BAN".equals(type));
 
         repository.save(incident);
         log.warn(
-            "Logged Fail2ban security incident: IP {} was {}", ip, action.toLowerCase() + "ned");
+            "Logged Fail2ban security incident: IP {} was {} in jail {}",
+            ip,
+            action.toLowerCase() + "ned",
+            jail);
 
         // Fire dynamic push alert via ntfy on active Ban
         if ("FAIL2BAN_BAN".equals(type)) {
-          String alertTitle = "🚨 Security Incident: SSH IP Banned";
+          String alertTitle = "🚨 Security Incident: IP Banned";
           String alertMsg =
               String.format(
-                  "IP address %s (%s, %s) was banned by Fail2ban due to suspicious SSH login activity.",
-                  ip, geo.country, geo.city);
+                  "IP address %s (%s, %s) was banned by Fail2ban in jail [%s] due to suspicious activity.",
+                  ip, geo.country, geo.city, jail);
           ntfy.send(alertTitle, alertMsg, "high", "rotating_light,shield");
         }
       } catch (Exception e) {
