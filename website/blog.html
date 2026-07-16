@@ -19,7 +19,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/index.css?v=6">
+    <link rel="stylesheet" href="css/index.css?v=7">
     <link rel="icon" type="image/png" href="favicon.png">
     <style>
         /* Blog-specific Layout Extensions */
@@ -357,11 +357,16 @@
 </head>
 <body class="dark-theme">
     <script>
-        (function() {
+        (function () {
             const savedTheme = localStorage.getItem('theme');
-            if (savedTheme && savedTheme !== 'dark') {
+            if (savedTheme) {
+                if (savedTheme !== 'dark') {
+                    document.body.classList.remove('dark-theme');
+                    document.body.classList.add(savedTheme + '-theme');
+                }
+            } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
                 document.body.classList.remove('dark-theme');
-                document.body.classList.add(savedTheme + '-theme');
+                document.body.classList.add('light-theme');
             }
         })();
     </script>
@@ -555,6 +560,40 @@
     <footer class="app-footer">
         <p>&copy; 2026 hutta.in. Created by Mukesh Joshi. Built with HTML5, CSS Grid, and vanilla JS. Powered by Raspberry Pi, GCP &amp; Certbot.</p>
     </footer>
+
+    <!-- Contact Modal Dialog -->
+    <dialog id="contact-dialog" class="contact-dialog-modal">
+        <div class="dialog-content">
+            <div class="dialog-header">
+                <h2>Send a Message</h2>
+                <button id="close-contact-dialog" class="btn-icon close-dialog-btn" aria-label="Close dialog">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <form id="contact-form" class="contact-form-body">
+                <div class="form-group">
+                    <label for="contact-name">Your Name</label>
+                    <input type="text" id="contact-name" name="name" required placeholder="John Doe" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="contact-email">Email Address</label>
+                    <input type="email" id="contact-email" name="email" required placeholder="john@example.com" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="contact-subject">Subject</label>
+                    <input type="text" id="contact-subject" name="subject" required placeholder="Inquiry about eSIM services" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="contact-message">Message</label>
+                    <textarea id="contact-message" name="message" required placeholder="Write your message here..." rows="5" class="form-input form-textarea"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary form-submit-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.25rem;"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    Send Message
+                </button>
+            </form>
+        </div>
+    </dialog>
 
     <!-- Dialog confirm script and other actions use auth-nav.js resources -->
     <script src="js/auth-nav.js?v=2"></script>
