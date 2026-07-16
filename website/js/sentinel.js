@@ -382,6 +382,96 @@ async function refreshSecurityIncidents() {
   }
 }
 
+// ── Fail2ban Banned IPs ──────────────────────────────────────────────────────
+
+const bannedGeoCache = {};
+
+async function refreshBannedIps() {
+  const tbody = document.getElementById('banned-ips-tbody');
+  if (!tbody) return;
+  try {
+    const list = await fetchJson(`${BASE}/security/fail2ban/banned`);
+    if (!list || list.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No active Fail2ban bans found.</td></tr>';
+      return;
+    }
+    
+    // Render immediately
+    tbody.innerHTML = list.map(item => {
+      const ip = item.ip;
+      const jail = item.jail;
+      return `
+        <tr id="ban-row-${ip.replace(/[.:]/g, '-')}" class="banned-ip-row">
+          <td style="font-weight:600;font-size:0.88rem;color:var(--text-primary);">${ip}</td>
+          <td><code style="font-size:0.8rem;background:rgba(255,255,255,0.03);padding:0.15rem 0.35rem;border-radius:3px;border:1px solid var(--card-border);">${jail}</code></td>
+          <td class="geo-cell" style="font-size:0.82rem;color:var(--text-secondary);">Resolving geo...</td>
+          <td style="text-align: right; padding-right: 1.5rem;">
+            <button class="btn btn-ctrl stop" onclick="unbanIp('${ip}', '${jail}')" style="padding: 0.25rem 0.6rem; font-size: 0.72rem; background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 4px; cursor: pointer; font-weight: 600;">
+              Unban
+            </button>
+          </td>
+        </tr>`;
+    }).join('');
+
+    // Lazy load geo IP info for each IP
+    list.forEach(async item => {
+      const ip = item.ip;
+      const geo = await getBannedIpGeo(ip);
+      const row = document.getElementById(`ban-row-${ip.replace(/[.:]/g, '-')}`);
+      if (row) {
+        const geoCell = row.querySelector('.geo-cell');
+        if (geoCell) geoCell.textContent = geo;
+      }
+    });
+
+  } catch (e) {
+    console.warn('Fail2ban banned IPs refresh failed:', e);
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-state" style="color:var(--warning-glow);">Failed to load banned IPs list.</td></tr>';
+  }
+}
+
+async function getBannedIpGeo(ip) {
+  if (ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.16.') || ip.startsWith('127.') || ip === 'localhost') {
+    return 'Local Network (LAN)';
+  }
+  if (bannedGeoCache[ip]) return bannedGeoCache[ip];
+  try {
+    const res = await fetch(`https://freeipapi.com/api/json/${ip}`);
+    if (res.ok) {
+      const d = await res.json();
+      const flag = getFlagEmoji(d.countryCode);
+      const geo = `${flag} ${d.cityName || ''}, ${d.countryName || ''}`;
+      bannedGeoCache[ip] = geo;
+      return geo;
+    }
+  } catch (e) {
+    console.warn('GeoIP lookup failed for', ip, e);
+  }
+  return 'Unknown Location';
+}
+
+window.unbanIp = async function(ip, jail) {
+  if (!confirm(`Are you sure you want to unban IP ${ip} from jail '${jail}'?`)) return;
+  try {
+    const res = await fetchJson(`${BASE}/security/fail2ban/unban`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ip, jail })
+    });
+    if (res.status === 'SUCCESS') {
+      refreshBannedIps();
+      if (typeof refreshSecurity === 'function') refreshSecurity();
+      if (typeof refreshSecurityIncidents === 'function') refreshSecurityIncidents();
+    } else {
+      alert(`Failed to unban IP: ${res.error || 'Unknown error'}`);
+    }
+  } catch (e) {
+    console.error('Unban request failed:', e);
+    alert(`Error: ${e.message}`);
+  }
+};
+
+
 // Convert 2-letter ISO code to flag emoji
 function getFlagEmoji(countryCode) {
   if (!countryCode || countryCode === 'UN' || countryCode === 'LOCAL') return '🌐';
@@ -1097,6 +1187,7 @@ async function refreshAll() {
     refreshBackups(),
     refreshSecurity(),
     refreshSecurityIncidents(),
+    refreshBannedIps(),
     refreshRules(),
     refreshHistory(),
     refreshTelemetry(),

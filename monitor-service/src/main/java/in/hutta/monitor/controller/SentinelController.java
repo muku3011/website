@@ -165,4 +165,104 @@ public class SentinelController {
       return ResponseEntity.internalServerError().body(response);
     }
   }
+
+  @GetMapping("/security/fail2ban/banned")
+  public ResponseEntity<List<Map<String, String>>> getBannedIps() {
+    List<Map<String, String>> bannedList = new java.util.ArrayList<>();
+    try {
+      String statusOutput = systemMetrics.runCommand("sudo", "fail2ban-client", "status");
+      log.debug("Fail2ban global status: {}", statusOutput);
+
+      String jailListLine = "";
+      for (String line : statusOutput.split("\n")) {
+        if (line.contains("Jail list:")) {
+          jailListLine = line;
+          break;
+        }
+      }
+
+      if (!jailListLine.isEmpty()) {
+        String jailsRaw = jailListLine.substring(jailListLine.indexOf("Jail list:") + 10).trim();
+        String[] jails = jailsRaw.split(",\\s*");
+
+        for (String jail : jails) {
+          jail = jail.trim();
+          if (jail.isEmpty()) continue;
+
+          String jailStatus = systemMetrics.runCommand("sudo", "fail2ban-client", "status", jail);
+          log.debug("Fail2ban jail {} status: {}", jail, jailStatus);
+
+          String bannedIpsLine = "";
+          for (String line : jailStatus.split("\n")) {
+            if (line.contains("Banned IP list:")) {
+              bannedIpsLine = line;
+              break;
+            }
+          }
+
+          if (!bannedIpsLine.isEmpty()) {
+            String ipsRaw =
+                bannedIpsLine.substring(bannedIpsLine.indexOf("Banned IP list:") + 15).trim();
+            if (!ipsRaw.isEmpty()) {
+              String[] ips = ipsRaw.split("\\s+");
+              for (String ip : ips) {
+                ip = ip.trim();
+                if (ip.isEmpty()) continue;
+                Map<String, String> entry = new HashMap<>();
+                entry.put("ip", ip);
+                entry.put("jail", jail);
+                bannedList.add(entry);
+              }
+            }
+          }
+        }
+      }
+    } catch (Exception e) {
+      log.error("Failed to fetch banned IPs: {}", e.getMessage(), e);
+      return ResponseEntity.internalServerError().build();
+    }
+    return ResponseEntity.ok(bannedList);
+  }
+
+  @PostMapping("/security/fail2ban/unban")
+  public ResponseEntity<Map<String, String>> unbanIp(@RequestBody Map<String, String> request) {
+    String ip = request.get("ip");
+    String jail = request.get("jail");
+    Map<String, String> response = new HashMap<>();
+
+    if (ip == null || ip.isBlank() || jail == null || jail.isBlank()) {
+      response.put("error", "Missing IP or Jail");
+      return ResponseEntity.badRequest().body(response);
+    }
+
+    if (!ip.matches("^[a-fA-F0-9.:%]+$")) {
+      response.put("error", "Invalid IP Address format");
+      return ResponseEntity.badRequest().body(response);
+    }
+
+    if (!jail.matches("^[a-zA-Z0-9_-]+$")) {
+      response.put("error", "Invalid Jail name format");
+      return ResponseEntity.badRequest().body(response);
+    }
+
+    try {
+      log.info("Sentinel: unbanning IP {} from jail {}", ip, jail);
+      String output =
+          systemMetrics.runCommand("sudo", "fail2ban-client", "set", jail, "unbanip", ip);
+      log.info("Fail2ban unban output: {}", output);
+
+      if (output.toLowerCase().contains("error") || output.toLowerCase().contains("fail")) {
+        response.put("error", output);
+        return ResponseEntity.internalServerError().body(response);
+      }
+
+      response.put("status", "SUCCESS");
+      response.put("message", "IP " + ip + " unbanned from jail " + jail);
+      return ResponseEntity.ok(response);
+    } catch (Exception e) {
+      log.error("Failed to unban IP {}: {}", ip, e.getMessage(), e);
+      response.put("error", e.getMessage());
+      return ResponseEntity.internalServerError().body(response);
+    }
+  }
 }
