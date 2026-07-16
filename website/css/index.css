@@ -4340,3 +4340,11 @@ input[type="file"].form-input::file-selector-button:hover {
 @keyframes messages-spin {
     to { transform: rotate(360deg); }
 }
+
+.text-gradient {
+    background: linear-gradient(135deg, var(--primary-glow), var(--secondary-glow));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+}
