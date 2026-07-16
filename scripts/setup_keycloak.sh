@@ -381,7 +381,7 @@ fi
 
 # Configure secure Password Policy and settings for the realm
 echo -e "${YELLOW}[*] Configuring realm settings (password policy) for '${REALM_NAME}'...${NC}"
-api_put "$TOKEN" "/admin/realms/${REALM_NAME}" '{"realm":"hutta","displayName":"hutta.in","passwordPolicy":"length(12) and digits(1) and lowerCase(1) and upperCase(1) and specialChars(1) and notUsername(true) and notEmail(true)"}' >/dev/null
+api_put "$TOKEN" "/admin/realms/${REALM_NAME}" '{"realm":"hutta","displayName":"hutta.in","displayNameHtml":"<a href="https://hutta.in" >hutta.in</a>","passwordPolicy":"length(12) and digits(1) and lowerCase(1) and upperCase(1) and specialChars(1) and notUsername(true) and notEmail(true)"}' >/dev/null
 
 # Clean up stale/old groups from previous setup versions
 for old_group_name in hutta-admins hutta-operators hutta-users; do
