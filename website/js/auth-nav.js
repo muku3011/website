@@ -138,8 +138,9 @@
             }
         } else {
             // Render Sign In Button
+            const redirectParam = encodeURIComponent(window.location.href);
             container.innerHTML = `
-                <a href="profiles.html" id="login-btn" class="btn btn-primary" style="margin-right: 0.5rem; text-decoration: none; padding: 0.45rem 0.9rem; border-radius: var(--border-radius-sm); font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem;">
+                <a href="profiles.html?redirect_to=${redirectParam}" id="login-btn" class="btn btn-primary" style="margin-right: 0.5rem; text-decoration: none; padding: 0.45rem 0.9rem; border-radius: var(--border-radius-sm); font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                     <span>Sign In</span>
                 </a>
@@ -584,6 +585,23 @@
 
     // Trigger DOM Initializations
     document.addEventListener('DOMContentLoaded', () => {
+        // Handle redirect_to query parameter if user is logged in
+        if (window.userNameVal) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirectTo = urlParams.get('redirect_to');
+            if (redirectTo) {
+                try {
+                    const targetUrl = new URL(redirectTo, window.location.origin);
+                    if (targetUrl.origin === window.location.origin) {
+                        window.location.replace(redirectTo);
+                        return; // Stop initialization as we are redirecting away
+                    }
+                } catch (e) {
+                    console.error('Invalid redirect_to URL:', e);
+                }
+            }
+        }
+
         initThemeToggle();
         initNavigation();
         initHeaderActions();
