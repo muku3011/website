@@ -2,8 +2,10 @@ package in.hutta.blog.controller;
 
 import in.hutta.blog.model.BlogImage;
 import in.hutta.blog.model.BlogPost;
+import in.hutta.blog.model.ContactMessage;
 import in.hutta.blog.repository.BlogImageRepository;
 import in.hutta.blog.repository.BlogPostRepository;
+import in.hutta.blog.repository.ContactMessageRepository;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -11,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +31,10 @@ public class BlogController {
 
   @Autowired private BlogPostRepository blogPostRepository;
   @Autowired private BlogImageRepository blogImageRepository;
+  @Autowired private ContactMessageRepository contactMessageRepository;
+
+  private final Map<String, Long> ipRateLimits = new ConcurrentHashMap<>();
+  private static final long RATE_LIMIT_COOLDOWN_MS = 60000; // 1 minute cooldown
 
   // --------------------------------------------------------------------------
   // BLOG POST ENDPOINTS (PUBLIC READ)
@@ -206,6 +213,108 @@ public class BlogController {
                     .contentType(MediaType.parseMediaType(image.getContentType()))
                     .body(image.getData()))
         .orElse(ResponseEntity.notFound().build());
+  }
+
+  // --------------------------------------------------------------------------
+  // CONTACT MESSAGE ENDPOINTS
+  // --------------------------------------------------------------------------
+
+  @PostMapping("/contact")
+  public ResponseEntity<?> submitContactMessage(
+      @RequestBody ContactMessage message, HttpServletRequest request) {
+    // 1. Honeypot check
+    if (message.getHoneypot() != null && !message.getHoneypot().trim().isEmpty()) {
+      log.warn("Spam blocked: Honeypot field filled");
+      return ResponseEntity.badRequest().body("Error: Spam detected.");
+    }
+
+    // 2. IP Rate Limiting
+    String ip = getClientIp(request);
+    long now = System.currentTimeMillis();
+    if (ipRateLimits.containsKey(ip)) {
+      long lastSubmit = ipRateLimits.get(ip);
+      if (now - lastSubmit < RATE_LIMIT_COOLDOWN_MS) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+            .body("Error: Too many requests. Please wait a minute before sending another message.");
+      }
+    }
+
+    // 3. Validation
+    if (message.getName() == null
+        || message.getName().trim().isEmpty()
+        || message.getName().length() > 100) {
+      return ResponseEntity.badRequest()
+          .body("Error: Name is required and must be under 100 characters.");
+    }
+    if (message.getEmail() == null
+        || message.getEmail().trim().isEmpty()
+        || message.getEmail().length() > 100
+        || !isValidEmail(message.getEmail())) {
+      return ResponseEntity.badRequest()
+          .body("Error: A valid email under 100 characters is required.");
+    }
+    if (message.getSubject() == null
+        || message.getSubject().trim().isEmpty()
+        || message.getSubject().length() > 200) {
+      return ResponseEntity.badRequest()
+          .body("Error: Subject is required and must be under 200 characters.");
+    }
+    if (message.getMessage() == null
+        || message.getMessage().trim().isEmpty()
+        || message.getMessage().length() > 5000) {
+      return ResponseEntity.badRequest()
+          .body("Error: Message is required and must be under 5000 characters.");
+    }
+
+    // Register IP submit time
+    ipRateLimits.put(ip, now);
+
+    ContactMessage saved = contactMessageRepository.save(message);
+    log.info(
+        "Contact message stored successfully: ID={}, email={}", saved.getId(), saved.getEmail());
+    return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+  }
+
+  @GetMapping("/messages")
+  public ResponseEntity<?> getContactMessages(HttpServletRequest request) {
+    String username = getAuthenticatedUser(request);
+    if (username == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body("Error: Unauthorized. Please log in.");
+    }
+    return ResponseEntity.ok(contactMessageRepository.findAllByOrderByCreatedAtDesc());
+  }
+
+  @DeleteMapping("/messages/{id}")
+  public ResponseEntity<?> deleteContactMessage(
+      @PathVariable("id") Long id, HttpServletRequest request) {
+    String username = getAuthenticatedUser(request);
+    if (username == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+          .body("Error: Unauthorized. Please log in.");
+    }
+
+    return contactMessageRepository
+        .findById(id)
+        .map(
+            msg -> {
+              contactMessageRepository.delete(msg);
+              log.info("Contact message deleted successfully: ID={}, by={}", id, username);
+              return ResponseEntity.ok().body("Message deleted successfully.");
+            })
+        .orElse(ResponseEntity.notFound().build());
+  }
+
+  private boolean isValidEmail(String email) {
+    return email.matches("^[A-Za-z0-9+_.-]+@(.+)$");
+  }
+
+  private String getClientIp(HttpServletRequest request) {
+    String xf = request.getHeader("X-Forwarded-For");
+    if (xf != null && !xf.trim().isEmpty()) {
+      return xf.split(",")[0].trim();
+    }
+    return request.getRemoteAddr();
   }
 
   // --------------------------------------------------------------------------

@@ -273,17 +273,92 @@
     }
 
     function initContactDialog() {
+        const BLOG_BACKEND_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:8094' 
+            : '';
+
         const contactTrigger = document.getElementById('contact-trigger');
         const contactDialog = document.getElementById('contact-dialog');
         const closeDialogBtn = document.getElementById('close-contact-dialog');
         const contactForm = document.getElementById('contact-form');
+        const isLoggedIn = !!window.userNameVal;
 
         if (!contactDialog) return;
 
+        // Create or configure the messages dialog if logged in
+        let messagesDialog = null;
+        if (isLoggedIn) {
+            messagesDialog = document.getElementById('messages-dialog');
+            if (!messagesDialog) {
+                messagesDialog = document.createElement('dialog');
+                messagesDialog.id = 'messages-dialog';
+                messagesDialog.className = 'contact-dialog-modal';
+                messagesDialog.style.cssText = 'max-width: 700px; width: 95%;';
+                messagesDialog.innerHTML = `
+                    <div class="dialog-content" style="max-height: 80vh; display: flex; flex-direction: column;">
+                        <div class="dialog-header">
+                            <h2>Contact Messages</h2>
+                            <button id="close-messages-dialog" class="btn-icon close-dialog-btn" aria-label="Close dialog">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                        <div id="messages-container" style="overflow-y: auto; flex: 1; padding-right: 0.5rem; display: flex; flex-direction: column; gap: 1rem; margin-bottom: 0.5rem;">
+                            <!-- Messages will be rendered dynamically -->
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(messagesDialog);
+
+                // Close events
+                const closeMessagesBtn = messagesDialog.querySelector('#close-messages-dialog');
+                const closeMessages = () => {
+                    messagesDialog.close();
+                    document.body.style.overflow = '';
+                };
+                if (closeMessagesBtn) {
+                    closeMessagesBtn.addEventListener('click', closeMessages);
+                }
+                messagesDialog.addEventListener('click', (e) => {
+                    const rect = messagesDialog.getBoundingClientRect();
+                    const isInDialog = (
+                        rect.top <= e.clientY &&
+                        e.clientY <= rect.top + rect.height &&
+                        rect.left <= e.clientX &&
+                        e.clientX <= rect.left + rect.width
+                    );
+                    if (!isInDialog) {
+                        closeMessages();
+                    }
+                });
+                messagesDialog.addEventListener('cancel', () => {
+                    document.body.style.overflow = '';
+                });
+            }
+
+            // Update contact me button to View Messages on main page
+            if (contactTrigger) {
+                contactTrigger.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" style="margin-right: 0.25rem;">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                    View Messages
+                `;
+            }
+        }
+
         if (contactTrigger) {
             contactTrigger.addEventListener('click', () => {
-                contactDialog.showModal();
-                document.body.style.overflow = 'hidden';
+                if (isLoggedIn && messagesDialog) {
+                    messagesDialog.showModal();
+                    document.body.style.overflow = 'hidden';
+                    loadMessages();
+                } else {
+                    contactDialog.showModal();
+                    document.body.style.overflow = 'hidden';
+                }
             });
         }
 
@@ -323,34 +398,186 @@
                 const email = document.getElementById('contact-email').value;
                 const subject = document.getElementById('contact-subject').value;
                 const message = document.getElementById('contact-message').value;
+                const honeypot = document.getElementById('contact-honeypot') ? document.getElementById('contact-honeypot').value : '';
 
                 if (!name || !email || !subject || !message) {
                     return;
                 }
 
-                // Trigger mail client fallback
-                const mailtoUrl = `mailto:muku3011@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent("Name: " + name + "\nEmail: " + email + "\n\n" + message)}`;
-                window.location.href = mailtoUrl;
-
                 const submitBtn = contactForm.querySelector('.form-submit-btn');
                 const originalContent = submitBtn.innerHTML;
                 
-                submitBtn.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.25rem;"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    Mail Client Opened!
-                `;
-                submitBtn.style.backgroundColor = 'var(--success-glow)';
-                submitBtn.style.color = 'white';
                 submitBtn.disabled = true;
+                submitBtn.innerHTML = `
+                    <div style="display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-radius: 50%; border-top-color: transparent; animation: messages-spin 0.6s linear infinite; margin-right: 0.25rem;"></div>
+                    Sending...
+                `;
 
+                fetch(`${BLOG_BACKEND_BASE}/api/blog/contact`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, email, subject, message, honeypot })
+                })
+                .then(res => {
+                    if (res.status === 429) {
+                        throw new Error('Too many requests. Please wait a minute before sending another message.');
+                    }
+                    if (!res.ok) {
+                        throw new Error('Failed to send message');
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    submitBtn.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.25rem;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        Message Sent!
+                    `;
+                    submitBtn.style.backgroundColor = 'var(--success-glow)';
+                    submitBtn.style.color = 'white';
+
+                    setTimeout(() => {
+                        closeDialog();
+                        contactForm.reset();
+                        submitBtn.innerHTML = originalContent;
+                        submitBtn.style.backgroundColor = '';
+                        submitBtn.style.color = '';
+                        submitBtn.disabled = false;
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error(err);
+                    submitBtn.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.25rem;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        ${err.message.includes('Too many requests') ? 'Too Many Requests' : 'Failed to Send'}
+                    `;
+                    submitBtn.style.backgroundColor = 'var(--warning-glow)';
+                    submitBtn.style.color = 'white';
+
+                    setTimeout(() => {
+                        submitBtn.innerHTML = originalContent;
+                        submitBtn.style.backgroundColor = '';
+                        submitBtn.style.color = '';
+                        submitBtn.disabled = false;
+                    }, 3000);
+                });
+            });
+        }
+
+        function loadMessages() {
+            const container = document.getElementById('messages-container');
+            if (!container) return;
+
+            container.innerHTML = `
+                <div class="messages-loader">
+                    <div class="messages-spinner"></div>
+                </div>
+            `;
+
+            fetch(`${BLOG_BACKEND_BASE}/api/blog/messages`)
+                .then(res => {
+                    if (res.status === 401 || res.status === 403) {
+                        throw new Error('Unauthorized');
+                    }
+                    if (!res.ok) {
+                        throw new Error('Failed to load messages');
+                    }
+                    return res.json();
+                })
+                .then(messages => {
+                    if (!messages || messages.length === 0) {
+                        container.innerHTML = `
+                            <div class="no-messages-placeholder">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5;">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                <p>No messages found in inbox.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    container.innerHTML = '';
+                    messages.forEach(msg => {
+                        const card = document.createElement('div');
+                        card.className = 'message-card';
+                        card.id = `msg-card-${msg.id}`;
+
+                        const dateStr = new Date(msg.createdAt).toLocaleString(undefined, {
+                            dateStyle: 'medium',
+                            timeStyle: 'short'
+                        });
+
+                        card.innerHTML = `
+                            <div class="message-card-header">
+                                <div class="message-sender-info">
+                                    <span class="message-sender-name">${escapeHtml(msg.name)}</span>
+                                    <span class="message-sender-email">${escapeHtml(msg.email)}</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span class="message-date">${dateStr}</span>
+                                    <button class="message-delete-btn" data-id="${msg.id}" aria-label="Delete message">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="message-subject">${escapeHtml(msg.subject)}</div>
+                            <div class="message-text">${escapeHtml(msg.message)}</div>
+                        `;
+
+                        const deleteBtn = card.querySelector('.message-delete-btn');
+                        deleteBtn.addEventListener('click', () => {
+                            if (confirm('Are you sure you want to delete this message?')) {
+                                deleteMessage(msg.id, card);
+                            }
+                        });
+
+                        container.appendChild(card);
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    container.innerHTML = `
+                        <div class="no-messages-placeholder" style="color: var(--warning-glow);">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            <p>${err.message === 'Unauthorized' ? 'Session expired. Please sign in again.' : 'Failed to load messages. Please try again.'}</p>
+                        </div>
+                    `;
+                });
+        }
+
+        function deleteMessage(id, cardElement) {
+            fetch(`${BLOG_BACKEND_BASE}/api/blog/messages/${id}`, {
+                method: 'DELETE'
+            })
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Failed to delete message');
+                }
+                cardElement.classList.add('removing');
                 setTimeout(() => {
-                    closeDialog();
-                    contactForm.reset();
-                    submitBtn.innerHTML = originalContent;
-                    submitBtn.style.backgroundColor = '';
-                    submitBtn.style.color = '';
-                    submitBtn.disabled = false;
-                }, 2000);
+                    cardElement.remove();
+                    const container = document.getElementById('messages-container');
+                    if (container && container.querySelectorAll('.message-card').length === 0) {
+                        container.innerHTML = `
+                            <div class="no-messages-placeholder">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5;">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                <p>No messages found in inbox.</p>
+                            </div>
+                        `;
+                    }
+                }, 300);
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Error: Failed to delete message.');
             });
         }
     }

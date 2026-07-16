@@ -370,6 +370,11 @@
                 </button>
             </div>
             <form id="contact-form" class="contact-form-body">
+                <!-- Honeypot spam protection field -->
+                <div style="display: none;" aria-hidden="true">
+                    <label for="contact-honeypot">Do not fill this field</label>
+                    <input type="text" id="contact-honeypot" name="honeypot" tabindex="-1" autocomplete="off">
+                </div>
                 <div class="form-group">
                     <label for="contact-name">Your Name</label>
                     <input type="text" id="contact-name" name="name" required placeholder="John Doe" class="form-input">

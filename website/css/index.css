@@ -4220,3 +4220,123 @@ input[type="file"].form-input::file-selector-button:hover {
         justify-content: center;
     }
 }
+
+/* ── Messages Dialog Modal ────────────────────────────────────────────────── */
+.message-card {
+    background: var(--console-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--border-radius-sm);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    position: relative;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.message-card.removing {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+}
+
+.message-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.message-sender-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.message-sender-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.message-sender-email {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.message-date {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.message-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.message-delete-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.35rem;
+    border-radius: var(--border-radius-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-smooth);
+}
+
+.message-delete-btn:hover {
+    color: var(--warning-glow);
+    background: rgba(240, 70, 70, 0.1);
+    border-color: rgba(240, 70, 70, 0.2);
+}
+
+.message-subject {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--primary-glow);
+    border-top: 1px dashed var(--card-border);
+    padding-top: 0.5rem;
+}
+
+.message-text {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.75rem;
+    border-radius: var(--border-radius-sm);
+}
+
+.no-messages-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    color: var(--text-secondary);
+    gap: 1rem;
+}
+
+.messages-loader {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 3rem 0;
+}
+
+.messages-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    border-top-color: var(--primary-glow);
+    animation: messages-spin 1s ease-in-out infinite;
+}
+
+@keyframes messages-spin {
+    to { transform: rotate(360deg); }
+}
