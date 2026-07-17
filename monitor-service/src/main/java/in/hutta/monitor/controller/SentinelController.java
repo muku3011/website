@@ -44,7 +44,8 @@ public class SentinelController {
           "keycloak",
           "apache2",
           "smdp-plus",
-          "lpa-simulator",
+          "device-simulator",
+          "eim-service",
           "blog-service",
           "monitor-service");
 

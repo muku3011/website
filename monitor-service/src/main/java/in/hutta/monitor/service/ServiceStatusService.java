@@ -23,7 +23,9 @@ public class ServiceStatusService {
   private static final List<ServiceDef> SERVICES =
       List.of(
           new ServiceDef("smdp-plus", "smdp-plus", 8092, "/actuator/health"),
-          new ServiceDef("lpa-simulator", "lpa-simulator", 8093, "/actuator/health"),
+          new ServiceDef("device-simulator-lpa", "device-simulator", 8093, "/actuator/health"),
+          new ServiceDef("device-simulator-ipa", "device-simulator", 8097, "/ipa/status"),
+          new ServiceDef("eim-service", "eim-service", 8096, "/actuator/health"),
           new ServiceDef("blog-service", "blog-service", 8094, "/actuator/health"),
           new ServiceDef("monitor-service", "monitor-service", 8095, "/actuator/health"),
           new ServiceDef(
@@ -155,11 +157,17 @@ public class ServiceStatusService {
   }
 
   private String getCustomServiceVersion(String name) {
-    String jarPath = "/home/rbpi/" + name + "/" + name + ".jar";
+    String folderName = name;
+    String jarBaseName = name;
+    if (name.startsWith("device-simulator-")) {
+      folderName = "device-simulator";
+      jarBaseName = "device-simulator";
+    }
+    String jarPath = "/home/rbpi/" + folderName + "/" + jarBaseName + ".jar";
     java.io.File jarFile = new java.io.File(jarPath);
     if (!jarFile.exists()) {
       // Fallback for local development environment
-      java.io.File localPom = new java.io.File("../" + name + "/pom.xml");
+      java.io.File localPom = new java.io.File("../" + folderName + "/pom.xml");
       if (localPom.exists()) {
         return "1.0.0-DEV";
       }
@@ -167,7 +175,7 @@ public class ServiceStatusService {
     }
     try (java.util.jar.JarFile jar = new java.util.jar.JarFile(jarFile)) {
       java.util.zip.ZipEntry entry =
-          jar.getEntry("META-INF/maven/in.hutta/" + name + "/pom.properties");
+          jar.getEntry("META-INF/maven/in.hutta/" + folderName + "/pom.properties");
       if (entry != null) {
         try (java.io.InputStream is = jar.getInputStream(entry)) {
           java.util.Properties props = new java.util.Properties();

@@ -46,6 +46,7 @@ monitor:
     blog-password: ${BLOG_DB_PASSWORD:}
     monitor-password: ${MONITOR_DB_PASSWORD:}
     keycloak-password: ${KC_DB_PASSWORD:}
+    eim-password: ${EIM_DB_PASSWORD:}
 
 
 management:
