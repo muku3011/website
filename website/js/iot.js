@@ -64,7 +64,7 @@
             const devices = await response.json();
             
             if (devices.length === 0) {
-                devicesList.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No devices registered.</td></tr>`;
+                devicesList.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No devices registered.</td></tr>`;
                 return;
             }
 
@@ -73,6 +73,9 @@
                     <td style="padding: 0.75rem; font-weight: 500;">${escapeHtml(d.deviceName)}</td>
                     <td style="padding: 0.75rem; font-family: monospace; font-size: 0.8rem;">${escapeHtml(d.eid)}</td>
                     <td style="padding: 0.75rem;"><span class="badge badge-success" style="background: rgba(145, 80%, 50%, 0.1); color: var(--success-glow); padding: 0.2rem 0.6rem; border-radius: 50px; font-size: 0.75rem; font-weight: 600;">${escapeHtml(d.status)}</span></td>
+                    <td style="padding: 0.75rem; text-align: center;">
+                        <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.7rem; background: rgba(220,53,69,0.1); color: var(--warning-glow); border-color: rgba(220,53,69,0.2);" onclick="event.stopPropagation(); window.deregisterIotDevice('${d.eid}')">Remove</button>
+                    </td>
                 </tr>
             `).join('');
 
@@ -313,9 +316,45 @@
         }
     }
 
+    // Deregister IoT Device
+    async function deregisterDevice(eid) {
+        if (!confirm(`Are you sure you want to remove device EID: ${eid} from the fleet inventory?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`${EIM_BACKEND_BASE}/api/eim/devices/${eid}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) throw new Error('Deregistration failed');
+
+            if (selectedEid === eid) {
+                selectedEid = null;
+                selectedDeviceName = 'No Device Selected';
+                selectedDeviceLabel.textContent = 'No Device';
+                eimOpsPanel.style.display = 'none';
+                if (pollInterval) {
+                    clearInterval(pollInterval);
+                    pollInterval = null;
+                }
+                euiccProfilesList.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Select registered IoT device to view eUICC status.</td></tr>';
+            }
+
+            await loadDevices();
+            loadAuditLogs();
+        } catch (e) {
+            alert('Failed to remove device: ' + e.message);
+        }
+    }
+
     // Expose lifecycle triggers to window object for inline HTML onclick handlers
     window.triggerIotPsmo = function(iccid, operation) {
         triggerPsmo(iccid, operation);
+    };
+
+    window.deregisterIotDevice = function(eid) {
+        deregisterDevice(eid);
     };
 
     // Event Listeners

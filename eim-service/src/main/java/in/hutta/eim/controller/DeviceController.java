@@ -18,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -71,6 +72,28 @@ public class DeviceController {
     auditLogRepository.save(audit);
 
     return ResponseEntity.ok(device);
+  }
+
+  @DeleteMapping("/{eid}")
+  public ResponseEntity<?> deregisterDevice(@PathVariable String eid) {
+    log.info("eIM: Deregistering IoT device EID={}", eid);
+    java.util.Optional<IotDevice> deviceOpt = deviceRepository.findById(eid);
+    if (deviceOpt.isEmpty()) {
+      return ResponseEntity.notFound().build();
+    }
+
+    deviceRepository.deleteById(eid);
+
+    EimAuditLog audit = new EimAuditLog();
+    audit.setTimestamp(LocalDateTime.now());
+    audit.setActorUsername("KeycloakUser");
+    audit.setAction("DEREGISTER");
+    audit.setTargetEid(eid);
+    audit.setStatus("SUCCESS");
+    audit.setDetails("Device deregistered/deleted");
+    auditLogRepository.save(audit);
+
+    return ResponseEntity.ok(java.util.Map.of("success", true));
   }
 
   @PostMapping("/{eid}/download")
