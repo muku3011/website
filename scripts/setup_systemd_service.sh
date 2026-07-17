@@ -66,4 +66,7 @@ systemctl daemon-reload
 echo "[*] Enabling ${SERVICE_NAME} on boot..."
 systemctl enable "${SERVICE_NAME}.service"
 
+echo "[*] Starting/restarting ${SERVICE_NAME} service..."
+systemctl restart "${SERVICE_NAME}.service"
+
 echo "[+] Service ${SERVICE_NAME} registered successfully!"
