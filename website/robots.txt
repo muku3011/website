@@ -3,6 +3,6 @@ Allow: /
 
 # Disallow private/authenticated pages
 Disallow: /sentinel.html
-Disallow: /profiles.html
+Disallow: /consumer.html
 
 Sitemap: https://hutta.in/sitemap.xml

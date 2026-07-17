@@ -13,7 +13,7 @@ flowchart TD
     subgraph Raspberry Pi (Home Server)
         subgraph Apache HTTP Server
             Static["Static Files (index.html, tools.html, blog.html, sentinel.html)"]
-            OIDC["mod_auth_openidc (profiles.html & /api/blog/ write APIs)"]
+            OIDC["mod_auth_openidc (consumer.html & /api/blog/ write APIs)"]
             Proxy["Reverse Proxy (API routes)"]
         end
 
@@ -33,7 +33,7 @@ flowchart TD
     Browser -->|HTTPS: /tools.html| Static
     Browser -->|HTTPS: /blog.html| Static
     Browser -->|HTTPS: /sentinel.html| Static
-    Browser -->|HTTPS: /profiles.html| OIDC
+    Browser -->|HTTPS: /consumer.html| OIDC
     OIDC -->|"Not authenticated → redirect"| Keycloak
     Keycloak -->|"SSO session + hutta_* cookies set"| OIDC
     OIDC -->|Authenticated: serve page + set cookies| Browser
@@ -50,14 +50,14 @@ flowchart TD
 ## Repository Contents
 - **`index.html`**: The main landing page.
 - **`tools.html`**: The developer toolbox (calculators, encoders, API explorer).
-- **`profiles.html`**: The eSIM profiles management registry and LPA download simulator.
+- **`consumer.html`**: The eSIM profiles management registry and LPA download simulator.
 - **`blog.html`**: The technology blog feed page.
 - **`sentinel.html`**: The platform service monitoring dashboard.
 - **`css/index.css`**: Global design system + home page layouts (consolidates portfolio styles).
 - **`js/auth-nav.js`**: Shared core — reads the `hutta_*` cookies set by Apache `mod_auth_openidc` on authenticated routes, drives dynamic nav menus (Profiles and Blog write permissions), manages the idle session timer, and handles the theme toggle. Authentication state is fully server-driven via cookies; no client-side session storage is used.
 - **`js/index.js`**: Home page scroll transitions and timeline animations.
 - **`js/tools.js`**: Developer toolbox calculators, encoders, and API explorer logic.
-- **`js/profiles.js`**: eSIM Profiles page — API integrations and LPA simulator.
+- **`js/consumer.js`**: eSIM Profiles page — API integrations and LPA simulator.
 - **`js/blog.js`**: Technology blog feed controller (Markdown compiler, search engine, CRUD overlays).
 - **`js/sentinel.js`**: Sentinel dashboard controller (fetches status/versions and renders health cards).
 - **`js/libs/`**: Vendor libraries (js-yaml, ReDoc).
@@ -120,7 +120,7 @@ sudo apt update && sudo apt install -y apache2
 sudo rm -f /var/www/html/index.html
 
 # Copy your website assets to the web root
-sudo cp /home/rbpi/website/index.html /home/rbpi/website/profiles.html \
+sudo cp /home/rbpi/website/index.html /home/rbpi/website/consumer.html \
         /home/rbpi/website/tools.html /home/rbpi/website/favicon.png /var/www/html/
 sudo cp -r /home/rbpi/website/css /var/www/html/
 sudo cp -r /home/rbpi/website/js /var/www/html/
@@ -151,7 +151,7 @@ sudo systemctl status certbot.timer
 
 ### Step 4: Set Up Keycloak Authentication (OIDC)
 
-Keycloak provides SSO for `profiles.html`. Apache acts as the OIDC Relying Party via `mod_auth_openidc`. On successful authentication, Apache sets the `hutta_*` cookies that `auth-nav.js` reads.
+Keycloak provides SSO for `consumer.html`. Apache acts as the OIDC Relying Party via `mod_auth_openidc`. On successful authentication, Apache sets the `hutta_*` cookies that `auth-nav.js` reads.
 
 #### Prerequisites
 - PostgreSQL must be installed and running (needed by Keycloak).

@@ -2,7 +2,7 @@
 # ==============================================================================
 # Apache Configuration for hutta.in with Keycloak OIDC
 # - Adds auth.hutta.in VirtualHost (reverse proxy to Keycloak on :8080)
-# - Protects /profiles.html with mod_auth_openidc
+# - Protects /consumer.html with mod_auth_openidc
 # - Restricts Keycloak Admin Console to home network only
 # Run with: sudo ./scripts/setup_apache.sh
 # ==============================================================================
@@ -250,8 +250,8 @@ cat >> "$SSL_TMP" <<'APACHEEOF'
         Header always add Set-Cookie "hutta_groups=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; Secure; SameSite=Lax"
     </Location>
 
-    # -- profiles.html: requires any authenticated Keycloak user --
-    <Location /profiles.html>
+    # -- consumer.html: requires any authenticated Keycloak user --
+    <Location /consumer.html>
         AuthType openid-connect
         Require valid-user
 
@@ -505,7 +505,7 @@ echo ""
 echo "============================================================"
 echo " Apache configured for Keycloak!"
 echo "============================================================"
-echo " hutta.in         → serves site, protects /profiles.html"
+echo " hutta.in         → serves site, protects /consumer.html"
 echo " auth.hutta.in    → proxies Keycloak :8080"
 echo " Admin Console    → LAN only"
 echo " Account Console  → https://auth.hutta.in/realms/hutta/account"

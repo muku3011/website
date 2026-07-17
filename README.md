@@ -80,7 +80,7 @@ flowchart TD
         direction TB
         subgraph Proxy ["Apache Reverse Proxy (Port 443)"]
             Static["Static Web Assets (index, tools, profiles, blog, sentinel)"]
-            OIDC["mod_auth_openidc (profiles.html, /api/blog/ write methods)"]
+            OIDC["mod_auth_openidc (consumer.html, /api/blog/ write methods)"]
         end
 
         subgraph Auth ["Auth System"]
@@ -155,7 +155,7 @@ Contains all GCP infrastructure provisioning and backend Dynamic DNS setup:
 
 ### 2. [Website Frontend (website/)](website/README.md)
 Contains the server dashboard and portfolio site assets deployed on the Raspberry Pi:
-- Frontend code (`index.html`, `index.css`, `profiles.html`, `blog.html`) for serving the portfolio site, eSIM profiles registry, LPA download simulator, and technology blog.
+- Frontend code (`index.html`, `index.css`, `consumer.html`, `blog.html`) for serving the portfolio site, eSIM profiles registry, LPA download simulator, and technology blog.
 - Deployment configuration for Apache HTTP Server and HTTPS (SSL/TLS) via Let's Encrypt.
 - GitHub Actions CI/CD setup via self-hosted runners.
 - **Go to [website/README.md](website/README.md) for frontend deployment and automation setup instructions.**
@@ -202,7 +202,7 @@ flowchart TD
     Path -->|"/lpa/* (LPA Console)"| ProxyLPA["Apache proxies directly to LPA Simulator :8093"]
 
     %% Protected Paths
-    Path -->|"/profiles.html OR POST/PUT/DELETE /api/blog/*"| Interceptor{"mod_auth_openidc: Valid Session?"}
+    Path -->|"/consumer.html OR POST/PUT/DELETE /api/blog/*"| Interceptor{"mod_auth_openidc: Valid Session?"}
 
     %% Session Validation
     Interceptor -->|Yes| AuthRule{"Path-specific Rule?"}
@@ -217,11 +217,11 @@ flowchart TD
     SaveSession --> Interceptor
 
     %% Authorization rules
-    AuthRule -->|"/profiles.html"| RequireValidUser1["Require valid-user\n(Any authenticated Keycloak user)"]
+    AuthRule -->|"/consumer.html"| RequireValidUser1["Require valid-user\n(Any authenticated Keycloak user)"]
     AuthRule -->|"POST/PUT/DELETE /api/blog/*"| RequireValidUser2["LimitExcept GET: Require valid-user\n(Bypass allowed on localhost for local dev)"]
-
+    
     %% Downstream Forwards
-    RequireValidUser1 --> ServeProfiles["Apache serves profiles.html\n(Sets hutta_* cookies from OIDC claims for auth-nav.js)"]
+    RequireValidUser1 --> ServeProfiles["Apache serves consumer.html\n(Sets hutta_* cookies from OIDC claims for auth-nav.js)"]
     RequireValidUser2 --> ProxyBlogWrite["Apache forwards write request to Blog Service :8094\n(Passes preferred_username in headers)"]
 ```
 
