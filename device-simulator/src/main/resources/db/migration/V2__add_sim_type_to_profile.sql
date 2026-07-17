@@ -1,0 +1,1 @@
+ALTER TABLE local_profile ADD COLUMN sim_type VARCHAR(20) DEFAULT 'LPA';

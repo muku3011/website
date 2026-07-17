@@ -190,7 +190,7 @@ cat > "$SSL_TMP" <<'APACHEEOF'
     ProxyPass /gsma/rsp/v2/ http://127.0.0.1:8092/gsma/rsp/v2/
     ProxyPassReverse /gsma/rsp/v2/ http://127.0.0.1:8092/gsma/rsp/v2/
 
-    # -- Reverse Proxy: LPA Simulator --
+    # -- Reverse Proxy: eSIM Device Simulator (LPA) --
     ProxyPass /lpa http://127.0.0.1:8093/lpa
     ProxyPassReverse /lpa http://127.0.0.1:8093/lpa
 
@@ -205,6 +205,14 @@ cat > "$SSL_TMP" <<'APACHEEOF'
     ProxyPassReverse /api/alert-rules http://127.0.0.1:8095/api/alert-rules
     ProxyPass /api/alert-history http://127.0.0.1:8095/api/alert-history
     ProxyPassReverse /api/alert-history http://127.0.0.1:8095/api/alert-history
+
+    # -- Reverse Proxy: eIM Service --
+    ProxyPass /api/eim/ http://127.0.0.1:8096/api/eim/
+    ProxyPassReverse /api/eim/ http://127.0.0.1:8096/api/eim/
+
+    # -- Reverse Proxy: IPA Simulator --
+    ProxyPass /api/ipa/ http://127.0.0.1:8097/ipa/
+    ProxyPassReverse /api/ipa/ http://127.0.0.1:8097/ipa/
 
 
 
@@ -275,6 +283,24 @@ cat >> "$SSL_TMP" <<'APACHEEOF'
         Header set Pragma "no-cache"
     </Location>
 
+    # -- iot.html: requires any authenticated Keycloak user --
+    <Location /iot.html>
+        AuthType openid-connect
+        Require valid-user
+
+        # Expose OIDC claims as cookies for auth-nav.js to read
+        Header always set Set-Cookie "hutta_auth=true; Path=/; Secure; SameSite=Lax"
+        Header add Set-Cookie "hutta_user=\"%{OIDC_CLAIM_preferred_username}e\"; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_preferred_username
+        Header add Set-Cookie "hutta_name=\"%{OIDC_CLAIM_name}e\"; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_name
+        Header add Set-Cookie "hutta_email=\"%{OIDC_CLAIM_email}e\"; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_email
+        Header add Set-Cookie "hutta_groups=\"%{OIDC_CLAIM_groups}e\"; Path=/; Secure; SameSite=Lax" env=OIDC_CLAIM_groups
+
+        # Prevent caching of protected pages
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </Location>
+
 
 
     # -- protect write operations to technology blog service --
@@ -307,8 +333,20 @@ cat >> "$SSL_TMP" <<'APACHEEOF'
         Require claim "groups:admins" "groups:operators"
     </Location>
 
-    # -- protect LPA Simulator endpoints --
+    # -- protect eSIM Device Simulator (LPA) endpoints --
     <Location /lpa>
+        AuthType openid-connect
+        Require valid-user
+    </Location>
+
+    # -- protect eIM Service endpoints --
+    <Location /api/eim>
+        AuthType openid-connect
+        Require valid-user
+    </Location>
+
+    # -- protect IPA Simulator endpoints --
+    <Location /api/ipa>
         AuthType openid-connect
         Require valid-user
     </Location>

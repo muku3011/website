@@ -1,0 +1,32 @@
+name: Deploy eIM Service (Self-Hosted)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'eim-service/**'
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Spring Boot JAR
+        run: |
+          mvn -pl eim-service clean package -DskipTests
+
+      - name: Ensure App Directory
+        run: |
+          sudo mkdir -p /home/rbpi/eim-service
+          sudo chown -R rbpi:rbpi /home/rbpi/eim-service
+
+      - name: Copy JAR to App Directory
+        run: |
+          cp eim-service/target/eim-service-1.0.0.jar /home/rbpi/eim-service/eim-service.jar
+
+      - name: Restart Service
+        run: |
+          sudo systemctl restart eim-service.service

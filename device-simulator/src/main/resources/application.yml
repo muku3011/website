@@ -1,0 +1,54 @@
+# LPA Simulator Service — Spring Boot configuration
+server:
+  port: 8093
+  address: 127.0.0.1
+  tomcat:
+    threads:
+      max: 20
+      min-spare: 4
+    max-connections: 200
+    accept-count: 50
+
+spring:
+  application:
+    name: device-simulator
+  main:
+    lazy-initialization: true
+  task:
+    execution:
+      pool:
+        core-size: 2
+        max-size: 4
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/lpadb}
+    username: ${SPRING_DATASOURCE_USERNAME:lpa}
+    password: ${LPA_DB_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  flyway:
+    enabled: true
+
+logging:
+  level:
+    root: INFO
+    in.hutta.lpa: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,loggers
+  endpoint:
+    health:
+      show-details: always
+  info:
+    java:
+      enabled: true
+    os:
+      enabled: true
+    build:
+      enabled: true

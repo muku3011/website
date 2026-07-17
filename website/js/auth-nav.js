@@ -56,6 +56,12 @@
             navSentinel.style.display = isLoggedIn ? 'inline-block' : 'none';
         }
         
+        // IoT eIM tab: visible to any authenticated user
+        const navIot = document.getElementById('nav-iot');
+        if (navIot) {
+            navIot.style.display = isLoggedIn ? 'inline-block' : 'none';
+        }
+        
         // HSM tab: visible to admins only
         const navHsm = document.getElementById('nav-hsm');
         if (navHsm) {

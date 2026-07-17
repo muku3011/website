@@ -128,10 +128,10 @@ SMDP_DB_PASS=$(get_or_create_secret "SMDP_DB_PASSWORD")
 
 provision_service_database "SM-DP+" "smdp" "smdpdb" "$SMDP_DB_PASS"
 
-# 5. Setup LPA Simulator User & Database
+# 5. Setup eSIM Device Simulator User & Database
 LPA_DB_PASS=$(get_or_create_secret "LPA_DB_PASSWORD")
 
-provision_service_database "LPA simulator" "lpa" "lpadb" "$LPA_DB_PASS"
+provision_service_database "eSIM Device Simulator" "lpa" "lpadb" "$LPA_DB_PASS"
 
 # 6. Setup Keycloak User & Database
 KC_DB_NAME="${KC_DB_NAME:-keycloakdb}"
@@ -156,6 +156,11 @@ provision_service_database "Blog" "blog" "blogdb" "$BLOG_DB_PASS"
 MONITOR_DB_PASS=$(get_or_create_secret "MONITOR_DB_PASSWORD")
 
 provision_service_database "Monitor (Sentinel)" "monitor" "monitordb" "$MONITOR_DB_PASS"
+
+# 7.5. Setup eSIM IoT Remote Manager (eIM) User & Database
+EIM_DB_PASS=$(get_or_create_secret "EIM_DB_PASSWORD")
+
+provision_service_database "eIM Service" "eim" "eimdb" "$EIM_DB_PASS"
 
 
 
@@ -203,3 +208,4 @@ echo -e "SMDP_DB_PASSWORD=${SMDP_DB_PASS}"
 echo -e "LPA_DB_PASSWORD=${LPA_DB_PASS}"
 echo -e "KC_DB_PASSWORD=${KC_DB_PASS}"
 echo -e "BLOG_DB_PASSWORD=${BLOG_DB_PASS}"
+echo -e "EIM_DB_PASSWORD=${EIM_DB_PASS}"

@@ -20,9 +20,10 @@
 
     <modules>
         <module>smdp-plus</module>
-        <module>lpa-simulator</module>
+        <module>device-simulator</module>
         <module>blog-service</module>
         <module>monitor-service</module>
+        <module>eim-service</module>
     </modules>
 
     <properties>

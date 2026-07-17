@@ -41,6 +41,7 @@ KC_DB_PASS="$KC_DB_PASSWORD"
 SMDP_DB_PASS="$SMDP_DB_PASSWORD"
 LPA_DB_PASS="$LPA_DB_PASSWORD"
 BLOG_DB_PASS="${BLOG_DB_PASSWORD:-}"
+EIM_DB_PASS="${EIM_DB_PASSWORD:-}"
 
 echo -e "${GREEN}[+] Step 1 complete${NC}"
 
@@ -57,10 +58,11 @@ echo -e "${GREEN}[+] Step 3 complete${NC}"
 # ── Step 4: Systemd Service Registrations ───────────────────────────────────
 echo -e "${YELLOW}[*] Step 4/4: Registering backend Systemd services...${NC}"
 bash "$SCRIPT_DIR/setup_systemd_service.sh" smdp-plus /home/rbpi/smdp-plus smdp-plus.jar "SM-DP+ eSIM Remote Provisioning Service"
-bash "$SCRIPT_DIR/setup_systemd_service.sh" lpa-simulator /home/rbpi/lpa-simulator lpa-simulator.jar "LPA Simulator Service"
+bash "$SCRIPT_DIR/setup_systemd_service.sh" device-simulator /home/rbpi/device-simulator device-simulator.jar "eSIM Device Simulator Service (LPA & IPA)"
 bash "$SCRIPT_DIR/setup_systemd_service.sh" blog-service /home/rbpi/blog-service blog-service.jar "Technology Blog Backend Service"
 bash "$SCRIPT_DIR/setup_systemd_service.sh" monitor-service /home/rbpi/monitor-service monitor-service.jar "Sentinel — System Monitoring & Alerting Service"
-echo -e "${GREEN}[+] Step 5 complete${NC}"
+bash "$SCRIPT_DIR/setup_systemd_service.sh" eim-service /home/rbpi/eim-service eim-service.jar "eSIM IoT Remote Manager (eIM) Service"
+echo -e "${GREEN}[+] Step 4 complete${NC}"
 
 # ── Final Summary & Verification ──────────────────────────────────────────────
 if [ -f "$SECRETS_FILE" ]; then
@@ -80,6 +82,7 @@ echo -e "KC_DB_PASSWORD=${KC_DB_PASS}"
 echo -e "SMDP_DB_PASSWORD=${SMDP_DB_PASS}"
 echo -e "LPA_DB_PASSWORD=${LPA_DB_PASS}"
 echo -e "BLOG_DB_PASSWORD=${BLOG_DB_PASS}"
+echo -e "EIM_DB_PASSWORD=${EIM_DB_PASS}"
 echo -e "${BLUE}============================================================${NC}"
 
 echo -e "\n${BLUE}============================================================${NC}"
@@ -118,17 +121,21 @@ check_service "apache2"
 if [ -f "/etc/systemd/system/smdp-plus.service" ]; then
     check_service "smdp-plus"
 fi
-if [ -f "/etc/systemd/system/lpa-simulator.service" ]; then
-    check_service "lpa-simulator"
+if [ -f "/etc/systemd/system/device-simulator.service" ]; then
+    check_service "device-simulator"
 fi
 if [ -f "/etc/systemd/system/blog-service.service" ]; then
     check_service "blog-service"
+fi
+if [ -f "/etc/systemd/system/eim-service.service" ]; then
+    check_service "eim-service"
 fi
 echo ""
 check_db "keycloakdb"
 check_db "smdpdb"
 check_db "lpadb"
 check_db "blogdb"
+check_db "eimdb"
 echo ""
 
 # 3. Keycloak HTTP Health-Check Endpoint Check
