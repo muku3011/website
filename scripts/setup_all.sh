@@ -57,6 +57,16 @@ echo -e "${GREEN}[+] Step 3 complete${NC}"
 
 # ── Step 4: Systemd Service Registrations ───────────────────────────────────
 echo -e "${YELLOW}[*] Step 4/4: Registering backend Systemd services...${NC}"
+
+# Stop, disable and remove legacy lpa-simulator service to prevent port 8093 conflict
+if systemctl list-unit-files | grep -q "lpa-simulator.service"; then
+    echo -e "${YELLOW}[*] Stopping and disabling obsolete lpa-simulator service...${NC}"
+    systemctl stop lpa-simulator.service || true
+    systemctl disable lpa-simulator.service || true
+    rm -f /etc/systemd/system/lpa-simulator.service
+    systemctl daemon-reload
+fi
+
 bash "$SCRIPT_DIR/setup_systemd_service.sh" smdp-plus /home/rbpi/smdp-plus smdp-plus.jar "SM-DP+ eSIM Remote Provisioning Service"
 bash "$SCRIPT_DIR/setup_systemd_service.sh" device-simulator /home/rbpi/device-simulator device-simulator.jar "eSIM Device Simulator Service (LPA & IPA)"
 bash "$SCRIPT_DIR/setup_systemd_service.sh" blog-service /home/rbpi/blog-service blog-service.jar "Technology Blog Backend Service"
