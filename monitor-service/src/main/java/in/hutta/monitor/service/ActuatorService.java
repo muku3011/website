@@ -28,9 +28,10 @@ public class ActuatorService {
   private static final List<ServiceDef> SERVICES =
       List.of(
           new ServiceDef("smdp-plus", 8092),
-          new ServiceDef("lpa-simulator", 8093),
+          new ServiceDef("device-simulator", 8093),
           new ServiceDef("blog-service", 8094),
-          new ServiceDef("monitor-service", 8095));
+          new ServiceDef("monitor-service", 8095),
+          new ServiceDef("eim-service", 8096));
 
   private static final List<String> METRICS =
       List.of(

@@ -460,9 +460,9 @@ body {
    DASHBOARD GRID ELEMENTS
    ------------------------------------------------------------- */
 .dashboard-grid {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 2rem auto;
-    padding: 0 2rem 4rem 2rem;
+    padding: 0 1.5rem 4rem 1.5rem;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 2rem;
@@ -4347,4 +4347,15 @@ input[type="file"].form-input::file-selector-button:hover {
     background-clip: text;
     -webkit-text-fill-color: transparent;
     font-weight: 700;
+}
+
+/* IoT-specific Dashboard Grid Override */
+.iot-dashboard-grid {
+    grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 991px) {
+    .iot-dashboard-grid {
+        grid-template-columns: 1fr;
+    }
 }
