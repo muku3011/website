@@ -470,6 +470,9 @@ function parseInlineMarkdown(text) {
     // Inline code: `code`
     escaped = escaped.replace(/`(.*?)`/g, '<code style="font-family:monospace; background:var(--console-bg); padding:0.15rem 0.35rem; border-radius:4px; font-size:0.9rem; color:var(--secondary-glow); border:1px solid var(--card-border);">$1</code>');
     
+    // Links: [text](url)
+    escaped = escaped.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color:var(--primary-glow); text-decoration:none; border-bottom:1px dashed var(--primary-glow); transition:var(--transition-smooth);">$1</a>');
+
     return escaped;
 }
 
