@@ -56,6 +56,13 @@
         ipaConsole.scrollTop = ipaConsole.scrollHeight;
     }
 
+    function updateTimestamp() {
+        const el = document.getElementById('last-refreshed');
+        if (el) {
+            el.textContent = 'Updated ' + new Date().toLocaleTimeString();
+        }
+    }
+
     // Fetch and Render IoT Devices
     async function loadDevices() {
         try {
@@ -65,6 +72,7 @@
             
             if (devices.length === 0) {
                 devicesList.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No devices registered.</td></tr>`;
+                updateTimestamp();
                 return;
             }
 
@@ -85,8 +93,10 @@
                     selectDevice(row.dataset.eid, row.dataset.name);
                 });
             });
+            updateTimestamp();
         } catch (e) {
             console.error('Error loading devices', e);
+            updateTimestamp();
         }
     }
 

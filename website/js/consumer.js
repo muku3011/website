@@ -288,6 +288,13 @@ if (clearConsoleBtn) {
 // -------------------------------------------------------------
 let currentProfiles = [];
 
+function updateTimestamp() {
+    const el = document.getElementById('last-refreshed');
+    if (el) {
+        el.textContent = 'Updated ' + new Date().toLocaleTimeString();
+    }
+}
+
 async function fetchProfiles() {
     const stateFilter = document.getElementById('state-filter').value;
     let url = `${BACKEND_BASE}/gsma/rsp/v2/admin/profiles`;
@@ -300,6 +307,7 @@ async function fetchProfiles() {
         if (!response.ok) throw new Error(`HTTP error ${response.status}`);
         currentProfiles = await response.json();
         renderProfiles();
+        updateTimestamp();
     } catch (err) {
         console.error("Failed to fetch profiles", err);
         addLogLine(`Failed to fetch profiles: ${err.message}`, "error");
@@ -308,6 +316,7 @@ async function fetchProfiles() {
                 <td colspan="5" class="table-empty" style="color: var(--warning-glow);">Error connecting to SM-DP+ backend. Ensure server is running on 8092.</td>
             </tr>
         `;
+        updateTimestamp();
     }
 }
 
