@@ -485,7 +485,10 @@ window.updateActivationDetails = function() {
             qrPlaceholder.innerHTML = 'Select a profile to generate QR Code';
         }
         if (codeText) codeText.value = '';
-        document.querySelectorAll('.activation-body .form-group').forEach(el => el.style.display = 'none');
+        const acGroup = document.getElementById('activation-code-group');
+        if (acGroup) acGroup.style.display = 'none';
+        const acScenario = document.getElementById('ac-scenario');
+        if (acScenario) acScenario.disabled = true;
         updateLpaSimulatorVisibility('', false);
         return;
     }
@@ -520,7 +523,10 @@ window.updateActivationDetails = function() {
             }
         }
         if (codeText) codeText.value = '';
-        document.querySelectorAll('.activation-body .form-group').forEach(el => el.style.display = 'none');
+        const acGroup = document.getElementById('activation-code-group');
+        if (acGroup) acGroup.style.display = 'none';
+        const acScenario = document.getElementById('ac-scenario');
+        if (acScenario) acScenario.disabled = true;
         updateLpaSimulatorVisibility('', false);
         return;
     }
@@ -533,7 +539,10 @@ window.updateActivationDetails = function() {
         qrContainer.style.background = 'white';
         qrContainer.style.border = '1px solid var(--card-border)';
     }
-    document.querySelectorAll('.activation-body .form-group').forEach(el => el.style.display = 'block');
+    const acGroup = document.getElementById('activation-code-group');
+    if (acGroup) acGroup.style.display = 'block';
+    const acScenario = document.getElementById('ac-scenario');
+    if (acScenario) acScenario.disabled = false;
 
     const host = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
         ? 'localhost:8092' 
