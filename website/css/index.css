@@ -466,8 +466,18 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 2rem;
+    align-items: start;
+    align-content: start;
     flex-grow: 1;
     width: 100%;
+}
+
+@media (max-width: 991px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        padding: 1.5rem 1rem;
+        gap: 1.5rem;
+    }
 }
 
 /* Card Sizes styling */
@@ -4352,17 +4362,11 @@ input[type="file"].form-input::file-selector-button:hover {
 /* IoT-specific Dashboard Grid Override */
 .iot-dashboard-grid {
     grid-template-columns: 1fr 1fr;
-    margin: 1.5rem auto !important;
-    padding-bottom: 2rem !important;
-    gap: 1.5rem !important;
 }
 
 @media (max-width: 991px) {
     .iot-dashboard-grid {
-        grid-template-columns: 1fr !important;
-        margin: 1rem auto !important;
-        padding-bottom: 1.5rem !important;
-        gap: 1.5rem !important;
+        grid-template-columns: 1fr;
     }
 }
 
@@ -4398,6 +4402,31 @@ input[type="file"].form-input::file-selector-button:hover {
     margin-top: 0.35rem;
     font-size: 0.95rem;
     margin-bottom: 0;
+}
+
+.dashboard-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.dashboard-icon-wrapper {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(0, 242, 254, 0.15), rgba(79, 172, 254, 0.05));
+    border: 1px solid var(--card-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-glow);
+    box-shadow: 0 4px 12px var(--shadow-color);
+    flex-shrink: 0;
+}
+
+.dashboard-icon-wrapper svg {
+    width: 22px;
+    height: 22px;
 }
 
 /* Refresh Indicator */
