@@ -208,11 +208,19 @@
             width: 100%;
         }
 
+        .db-perf-row {
+            grid-template-columns: 1.3fr 1fr;
+        }
+
         @media (max-width: 991px) {
             .sentinel-grid {
                 grid-template-columns: 1fr;
                 padding: 1.5rem 1rem;
                 gap: 1.5rem;
+            }
+
+            .db-perf-row {
+                grid-template-columns: 1fr;
             }
 
             .sentinel-page-header {
@@ -1134,7 +1142,7 @@
 
                 <!-- Row: I/O Performance -->
                 <div class="row-2"
-                    style="margin-top:1.5rem;display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+                    style="margin-top:1.5rem;margin-bottom:1.5rem;">
                     <!-- Disk I/O -->
                     <div class="sentinel-card" style="margin-top:0;">
                         <div class="card-title">
@@ -1269,7 +1277,7 @@
                 </div>
 
                 <!-- Row 2: DB Performance & Backups -->
-                <div class="row-2" style="margin-top:1.5rem;display:grid;grid-template-columns:1.3fr 1fr;gap:1.5rem;">
+                <div class="row-2 db-perf-row" style="margin-top:1.5rem;">
                     <!-- Database Sizing & Performance -->
                     <div class="sentinel-card" style="margin-top:0;">
                         <div class="card-title">
@@ -1523,7 +1531,7 @@
                 </div>
 
                 <!-- Row 3: Top paths bar + Top IPs + Recent requests -->
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+                <div class="row-2">
                     <!-- Top paths horizontal bar -->
                     <div class="sentinel-card">
                         <div class="card-title">

@@ -12,8 +12,10 @@ import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -127,8 +129,12 @@ public class DeviceController {
       HttpEntity<Map<String, Object>> entity = new HttpEntity<>(orderReq, headers);
 
       log.info("eIM calling SM-DP+ downloadOrder at: {}", smdpUrl + "/downloadOrder");
-      ResponseEntity<Map> orderResp =
-          restTemplate.postForEntity(smdpUrl + "/downloadOrder", entity, Map.class);
+      ResponseEntity<Map<String, Object>> orderResp =
+          restTemplate.exchange(
+              smdpUrl + "/downloadOrder",
+              HttpMethod.POST,
+              entity,
+              new ParameterizedTypeReference<Map<String, Object>>() {});
 
       if (orderResp.getStatusCode() != HttpStatus.OK || orderResp.getBody() == null) {
         throw new IllegalStateException(
@@ -144,8 +150,12 @@ public class DeviceController {
 
       HttpEntity<Map<String, Object>> confirmEntity = new HttpEntity<>(confirmReq, headers);
       log.info("eIM calling SM-DP+ confirmOrder at: {}", smdpUrl + "/confirmOrder");
-      ResponseEntity<Map> confirmResp =
-          restTemplate.postForEntity(smdpUrl + "/confirmOrder", confirmEntity, Map.class);
+      ResponseEntity<Map<String, Object>> confirmResp =
+          restTemplate.exchange(
+              smdpUrl + "/confirmOrder",
+              HttpMethod.POST,
+              confirmEntity,
+              new ParameterizedTypeReference<Map<String, Object>>() {});
 
       if (confirmResp.getStatusCode() != HttpStatus.OK || confirmResp.getBody() == null) {
         throw new IllegalStateException("SM-DP+ confirmOrder failed");
@@ -168,8 +178,12 @@ public class DeviceController {
       // 4. Send to IPA Simulator on Port 8097
       log.info("eIM sending remote trigger to IPA at: {}/trigger", ipaUrl);
       HttpEntity<Map<String, String>> ipaEntity = new HttpEntity<>(ipaTrigger, headers);
-      ResponseEntity<Map> ipaResp =
-          restTemplate.postForEntity(ipaUrl + "/trigger", ipaEntity, Map.class);
+      ResponseEntity<Map<String, Object>> ipaResp =
+          restTemplate.exchange(
+              ipaUrl + "/trigger",
+              HttpMethod.POST,
+              ipaEntity,
+              new ParameterizedTypeReference<Map<String, Object>>() {});
 
       if (ipaResp.getStatusCode() == HttpStatus.OK) {
         audit.setStatus("SUCCESS");
@@ -222,8 +236,12 @@ public class DeviceController {
       HttpEntity<Map<String, String>> ipaEntity = new HttpEntity<>(ipaTrigger, headers);
 
       log.info("eIM sending remote trigger {} to IPA at: {}/trigger", operation, ipaUrl);
-      ResponseEntity<Map> ipaResp =
-          restTemplate.postForEntity(ipaUrl + "/trigger", ipaEntity, Map.class);
+      ResponseEntity<Map<String, Object>> ipaResp =
+          restTemplate.exchange(
+              ipaUrl + "/trigger",
+              HttpMethod.POST,
+              ipaEntity,
+              new ParameterizedTypeReference<Map<String, Object>>() {});
 
       if (ipaResp.getStatusCode() == HttpStatus.OK) {
         audit.setStatus("SUCCESS");
