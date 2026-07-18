@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/index.css?v=11">
+    <link rel="stylesheet" href="css/index.css?v=12">
     <link rel="icon" type="image/png" href="favicon.png">
 </head>
 <body class="dark-theme">
@@ -220,6 +220,7 @@
                         <option value="ORDERED">ORDERED</option>
                         <option value="RELEASED">RELEASED</option>
                         <option value="DOWNLOADED">DOWNLOADED</option>
+                        <option value="ENABLED">ENABLED</option>
                     </select>
                 </div>
             </div>
@@ -423,6 +424,8 @@
     </dialog>
 
     <script src="js/auth-nav.js?v=2"></script>
-    <script src="js/consumer.js?v=3"></script>
+    <!-- qr-creator: client-side QR code generation (no data sent externally) -->
+    <script src="https://cdn.jsdelivr.net/npm/qr-creator/dist/qr-creator.min.js"></script>
+    <script src="js/consumer.js?v=4"></script>
 </body>
 </html>

@@ -362,9 +362,9 @@ function renderProfiles() {
                 </button>`;
         } else if (profile.state === 'ORDERED') {
             actionButton = `
-                <button class="btn btn-action-trigger btn-secondary-action" onclick="triggerRelease('${profile.iccid}')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: middle;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    Release
+                <button class="btn btn-action-trigger btn-secondary-action" onclick="triggerConfirm('${profile.iccid}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: middle;"><polyline points="20 6 9 17 4 12"/></svg>
+                    Confirm Order
                 </button>`;
         } else if (profile.state === 'RELEASED') {
             actionButton = `
@@ -377,6 +377,12 @@ function renderProfiles() {
                 <span style="font-size: 0.85rem; color: var(--success-glow); font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                     Completed
+                </span>`;
+        } else if (profile.state === 'ENABLED') {
+            actionButton = `
+                <span style="font-size: 0.85rem; color: hsl(270,90%,70%); font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    Active on Device
                 </span>`;
         }
 
@@ -553,6 +559,8 @@ window.updateActivationDetails = function() {
         acString = `LPA:1$${host}$${window.selectedIccid}`;
     } else if (scenario === 'push') {
         acString = `LPA:1$${host}$`;
+        // Push scenario: LPA uses SM-DP+ address only to discover a pending order bound to this device's EID.
+        // The EID must be pre-registered at the SM-DP+ via downloadOrder. No matching ID is included.
     } else if (scenario === 'confirm') {
         acString = `LPA:1$${host}$${window.selectedIccid}$1`;
     }
@@ -561,8 +569,25 @@ window.updateActivationDetails = function() {
     
     if (qrImg && qrPlaceholder) {
         qrPlaceholder.style.display = 'none';
-        qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=128x128&data=${encodeURIComponent(acString)}`;
         qrImg.style.display = 'block';
+        // Generate QR code client-side using qr-creator (no external data sent)
+        if (window.QrCreator) {
+            // Clear previous content
+            qrImg.style.display = 'none';
+            let qrCanvas = document.getElementById('activation-qr-canvas');
+            if (!qrCanvas) {
+                qrCanvas = document.createElement('canvas');
+                qrCanvas.id = 'activation-qr-canvas';
+                qrCanvas.width = 128;
+                qrCanvas.height = 128;
+                qrImg.parentNode.insertBefore(qrCanvas, qrImg);
+            }
+            qrCanvas.style.display = 'block';
+            QrCreator.render({ text: acString, radius: 0.5, ecLevel: 'M', fill: '#000', background: '#fff', size: 128 }, qrCanvas);
+        } else {
+            // Fallback: external API
+            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=128x128&data=${encodeURIComponent(acString)}`;
+        }
     }
     updateLpaSimulatorVisibility(acString, true);
 };
@@ -937,14 +962,52 @@ if (orderForm) {
     });
 }
 
-// 3. Release Profile
+// 3. Confirm Order (ES2+ Step 2 of the operator flow)
+async function triggerConfirm(iccid) {
+    addLogLine(`Submitting confirmOrder to ES2+ interface for ICCID ${iccid}...`, "info");
+
+    const payload = {
+        header: {
+            functionRequesterIdentifier: "OperatorX",
+            functionCallIdentifier: generateCallId()
+        },
+        iccid: iccid
+    };
+
+    try {
+        const response = await fetch(`${BACKEND_BASE}/gsma/rsp/v2/es2plus/confirmOrder`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Admin-Protocol': 'gsma/rsp/v3.1.0'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            const reason = (data.header && data.header.functionExecutionStatus)
+                ? data.header.functionExecutionStatus.statusMessage
+                : `HTTP ${response.status}`;
+            throw new Error(reason);
+        }
+
+        addLogLine(`ES2+ confirmOrder Success! Profile confirmed — click Release when ready to provision.`, "success");
+        fetchProfiles();
+    } catch (err) {
+        console.error("Confirm failed", err);
+        addLogLine(`Confirm failed: ${err.message}`, "error");
+    }
+}
+
+// 4. Release Profile (ES2+ Step 3 of the operator flow)
 async function triggerRelease(iccid) {
     addLogLine(`Submitting releaseProfile to ES2+ interface for ICCID ${iccid}...`, "info");
 
     const payload = {
         header: {
             functionRequesterIdentifier: "OperatorX",
-            functionCallIdentifier: "TX-101"
+            functionCallIdentifier: generateCallId()
         },
         iccid: iccid
     };
@@ -1006,6 +1069,7 @@ async function triggerLpaDownload(iccid) {
 
 // Expose functions globally for table event handlers
 window.openOrderModal = openOrderModal;
+window.triggerConfirm = triggerConfirm;
 window.triggerRelease = triggerRelease;
 window.triggerLpaDownload = triggerLpaDownload;
 window.deleteProfile = deleteProfile;
@@ -1109,7 +1173,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (codeText && codeText.value) {
                 navigator.clipboard.writeText(codeText.value);
                 addLogLine(`Copied activation code to clipboard: ${codeText.value}`, "info");
-                showToast("Copied!", "Activation code copied to clipboard.", "success");
+                showToast("Activation code copied to clipboard.", "success");
             }
         });
     }
@@ -1139,6 +1203,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    // Auto-refresh profiles registry every 8 seconds
+    setInterval(fetchProfiles, 8000);
 
     // Initialize LPA Simulator floating window controls
     initLpaSimulator();
@@ -1291,7 +1358,10 @@ function initLpaSimulator() {
                     addLpaLog('ES9+ Step 2: authenticateClient success (Server signature verified).', 'process');
                     
                     await delay(500);
-                    addLpaLog('ES9+ Step 3: getBoundProfilePackage success (BPP downloaded).', 'process');
+                    addLpaLog('ES9+ Step 3a: prepareDownload — encrypting device credentials and binding token...', 'process');
+                    
+                    await delay(500);
+                    addLpaLog('ES9+ Step 3b: getBoundProfilePackage success (BPP downloaded).', 'process');
                     addLpaLog(`Bound Profile Package size: ${data.boundProfilePackageSize} bytes`, 'info');
                     
                     await delay(600);

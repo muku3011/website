@@ -76,16 +76,20 @@
                 return;
             }
 
-            devicesList.innerHTML = devices.map(d => `
+            devicesList.innerHTML = devices.map(d => {
+                const shortEid = d.eid.length > 16
+                    ? d.eid.substring(0, 8) + '\u2026' + d.eid.substring(d.eid.length - 8)
+                    : d.eid;
+                return `
                 <tr class="device-row ${selectedEid === d.eid ? 'selected' : ''}" data-eid="${d.eid}" data-name="${d.deviceName}" style="cursor: pointer; transition: background var(--transition-smooth);">
                     <td style="padding: 0.75rem; font-weight: 500;">${escapeHtml(d.deviceName)}</td>
-                    <td style="padding: 0.75rem; font-family: monospace; font-size: 0.8rem;">${escapeHtml(d.eid)}</td>
+                    <td style="padding: 0.75rem; font-family: monospace; font-size: 0.8rem;" title="${escapeHtml(d.eid)}">${escapeHtml(shortEid)}</td>
                     <td style="padding: 0.75rem;"><span class="badge badge-success" style="background: rgba(145, 80%, 50%, 0.1); color: var(--success-glow); padding: 0.2rem 0.6rem; border-radius: 50px; font-size: 0.75rem; font-weight: 600;">${escapeHtml(d.status)}</span></td>
                     <td style="padding: 0.75rem; text-align: center;">
                         <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.7rem; background: rgba(220,53,69,0.1); color: var(--warning-glow); border-color: rgba(220,53,69,0.2);" onclick="event.stopPropagation(); window.deregisterIotDevice('${d.eid}')">Remove</button>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
 
             // Add Click Handlers
             document.querySelectorAll('.device-row').forEach(row => {
@@ -134,6 +138,12 @@
             return;
         }
 
+        // SGP.02 §2.2.7: EID must be exactly 32 hexadecimal digits
+        if (!/^[0-9A-Fa-f]{32}$/.test(eid)) {
+            alert('Invalid EID format. EID must be exactly 32 hexadecimal characters (e.g. 89049032000008888888888888888801).');
+            return;
+        }
+
         try {
             const response = await fetch(`${EIM_BACKEND_BASE}/api/eim/devices`, {
                 method: 'POST',
@@ -166,17 +176,29 @@
 
             const released  = releasedResp.ok  ? await releasedResp.json()  : [];
             const available = availableResp.ok ? await availableResp.json() : [];
-            const allProfiles = [...released, ...available];
 
-            if (allProfiles.length === 0) {
+            if (released.length === 0 && available.length === 0) {
                 selectProfile.innerHTML = `<option value="">-- No profiles available in SM-DP+ --</option>`;
                 return;
             }
 
-            selectProfile.innerHTML = allProfiles.map(p => {
-                const stateLabel = p.state === 'RELEASED' ? ' ✓ RELEASED' : ' AVAILABLE';
-                return `<option value="${p.iccid}" data-state="${p.state}">ICCID: ${p.iccid} (${p.networkType} - ${p.mccMnc}) [${stateLabel.trim()}]</option>`;
-            }).join('');
+            // Use optgroup to visually separate RELEASED from AVAILABLE
+            let html = '';
+            if (released.length > 0) {
+                html += `<optgroup label="\u2713 RELEASED \u2014 ready to provision">`;
+                html += released.map(p =>
+                    `<option value="${p.iccid}" data-state="RELEASED">ICCID: ${p.iccid} (${p.networkType} - ${p.mccMnc})</option>`
+                ).join('');
+                html += '</optgroup>';
+            }
+            if (available.length > 0) {
+                html += `<optgroup label="AVAILABLE \u2014 requires order + release first">`;
+                html += available.map(p =>
+                    `<option value="${p.iccid}" data-state="AVAILABLE">ICCID: ${p.iccid} (${p.networkType} - ${p.mccMnc})</option>`
+                ).join('');
+                html += '</optgroup>';
+            }
+            selectProfile.innerHTML = html;
         } catch (e) {
             selectProfile.innerHTML = `<option value="">-- Failed to load profiles --</option>`;
         }
@@ -209,6 +231,13 @@
             const data = await response.json();
             if (response.ok && data.success) {
                 addConsoleLog(`[eIM] Remote download trigger pushed successfully.`, 'success');
+                // Fast-poll IPA status every 500ms for up to 15s to show live provisioning activity
+                let fastPollCount = 0;
+                const fastPoll = setInterval(() => {
+                    loadIpaStatus();
+                    fastPollCount++;
+                    if (fastPollCount >= 30) clearInterval(fastPoll); // Stop after 15s
+                }, 500);
             } else {
                 throw new Error(data.message || 'Trigger rejected');
             }
@@ -380,6 +409,12 @@
     btnRegisterDevice.addEventListener('click', registerDevice);
     btnTriggerDownload.addEventListener('click', triggerProfileDownload);
     btnClearIpaLogs.addEventListener('click', clearIpaLogs);
+
+    // Refresh profiles button (E-3)
+    const btnRefreshProfiles = document.getElementById('btn-refresh-profiles');
+    if (btnRefreshProfiles) {
+        btnRefreshProfiles.addEventListener('click', loadSmdpProfiles);
+    }
 
     // Initial Load
     loadDevices();

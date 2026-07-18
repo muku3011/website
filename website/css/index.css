@@ -1447,6 +1447,12 @@ input[type="file"].form-input::file-selector-button:hover {
     border-color: hsla(var(--hue-success), 80%, 50%, 0.2);
 }
 
+.status-pill.enabled {
+    background: hsla(270, 90%, 65%, 0.12);
+    color: hsl(270, 90%, 70%);
+    border-color: hsla(270, 90%, 65%, 0.25);
+}
+
 .table-loading {
     text-align: center;
     padding: 2.5rem !important;
