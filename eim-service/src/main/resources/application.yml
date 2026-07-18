@@ -36,6 +36,12 @@ logging:
     root: INFO
     in.hutta.eim: DEBUG
 
+# eIM service integration URLs — override via environment variables in production
+eim:
+  smdp-url: ${EIM_SMDP_URL:http://127.0.0.1:8092/gsma/rsp/v2/es2plus}
+  smdp-address: ${EIM_SMDP_ADDRESS:127.0.0.1:8092}
+  ipa-url: ${EIM_IPA_URL:http://127.0.0.1:8097/ipa}
+
 management:
   endpoints:
     web:

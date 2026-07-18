@@ -256,30 +256,30 @@ public class LpaDownloadService {
           ASN1Primitive obj = asn1In.readObject();
           if (obj instanceof ASN1Sequence) {
             ASN1Sequence seq = (ASN1Sequence) obj;
-            // BPP Sequence tag structure:
-            // [0] smdpSigned2 (Sequence)
-            // [1] smdpSignature2 (OctetString)
-            // [2] smdpCertificate (OctetString)
-            // [3] encryptedProfilePackage (OctetString)
+            // BPP Sequence tag structure (updated for ephemeral ECDH):
+            // [0] smdpSigned2          (Sequence)    - signed challenge data
+            // [1] smdpSignature2       (OctetString) - ECDSA signature (long-term key)
+            // [2] smdpEphemeralPubKey  (OctetString) - SM-DP+ ephemeral public key for ECDH
+            // [3] encryptedPayload     (OctetString) - AES-GCM encrypted profile
+            // [4] smdpCertificate      (OctetString) - long-term cert for signature verification
 
-            ASN1TaggedObject taggedCert = (ASN1TaggedObject) seq.getObjectAt(2);
-            byte[] certBytes = ((ASN1OctetString) taggedCert.getBaseObject()).getOctets();
+            ASN1TaggedObject taggedEphPubKey = (ASN1TaggedObject) seq.getObjectAt(2);
+            byte[] smdpEphemeralPubKeyBytes =
+                ((ASN1OctetString) taggedEphPubKey.getBaseObject()).getOctets();
 
             ASN1TaggedObject taggedEncPayload = (ASN1TaggedObject) seq.getObjectAt(3);
             byte[] encPayload = ((ASN1OctetString) taggedEncPayload.getBaseObject()).getOctets();
 
-            // Extract Server Public Key from Certificate
-            java.security.cert.CertificateFactory cf =
-                java.security.cert.CertificateFactory.getInstance("X.509");
-            java.security.cert.X509Certificate serverCert =
-                (java.security.cert.X509Certificate)
-                    cf.generateCertificate(new java.io.ByteArrayInputStream(certBytes));
-            PublicKey serverPublicKey = serverCert.getPublicKey();
+            // Reconstruct SM-DP+ ephemeral public key for ECDH
+            KeyFactory kf = KeyFactory.getInstance("EC", "BC");
+            PublicKey smdpEphemeralPublicKey =
+                kf.generatePublic(
+                    new java.security.spec.X509EncodedKeySpec(smdpEphemeralPubKeyBytes));
 
-            // Perform client-side ECDH key agreement
+            // Perform client-side ECDH: client ephemeral private key + SM-DP+ ephemeral public key
             KeyAgreement ka = KeyAgreement.getInstance("ECDH", "BC");
             ka.init(clientEphemeralKeyPair.getPrivate());
-            ka.doPhase(serverPublicKey, true);
+            ka.doPhase(smdpEphemeralPublicKey, true);
             byte[] sharedSecret = ka.generateSecret();
 
             // Derive 16-byte symmetric key via SHA-256 KDF

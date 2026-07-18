@@ -28,6 +28,12 @@ public class PortFilteringFilter implements Filter {
     int localPort = request.getLocalPort();
     String uri = httpRequest.getRequestURI();
 
+    // Actuator / health-check endpoints are permitted on both ports
+    if (uri.startsWith("/actuator")) {
+      chain.doFilter(request, response);
+      return;
+    }
+
     if (uri.startsWith("/ipa/") && localPort != ipaPort) {
       httpResponse.sendError(
           HttpServletResponse.SC_FORBIDDEN, "IPA endpoints are only accessible on port " + ipaPort);

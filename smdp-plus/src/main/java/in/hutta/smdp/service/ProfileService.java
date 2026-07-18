@@ -138,6 +138,8 @@ public class ProfileService {
       SessionContext session = cryptoService.createSession(euiccChallenge, smdpAddress);
       session.setIccid(profile.getIccid());
       session.setEid(profile.getEid());
+      // Record current state so cancelSession can restore it correctly
+      session.setPriorProfileState(profile.getState());
       return Optional.of(session);
     } else {
       log.error("No profile available in the system for RSP provisioning");
@@ -206,20 +208,29 @@ public class ProfileService {
     log.info("Canceling RSP session: {}", transactionId);
     SessionContext session = cryptoService.getSession(transactionId);
     if (session != null) {
-      // Revert profile state from ORDERED/RELEASED if cancel happens before download completes
+      // Restore the profile to exactly the state it had before the session was created.
+      // This avoids incorrectly promoting an AVAILABLE/ORDERED profile to RELEASED.
       String iccid = session.getIccid();
       if (iccid != null) {
         Optional<Profile> profileOpt = profileRepository.findById(iccid);
         if (profileOpt.isPresent()) {
           Profile profile = profileOpt.get();
           if (!"DOWNLOADED".equals(profile.getState())) {
-            profile.setState("RELEASED"); // return to released state so it can be attempted again
+            String restoreState =
+                session.getPriorProfileState() != null
+                    ? session.getPriorProfileState()
+                    : "RELEASED"; // safe default if somehow not set
+            profile.setState(restoreState);
             profileRepository.save(profile);
+            log.info(
+                "Session cancelled: profile ICCID={} restored to prior state={}",
+                iccid,
+                restoreState);
           }
         }
       }
       cryptoService.removeSession(transactionId);
-      log.info("Session cancelled and cleaned up: {}", transactionId);
+      log.info("RSP session cancelled and cleaned up: {}", transactionId);
     }
   }
 
@@ -229,26 +240,56 @@ public class ProfileService {
     }
 
     in.hutta.smdp.dto.Es9Dtos.PendingNotification notification = request.getPendingNotification();
-    log.info(
-        "RSP handleNotification received: operation={}, ICCID={}",
-        notification.getProfileManagementOperation(),
-        notification.getIccid());
+    String operation = notification.getProfileManagementOperation();
+    String iccid = notification.getIccid();
+    log.info("RSP handleNotification received: operation={}, ICCID={}", operation, iccid);
 
-    if ("delete".equalsIgnoreCase(notification.getProfileManagementOperation())) {
-      String iccid = notification.getIccid();
-      if (iccid != null) {
-        Optional<Profile> profileOpt = profileRepository.findById(iccid);
-        if (profileOpt.isPresent()) {
-          Profile profile = profileOpt.get();
-          profile.setState("AVAILABLE");
-          profile.setEid(null);
-          profileRepository.save(profile);
-          log.info(
-              "Profile uninstalled notification processed. ICCID={} set back to AVAILABLE", iccid);
-          return true;
-        }
-      }
+    if (iccid == null) {
+      log.warn("handleNotification: ICCID is null, cannot process operation={}", operation);
+      return false;
     }
-    return false;
+
+    Optional<Profile> profileOpt = profileRepository.findById(iccid);
+    if (profileOpt.isEmpty()) {
+      log.warn("handleNotification: profile not found for ICCID={}", iccid);
+      return false;
+    }
+
+    Profile profile = profileOpt.get();
+
+    // SGP.22 §5.6.3 — handle all profile management operations
+    if ("delete".equalsIgnoreCase(operation)) {
+      profile.setState("AVAILABLE");
+      profile.setEid(null);
+      profileRepository.save(profile);
+      log.info("Profile delete notification processed. ICCID={} reset to AVAILABLE", iccid);
+      return true;
+
+    } else if ("enable".equalsIgnoreCase(operation)) {
+      // Record that the profile is currently active on the device
+      profile.setState("ENABLED");
+      profileRepository.save(profile);
+      log.info("Profile enable notification processed. ICCID={} state=ENABLED", iccid);
+      return true;
+
+    } else if ("disable".equalsIgnoreCase(operation)) {
+      // Record that the profile was deactivated on the device
+      profile.setState("DOWNLOADED");
+      profileRepository.save(profile);
+      log.info(
+          "Profile disable notification processed. ICCID={} state reverted to DOWNLOADED", iccid);
+      return true;
+
+    } else if ("install".equalsIgnoreCase(operation)) {
+      // First-time install confirmation from the device
+      profile.setState("DOWNLOADED");
+      profileRepository.save(profile);
+      log.info("Profile install notification processed. ICCID={} state=DOWNLOADED", iccid);
+      return true;
+
+    } else {
+      log.warn("handleNotification: unknown operation={} for ICCID={}", operation, iccid);
+      return false;
+    }
   }
 }

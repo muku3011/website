@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -41,9 +42,14 @@ public class DeviceController {
   private final EimCryptoService cryptoService;
   private final RestTemplate restTemplate = new RestTemplate();
 
-  private final String smdpUrl = "http://127.0.0.1:8092/gsma/rsp/v2/es2plus";
-  private final String smdpAddress = "127.0.0.1:8092";
-  private final String ipaUrl = "http://127.0.0.1:8097/ipa";
+  @Value("${eim.smdp-url:http://127.0.0.1:8092/gsma/rsp/v2/es2plus}")
+  private String smdpUrl;
+
+  @Value("${eim.smdp-address:127.0.0.1:8092}")
+  private String smdpAddress;
+
+  @Value("${eim.ipa-url:http://127.0.0.1:8097/ipa}")
+  private String ipaUrl;
 
   @GetMapping
   public ResponseEntity<List<IotDevice>> listDevices() {
@@ -163,7 +169,30 @@ public class DeviceController {
 
       String matchingId = (String) confirmResp.getBody().get("matchingId");
 
-      // 3. Create Download Trigger
+      // 3. Call SM-DP+ releaseProfile to transition the profile to RELEASED state
+      //    This completes the full ES2+ operator lifecycle:
+      //    downloadOrder (ORDERED) -> confirmOrder -> releaseProfile (RELEASED)
+      //    Without this, initiateAuthentication on ES9+ cannot find a properly
+      //    RELEASED profile and must fall back to ORDERED state (spec violation).
+      Map<String, Object> releaseReq = new HashMap<>();
+      releaseReq.put("iccid", iccid);
+
+      HttpEntity<Map<String, Object>> releaseEntity = new HttpEntity<>(releaseReq, headers);
+      log.info("eIM calling SM-DP+ releaseProfile at: {}", smdpUrl + "/releaseProfile");
+      ResponseEntity<Map<String, Object>> releaseResp =
+          restTemplate.exchange(
+              smdpUrl + "/releaseProfile",
+              HttpMethod.POST,
+              releaseEntity,
+              new ParameterizedTypeReference<Map<String, Object>>() {});
+
+      if (releaseResp.getStatusCode() != HttpStatus.OK || releaseResp.getBody() == null) {
+        throw new IllegalStateException(
+            "SM-DP+ releaseProfile failed: " + releaseResp.getStatusCode());
+      }
+      log.info("eIM: Profile released successfully for ICCID={}", iccid);
+
+      // 4. Create Download Trigger
       String activationCode = "LPA:1$" + smdpAddress + "$" + matchingId;
       String transactionId = UUID.randomUUID().toString();
       String rawDataToSign = activationCode + "|" + transactionId;

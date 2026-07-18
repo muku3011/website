@@ -26,11 +26,19 @@ public class CryptoConverter implements AttributeConverter<String, String> {
 
   public CryptoConverter() {
     if (secretKey == null) {
+      // WARNING: This is a weak, deterministic, test-only key.
+      // It is ONLY safe for local development. In production you MUST set the
+      // SMDP_DB_ENCRYPTION_KEY environment variable to a 32-byte random Base64 key.
+      // If this log line appears in production logs, treat it as a security incident.
       byte[] keyBytes = new byte[32];
       for (int i = 0; i < 32; i++) {
         keyBytes[i] = (byte) (i * 7);
       }
       secretKey = new SecretKeySpec(keyBytes, "AES");
+      // Use a System.err print as well so this is visible even if logging is suppressed
+      System.err.println(
+          "[SECURITY WARNING] CryptoConverter: SMDP_DB_ENCRYPTION_KEY is not set. "
+              + "Using insecure hardcoded dev key. DO NOT use this in production!");
     }
   }
 

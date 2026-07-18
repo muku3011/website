@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class Profile {
   @Id private String iccid;
   private String eid;
-  private String state; // AVAILABLE, ORDERED, RELEASED, DOWNLOADED
+  private String state; // AVAILABLE, ORDERED, RELEASED, DOWNLOADED, ENABLED
   private String networkType; // "4G" or "5G"
 
   @Column(columnDefinition = "TEXT")

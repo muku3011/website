@@ -467,13 +467,22 @@ public class CryptoService {
       DERSequence smdpSigned2 = new DERSequence(signed2Vector);
       byte[] signed2Bytes = smdpSigned2.getEncoded("DER");
 
-      // 2. Generate real ECDSA signature over smdpSigned2 using SM-DP+ private key
+      // 2. Sign smdpSigned2 with the SM-DP+ long-term private key (for authentication)
       Signature ecdsa = Signature.getInstance("SHA256withECDSA", "BC");
       ecdsa.initSign(this.smdpKeyPair.getPrivate());
       ecdsa.update(signed2Bytes);
       byte[] signature2Bytes = ecdsa.sign();
 
-      // 3. Encrypt the rawPayload (profile data) using derived key from real ECDH key agreement
+      // 3. Generate a per-session SM-DP+ ephemeral EC key pair for ECDH (forward secrecy)
+      //    Per SGP.22 §3.1, the SM-DP+ MUST use a one-time key (otPK.SMDP.ECKA) for ECDH,
+      //    NOT the long-term certificate key pair.
+      KeyPairGenerator ephemeralKpg = KeyPairGenerator.getInstance("EC", "BC");
+      ephemeralKpg.initialize(new ECGenParameterSpec("secp256r1"));
+      KeyPair smdpEphemeralKeyPair = ephemeralKpg.generateKeyPair();
+      byte[] smdpEphemeralPublicKeyBytes = smdpEphemeralKeyPair.getPublic().getEncoded();
+
+      // 4. Encrypt the rawPayload using a key derived from the SM-DP+ ephemeral private key
+      //    and the LPA's client ephemeral public key
       byte[] encPayload;
       try {
         // Parse client ephemeral public key from prepareDownloadResponse ASN.1 DER sequence
@@ -493,8 +502,12 @@ public class CryptoService {
           }
         }
 
-        // Perform real ECDH key agreement
-        byte[] sharedSecret = performECDH(clientPublicKey);
+        // ECDH with SM-DP+ *ephemeral* private key + client ephemeral public key
+        KeyAgreement ka = KeyAgreement.getInstance("ECDH", "BC");
+        ka.init(smdpEphemeralKeyPair.getPrivate());
+        ka.doPhase(clientPublicKey, true);
+        byte[] sharedSecret = ka.generateSecret();
+        log.info("ECDH (ephemeral) completed. Shared secret size: {} bytes.", sharedSecret.length);
 
         // Derive 16-byte symmetric key using SHA-256 KDF
         byte[] keyBytes = new byte[16];
@@ -523,15 +536,22 @@ public class CryptoService {
         encPayload = rawPayload.getBytes();
       }
 
-      // 4. Assemble the BPP DER Sequence
+      // 5. Assemble the BPP DER Sequence
+      // Structure:
+      //   [0] smdpSigned2          (Sequence)   — signed challenge data
+      //   [1] smdpSignature2       (OctetString) — ECDSA signature of smdpSigned2 (long-term key)
+      //   [2] smdpEphemeralPubKey  (OctetString) — SM-DP+ ephemeral public key bytes for LPA ECDH
+      //   [3] encryptedPayload     (OctetString) — AES-GCM encrypted profile
+      //   [4] smdpCertificate      (OctetString) — SM-DP+ long-term certificate (for sig verify)
       ASN1EncodableVector bppVector = new ASN1EncodableVector();
       bppVector.add(new DERTaggedObject(true, 0, smdpSigned2));
       bppVector.add(new DERTaggedObject(true, 1, new DEROctetString(signature2Bytes)));
-      // Embed raw DER bytes of the certificate instead of Base64 characters
+      bppVector.add(new DERTaggedObject(true, 2, new DEROctetString(smdpEphemeralPublicKeyBytes)));
+      bppVector.add(new DERTaggedObject(true, 3, new DEROctetString(encPayload)));
+      // Embed raw DER bytes of the long-term certificate for LPA signature verification
       bppVector.add(
           new DERTaggedObject(
-              true, 2, new DEROctetString(Base64.getDecoder().decode(getSmdpCertificate()))));
-      bppVector.add(new DERTaggedObject(true, 3, new DEROctetString(encPayload)));
+              true, 4, new DEROctetString(Base64.getDecoder().decode(getSmdpCertificate()))));
 
       DERSequence bppSequence = new DERSequence(bppVector);
       byte[] bppBytes = bppSequence.getEncoded("DER");
