@@ -542,13 +542,16 @@ public class SmdpIntegrationTest {
 
       ASN1TaggedObject taggedCert = (ASN1TaggedObject) seq.getObjectAt(4);
       byte[] certBytesBpp = ((ASN1OctetString) taggedCert.getBaseObject()).getOctets();
+      assertThat(certBytesBpp).isNotEmpty();
 
-      // Extract Server Public Key (long-term cert) for signature verification (if needed)
+      // Extract and verify Server Certificate (long-term cert)
       java.security.cert.CertificateFactory cfBpp =
           java.security.cert.CertificateFactory.getInstance("X.509");
       java.security.cert.X509Certificate serverCertBpp =
           (java.security.cert.X509Certificate)
               cfBpp.generateCertificate(new java.io.ByteArrayInputStream(certBytesBpp));
+      assertThat(serverCertBpp).isNotNull();
+      assertThat(serverCertBpp.getSubjectX500Principal().getName()).contains("Hutta SM-DP");
 
       // Reconstruct SM-DP+ ephemeral public key
       KeyFactory kf = KeyFactory.getInstance("EC", "BC");
