@@ -28,8 +28,8 @@
 
     <properties>
         <java.version>25</java.version>
-        <bouncycastle.version>1.84</bouncycastle.version>
-        <unboundid-ldapsdk.version>7.0.5</unboundid-ldapsdk.version>
+        <bouncycastle.version>1.85</bouncycastle.version>
+        <unboundid-ldapsdk.version>7.0.6</unboundid-ldapsdk.version>
         <spotless.version>3.8.0</spotless.version>
     </properties>
 

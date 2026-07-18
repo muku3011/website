@@ -66,7 +66,7 @@ done
 echo -e "${GREEN}[+] All dependencies present${NC}"
 
 # ── 4. Configuration ──────────────────────────────────────────────────────────
-KC_VERSION="26.6.4"
+KC_VERSION="26.7.0"
 KC_DIR="/opt/keycloak"
 KC_USER="keycloak"
 KC_DB_NAME="keycloakdb"

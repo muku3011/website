@@ -138,8 +138,8 @@ public class CryptoServiceTest {
     assertThat(obj).isInstanceOf(org.bouncycastle.asn1.ASN1Sequence.class);
     org.bouncycastle.asn1.ASN1Sequence seq = (org.bouncycastle.asn1.ASN1Sequence) obj;
 
-    // BPP has 4 tagged fields: smdpSigned2 [0], smdpSignature2 [1], smdpCertificate [2],
-    // encPersonalisationData [3]
-    assertThat(seq.size()).isEqualTo(4);
+    // BPP has 5 tagged fields: smdpSigned2 [0], smdpSignature2 [1], smdpEphemeralPubKey [2],
+    // encPersonalisationData [3], smdpCertificate [4]
+    assertThat(seq.size()).isEqualTo(5);
   }
 }

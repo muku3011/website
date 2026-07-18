@@ -531,26 +531,34 @@ public class SmdpIntegrationTest {
       ASN1Primitive obj = asn1In.readObject();
       assertThat(obj).isInstanceOf(ASN1Sequence.class);
       ASN1Sequence seq = (ASN1Sequence) obj;
-      assertThat(seq.size()).isEqualTo(4);
+      assertThat(seq.size()).isEqualTo(5);
 
-      ASN1TaggedObject taggedCert = (ASN1TaggedObject) seq.getObjectAt(2);
-      byte[] certBytesBpp = ((ASN1OctetString) taggedCert.getBaseObject()).getOctets();
+      ASN1TaggedObject taggedEphPubKey = (ASN1TaggedObject) seq.getObjectAt(2);
+      byte[] smdpEphemeralPubKeyBytes =
+          ((ASN1OctetString) taggedEphPubKey.getBaseObject()).getOctets();
 
       ASN1TaggedObject taggedEncPayload = (ASN1TaggedObject) seq.getObjectAt(3);
       byte[] encPayload = ((ASN1OctetString) taggedEncPayload.getBaseObject()).getOctets();
 
-      // Extract Server Public Key
+      ASN1TaggedObject taggedCert = (ASN1TaggedObject) seq.getObjectAt(4);
+      byte[] certBytesBpp = ((ASN1OctetString) taggedCert.getBaseObject()).getOctets();
+
+      // Extract Server Public Key (long-term cert) for signature verification (if needed)
       java.security.cert.CertificateFactory cfBpp =
           java.security.cert.CertificateFactory.getInstance("X.509");
       java.security.cert.X509Certificate serverCertBpp =
           (java.security.cert.X509Certificate)
               cfBpp.generateCertificate(new java.io.ByteArrayInputStream(certBytesBpp));
-      PublicKey serverPublicKeyBpp = serverCertBpp.getPublicKey();
 
-      // Perform client-side ECDH key agreement
+      // Reconstruct SM-DP+ ephemeral public key
+      KeyFactory kf = KeyFactory.getInstance("EC", "BC");
+      PublicKey smdpEphemeralPublicKey =
+          kf.generatePublic(new java.security.spec.X509EncodedKeySpec(smdpEphemeralPubKeyBytes));
+
+      // Perform client-side ECDH key agreement using SM-DP+ ephemeral key
       KeyAgreement ka = KeyAgreement.getInstance("ECDH", "BC");
       ka.init(clientEphemeralKeyPair.getPrivate());
-      ka.doPhase(serverPublicKeyBpp, true);
+      ka.doPhase(smdpEphemeralPublicKey, true);
       byte[] sharedSecret = ka.generateSecret();
 
       // Derive symmetric key via SHA-256 KDF

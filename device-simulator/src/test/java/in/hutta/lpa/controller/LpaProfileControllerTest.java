@@ -20,13 +20,25 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc
 public class LpaProfileControllerTest {
 
-  @Autowired private MockMvc mockMvc;
+  private MockMvc mockMvc;
+
+  @Autowired private org.springframework.web.context.WebApplicationContext wac;
 
   @Autowired private LocalProfileRepository localProfileRepository;
 
   @BeforeEach
   public void setUp() {
     localProfileRepository.deleteAll();
+    mockMvc =
+        org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup(wac)
+            .defaultRequest(
+                get("/")
+                    .with(
+                        request -> {
+                          request.setLocalPort(8093);
+                          return request;
+                        }))
+            .build();
   }
 
   @Test
