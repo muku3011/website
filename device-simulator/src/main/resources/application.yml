@@ -12,6 +12,9 @@ server:
 spring:
   application:
     name: device-simulator
+  threads:
+    virtual:
+      enabled: true
   main:
     lazy-initialization: true
   task:
