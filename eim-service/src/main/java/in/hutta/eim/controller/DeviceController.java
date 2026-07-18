@@ -124,73 +124,103 @@ public class DeviceController {
     audit.setTargetIccid(iccid);
 
     try {
-      // 1. Call SM-DP+ downloadOrder
-      Map<String, Object> orderReq = new HashMap<>();
-      orderReq.put("eid", eid);
-      orderReq.put("iccid", iccid);
-      orderReq.put("profileType", profileType);
-
       HttpHeaders headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_JSON);
-      HttpEntity<Map<String, Object>> entity = new HttpEntity<>(orderReq, headers);
 
-      log.info("eIM calling SM-DP+ downloadOrder at: {}", smdpUrl + "/downloadOrder");
-      ResponseEntity<Map<String, Object>> orderResp =
+      // Fetch the profile state from the SM-DP+ to determine starting point in the ES2+ lifecycle
+      String adminUrl = smdpUrl.replace("/es2plus", "/admin/profiles");
+      log.info("eIM querying SM-DP+ profiles from: {}", adminUrl);
+      ResponseEntity<List<Map<String, Object>>> profilesResp =
           restTemplate.exchange(
-              smdpUrl + "/downloadOrder",
-              HttpMethod.POST,
-              entity,
-              new ParameterizedTypeReference<Map<String, Object>>() {});
+              adminUrl,
+              HttpMethod.GET,
+              null,
+              new ParameterizedTypeReference<List<Map<String, Object>>>() {});
 
-      if (orderResp.getStatusCode() != HttpStatus.OK || orderResp.getBody() == null) {
+      String currentState = "AVAILABLE";
+      if (profilesResp.getStatusCode() == HttpStatus.OK && profilesResp.getBody() != null) {
+        for (Map<String, Object> p : profilesResp.getBody()) {
+          if (iccid.equals(p.get("iccid"))) {
+            currentState = (String) p.get("state");
+            break;
+          }
+        }
+      }
+
+      log.info("eIM: Current state of profile {} on SM-DP+ is {}", iccid, currentState);
+      String matchingId = iccid; // Default fallback to ICCID if already released
+
+      if ("AVAILABLE".equals(currentState)) {
+        // 1. Call SM-DP+ downloadOrder
+        Map<String, Object> orderReq = new HashMap<>();
+        orderReq.put("eid", eid);
+        orderReq.put("iccid", iccid);
+        orderReq.put("profileType", profileType);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(orderReq, headers);
+        log.info("eIM calling SM-DP+ downloadOrder at: {}", smdpUrl + "/downloadOrder");
+        ResponseEntity<Map<String, Object>> orderResp =
+            restTemplate.exchange(
+                smdpUrl + "/downloadOrder",
+                HttpMethod.POST,
+                entity,
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+
+        if (orderResp.getStatusCode() != HttpStatus.OK || orderResp.getBody() == null) {
+          throw new IllegalStateException(
+              "SM-DP+ downloadOrder failed: " + orderResp.getStatusCode());
+        }
+
+        currentState = "ORDERED";
+      }
+
+      if ("ORDERED".equals(currentState)) {
+        // 2. Call SM-DP+ confirmOrder
+        Map<String, Object> confirmReq = new HashMap<>();
+        confirmReq.put("eid", eid);
+        confirmReq.put("iccid", iccid);
+        confirmReq.put(
+            "matchingId", "MATCHING-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+
+        HttpEntity<Map<String, Object>> confirmEntity = new HttpEntity<>(confirmReq, headers);
+        log.info("eIM calling SM-DP+ confirmOrder at: {}", smdpUrl + "/confirmOrder");
+        ResponseEntity<Map<String, Object>> confirmResp =
+            restTemplate.exchange(
+                smdpUrl + "/confirmOrder",
+                HttpMethod.POST,
+                confirmEntity,
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+
+        if (confirmResp.getStatusCode() != HttpStatus.OK || confirmResp.getBody() == null) {
+          throw new IllegalStateException("SM-DP+ confirmOrder failed");
+        }
+
+        matchingId = (String) confirmResp.getBody().get("matchingId");
+
+        // 3. Call SM-DP+ releaseProfile to transition the profile to RELEASED state
+        Map<String, Object> releaseReq = new HashMap<>();
+        releaseReq.put("iccid", iccid);
+
+        HttpEntity<Map<String, Object>> releaseEntity = new HttpEntity<>(releaseReq, headers);
+        log.info("eIM calling SM-DP+ releaseProfile at: {}", smdpUrl + "/releaseProfile");
+        ResponseEntity<Map<String, Object>> releaseResp =
+            restTemplate.exchange(
+                smdpUrl + "/releaseProfile",
+                HttpMethod.POST,
+                releaseEntity,
+                new ParameterizedTypeReference<Map<String, Object>>() {});
+
+        if (releaseResp.getStatusCode() != HttpStatus.OK || releaseResp.getBody() == null) {
+          throw new IllegalStateException(
+              "SM-DP+ releaseProfile failed: " + releaseResp.getStatusCode());
+        }
+        log.info("eIM: Profile released successfully for ICCID={}", iccid);
+      } else if ("RELEASED".equals(currentState)) {
+        log.info("eIM: Profile {} is already RELEASED. Skipping ES2+ ordering steps.", iccid);
+      } else {
         throw new IllegalStateException(
-            "SM-DP+ downloadOrder failed: " + orderResp.getStatusCode());
+            "Profile is already in " + currentState + " state and cannot be provisioned.");
       }
-
-      // 2. Call SM-DP+ confirmOrder
-      Map<String, Object> confirmReq = new HashMap<>();
-      confirmReq.put("eid", eid);
-      confirmReq.put("iccid", iccid);
-      confirmReq.put(
-          "matchingId", "MATCHING-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-
-      HttpEntity<Map<String, Object>> confirmEntity = new HttpEntity<>(confirmReq, headers);
-      log.info("eIM calling SM-DP+ confirmOrder at: {}", smdpUrl + "/confirmOrder");
-      ResponseEntity<Map<String, Object>> confirmResp =
-          restTemplate.exchange(
-              smdpUrl + "/confirmOrder",
-              HttpMethod.POST,
-              confirmEntity,
-              new ParameterizedTypeReference<Map<String, Object>>() {});
-
-      if (confirmResp.getStatusCode() != HttpStatus.OK || confirmResp.getBody() == null) {
-        throw new IllegalStateException("SM-DP+ confirmOrder failed");
-      }
-
-      String matchingId = (String) confirmResp.getBody().get("matchingId");
-
-      // 3. Call SM-DP+ releaseProfile to transition the profile to RELEASED state
-      //    This completes the full ES2+ operator lifecycle:
-      //    downloadOrder (ORDERED) -> confirmOrder -> releaseProfile (RELEASED)
-      //    Without this, initiateAuthentication on ES9+ cannot find a properly
-      //    RELEASED profile and must fall back to ORDERED state (spec violation).
-      Map<String, Object> releaseReq = new HashMap<>();
-      releaseReq.put("iccid", iccid);
-
-      HttpEntity<Map<String, Object>> releaseEntity = new HttpEntity<>(releaseReq, headers);
-      log.info("eIM calling SM-DP+ releaseProfile at: {}", smdpUrl + "/releaseProfile");
-      ResponseEntity<Map<String, Object>> releaseResp =
-          restTemplate.exchange(
-              smdpUrl + "/releaseProfile",
-              HttpMethod.POST,
-              releaseEntity,
-              new ParameterizedTypeReference<Map<String, Object>>() {});
-
-      if (releaseResp.getStatusCode() != HttpStatus.OK || releaseResp.getBody() == null) {
-        throw new IllegalStateException(
-            "SM-DP+ releaseProfile failed: " + releaseResp.getStatusCode());
-      }
-      log.info("eIM: Profile released successfully for ICCID={}", iccid);
 
       // 4. Create Download Trigger
       String activationCode = "LPA:1$" + smdpAddress + "$" + matchingId;
