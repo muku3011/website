@@ -156,18 +156,27 @@
     // Fetch Available Profiles from SM-DP+
     async function loadSmdpProfiles() {
         try {
-            const response = await fetch(`${SMDP_BACKEND_BASE}/gsma/rsp/v2/admin/profiles?state=AVAILABLE`);
-            if (!response.ok) throw new Error('Failed to fetch SM-DP+ profiles');
-            const profiles = await response.json();
-            
-            if (profiles.length === 0) {
-                selectProfile.innerHTML = `<option value="">-- No AVAILABLE profiles in SM-DP+ --</option>`;
+            // Fetch both AVAILABLE and RELEASED profiles.
+            // RELEASED = already ordered and ready for immediate provisioning.
+            // AVAILABLE = can be newly ordered by the eIM download flow.
+            const [releasedResp, availableResp] = await Promise.all([
+                fetch(`${SMDP_BACKEND_BASE}/gsma/rsp/v2/admin/profiles?state=RELEASED`),
+                fetch(`${SMDP_BACKEND_BASE}/gsma/rsp/v2/admin/profiles?state=AVAILABLE`)
+            ]);
+
+            const released  = releasedResp.ok  ? await releasedResp.json()  : [];
+            const available = availableResp.ok ? await availableResp.json() : [];
+            const allProfiles = [...released, ...available];
+
+            if (allProfiles.length === 0) {
+                selectProfile.innerHTML = `<option value="">-- No profiles available in SM-DP+ --</option>`;
                 return;
             }
 
-            selectProfile.innerHTML = profiles.map(p => `
-                <option value="${p.iccid}">ICCID: ${p.iccid} (${p.networkType} - ${p.mccMnc})</option>
-            `).join('');
+            selectProfile.innerHTML = allProfiles.map(p => {
+                const stateLabel = p.state === 'RELEASED' ? ' ✓ RELEASED' : ' AVAILABLE';
+                return `<option value="${p.iccid}" data-state="${p.state}">ICCID: ${p.iccid} (${p.networkType} - ${p.mccMnc}) [${stateLabel.trim()}]</option>`;
+            }).join('');
         } catch (e) {
             selectProfile.innerHTML = `<option value="">-- Failed to load profiles --</option>`;
         }
