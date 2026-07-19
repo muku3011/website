@@ -23,7 +23,7 @@ DESCRIPTION="${4:-Hutta $SERVICE_NAME Service}"
 MAX_HEAP="${5:-256m}"
 
 # JVM flags optimised for a low-memory embedded system (Raspberry Pi)
-JVM_OPTS="-Xms32m -Xmx${MAX_HEAP} -XX:+UseSerialGC -XX:MaxMetaspaceSize=96m \
+JVM_OPTS="-Xms32m -Xmx${MAX_HEAP} -XX:+UseSerialGC -XX:MaxMetaspaceSize=160m \
 -XX:+TieredCompilation -XX:TieredStopAtLevel=1 \
 -XX:ActiveProcessorCount=1 -XX:+UseStringDeduplication \
 -Djava.security.egd=file:/dev/./urandom"
