@@ -3,6 +3,7 @@ package in.hutta.smdp.service;
 import in.hutta.smdp.model.Profile;
 import in.hutta.smdp.model.SessionContext;
 import in.hutta.smdp.repository.ProfileRepository;
+import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,7 +64,7 @@ public class ProfileService {
     Optional<Profile> profileOpt = profileRepository.findById(iccid);
     if (profileOpt.isPresent()) {
       Profile profile = profileOpt.get();
-      if ("ORDERED".equals(profile.getState()) && eid.equals(profile.getEid())) {
+      if ("ORDERED".equals(profile.getState()) && Objects.equals(eid, profile.getEid())) {
         log.info("Order confirmed: ICCID={}", iccid);
         return true;
       }
@@ -79,7 +80,7 @@ public class ProfileService {
     Optional<Profile> profileOpt = profileRepository.findById(iccid);
     if (profileOpt.isPresent()) {
       Profile profile = profileOpt.get();
-      if (eid.equals(profile.getEid())
+      if (Objects.equals(eid, profile.getEid())
           && ("ORDERED".equals(profile.getState()) || "RELEASED".equals(profile.getState()))) {
         profile.setEid(null);
         profile.setState("AVAILABLE");
