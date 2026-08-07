@@ -1,35 +1,17 @@
 # ==============================================================================
-# Multi-Stage Build Dockerfile for blog-service (Java 25 Spring Boot)
+# Production Hardened Dockerfile for blog-service (Java 25 JRE Alpine)
+# Microservice artifact pre-compiled via native host Maven build
 # ==============================================================================
-
-# Stage 1: Build Jar Artifact using Maven
-FROM maven:3.9.16-eclipse-temurin-25-alpine AS builder
-WORKDIR /workspace
-
-# Copy parent and module pom.xml files for dependency layer caching
-COPY pom.xml .
-COPY smdp-plus/pom.xml smdp-plus/
-COPY device-simulator/pom.xml device-simulator/
-COPY blog-service/pom.xml blog-service/
-COPY eim-service/pom.xml eim-service/
-
-RUN mvn dependency:go-offline -B --fail-never
-
-# Copy source code and build blog-service module
-COPY blog-service blog-service
-RUN mvn clean package -pl blog-service -am -DskipTests
-
-# Stage 2: Hardened High-Performance JRE 25 Runtime
 FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
 
-# Non-root user creation
+# Non-root application user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# Copy compiled jar
-COPY --from=builder /workspace/blog-service/target/*.jar /app/app.jar
+# Copy pre-compiled target artifact
+COPY blog-service/target/*.jar /app/app.jar
 
-# Set file ownership
+# Enforce secure ownership
 RUN chown -R appuser:appgroup /app
 
 USER appuser
