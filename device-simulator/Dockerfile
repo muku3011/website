@@ -3,7 +3,7 @@
 # ==============================================================================
 
 # Stage 1: Build Jar Artifact using Maven
-FROM maven:3.9.9-eclipse-temurin-21-alpine AS builder
+FROM maven:3.9.16-eclipse-temurin-25-alpine AS builder
 WORKDIR /workspace
 
 # Copy parent and module pom.xml files for dependency layer caching
@@ -11,6 +11,7 @@ COPY pom.xml .
 COPY smdp-plus/pom.xml smdp-plus/
 COPY device-simulator/pom.xml device-simulator/
 COPY blog-service/pom.xml blog-service/
+COPY monitor-service/pom.xml monitor-service/
 COPY eim-service/pom.xml eim-service/
 
 RUN mvn dependency:go-offline -B --fail-never
