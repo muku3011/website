@@ -33,18 +33,23 @@ jobs:
           filters: |
             portal:
               - 'website/**'
+              - 'website-iac/k8s/apps/website-portal.yaml'
             smdp:
               - 'smdp-plus/**'
               - 'pom.xml'
+              - 'website-iac/k8s/apps/smdp-plus.yaml'
             device:
               - 'device-simulator/**'
               - 'pom.xml'
+              - 'website-iac/k8s/apps/device-simulator.yaml'
             blog:
               - 'blog-service/**'
               - 'pom.xml'
+              - 'website-iac/k8s/apps/blog-service.yaml'
             eim:
               - 'eim-service/**'
               - 'pom.xml'
+              - 'website-iac/k8s/apps/eim-service.yaml'
 
   # Job 2: Build & Deploy ONLY modified application container images
   build-and-deploy:
