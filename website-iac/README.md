@@ -90,3 +90,11 @@ kubectl apply -f website-iac/k8s/infrastructure/cert-issuer.yaml
 kubectl apply -f website-iac/k8s/infrastructure/ddns-cronjob.yaml
 kubectl apply -f website-iac/k8s/argocd/root-app.yaml
 ```
+
+### 5. Fast Native Local Build & Deploy (Skip GitHub Actions QEMU)
+To bypass slow GitHub Actions QEMU cross-compilation, build natively and import images directly into K3s containerd:
+
+```bash
+chmod +x website-iac/scripts/build_and_deploy_local.sh
+./website-iac/scripts/build_and_deploy_local.sh
+```
