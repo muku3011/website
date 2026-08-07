@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: smdp-plus
-        image: ghcr.io/muku3011/website/smdp-plus:latest
+        image: ghcr.io/muku3011/website/smdp-plus:560e7037602a4603bcc0ea79ed62853e95582034
         imagePullPolicy: Always
         ports:
         - containerPort: 8092

@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: device-simulator
-        image: ghcr.io/muku3011/website/device-simulator:latest
+        image: ghcr.io/muku3011/website/device-simulator:560e7037602a4603bcc0ea79ed62853e95582034
         imagePullPolicy: Always
         ports:
         - containerPort: 8093
