@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: web-app
-        image: ghcr.io/muku3011/website/portal:latest
+        image: ghcr.io/muku3011/website/portal:ad4d90cb699d7d35fbc5e3eaa610967c49ac8cd6
         imagePullPolicy: Always
         ports:
         - containerPort: 80
