@@ -1,0 +1,45 @@
+{
+  "realm": "hutta",
+  "enabled": true,
+  "displayName": "hutta.in Platform SSO",
+  "sslRequired": "external",
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "clients": [
+    {
+      "clientId": "hutta-portal",
+      "name": "hutta.in Web Portal",
+      "enabled": true,
+      "publicClient": true,
+      "redirectUris": [
+        "https://hutta.in/*",
+        "https://*.hutta.in/*"
+      ],
+      "webOrigins": [
+        "https://hutta.in",
+        "https://*.hutta.in"
+      ],
+      "standardFlowEnabled": true
+    },
+    {
+      "clientId": "hutta-api",
+      "name": "hutta.in Microservices API",
+      "enabled": true,
+      "bearerOnly": true
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "Standard hutta.in Consumer User"
+      },
+      {
+        "name": "admin",
+        "description": "Platform Administrator"
+      }
+    ]
+  }
+}

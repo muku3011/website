@@ -1,0 +1,171 @@
+---
+- name: Hardening, MicroSD Wear Protection & OS Preparation for K3s Nodes
+  hosts: all
+  become: true
+  tasks:
+    - name: 1. Ensure kernel cgroups memory flags in cmdline.txt
+      replace:
+        path: "{{ item }}"
+        regexp: '^((?!.*cgroup_enable=memory).*)$'
+        replace: '\1 cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory'
+      loop:
+        - /boot/firmware/cmdline.txt
+        - /boot/cmdline.txt
+      ignore_errors: true
+
+    - name: 2. Disable active swap memory (MicroSD Protection)
+      command: swapoff -a
+      ignore_errors: true
+
+    - name: Remount root filesystem read-write and clean /etc/fstab
+      raw: |
+        ROOT_SRC=$(findmnt -n -o SOURCE / 2>/dev/null || echo "/dev/root")
+        mount -o remount,rw "$ROOT_SRC" / || mount -o remount,rw /dev/root / || true
+        sed -i '/LABEL=boot.*ext4/d' /etc/fstab
+        if ! grep -E '\s+/\s+' /etc/fstab >/dev/null; then
+          echo "/dev/root / ext4 defaults,noatime 0 1" >> /etc/fstab
+        fi
+      ignore_errors: true
+
+    - name: Populate service facts
+      ansible.builtin.service_facts:
+
+    - name: Disable swap service if present
+      service:
+        name: dphys-swapfile
+        state: stopped
+        enabled: false
+      when: "'dphys-swapfile.service' in ansible_facts.services"
+      ignore_errors: true
+
+    - name: Ensure interrupted dpkg state is fixed
+      command: dpkg --configure -a
+      environment:
+        DEBIAN_FRONTEND: noninteractive
+
+    - name: Remove dphys-swapfile package if present
+      apt:
+        name: dphys-swapfile
+        state: absent
+        purge: true
+
+    - name: 3. Mount /tmp and /var/log in RAM (tmpfs) to protect MicroSD card
+      mount:
+        path: "{{ item.path }}"
+        src: tmpfs
+        fstype: tmpfs
+        opts: "{{ item.opts }}"
+        state: mounted
+      loop:
+        - { path: '/tmp', opts: 'defaults,noatime,nosuid,nodev,size=512M' }
+        - { path: '/var/log', opts: 'defaults,noatime,nosuid,nodev,size=100M' }
+
+    - name: 5. Configure volatile systemd journal logging (RAM only)
+      ini_file:
+        path: /etc/systemd/journald.conf
+        section: Journal
+        option: "{{ item.key }}"
+        value: "{{ item.value }}"
+      loop:
+        - { key: 'Storage', value: 'volatile' }
+        - { key: 'RuntimeMaxUse', value: '50M' }
+      notify: Restart journald
+
+    - name: 6. Load required Kubernetes kernel modules
+      modprobe:
+        name: "{{ item }}"
+        state: present
+        persistent: present
+      loop:
+        - overlay
+        - br_netfilter
+
+    - name: 7. Apply sysctl kernel hardening and performance rules
+      sysctl:
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        state: present
+        reload: true
+      loop:
+        - { key: 'net.bridge.bridge-nf-call-iptables', value: '1' }
+        - { key: 'net.bridge.bridge-nf-call-ip6tables', value: '1' }
+        - { key: 'net.ipv4.ip_forward', value: '1' }
+        - { key: 'vm.swappiness', value: '1' }
+        - { key: 'vm.vfs_cache_pressure', value: '50' }
+        - { key: 'fs.protected_hardlinks', value: '1' }
+        - { key: 'fs.protected_symlinks', value: '1' }
+
+    - name: 8. Disable unnecessary background daemons if present to save CPU & RAM
+      service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      when: "(item + '.service') in ansible_facts.services"
+      loop:
+        - bluetooth
+        - avahi-daemon
+        - triggerhappy
+
+    - name: Update apt package cache cleanly
+      shell: |
+        while fuser /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock /var/lib/dpkg/lock >/dev/null 2>&1; do sleep 2; done
+        apt-get update -y
+      ignore_errors: true
+
+    - name: 9. Install security tools (UFW, Fail2ban)
+      apt:
+        name:
+          - ufw
+          - fail2ban
+          - iptables
+        state: present
+
+    - name: 10. Configure UFW Firewall rules
+      ufw:
+        direction: "{{ item.direction }}"
+        policy: "{{ item.policy }}"
+      loop:
+        - { direction: 'incoming', policy: 'deny' }
+        - { direction: 'outgoing', policy: 'allow' }
+
+    - name: Allow essential K3s and SSH ports
+      ufw:
+        rule: allow
+        port: "{{ item.port }}"
+        proto: "{{ item.proto }}"
+      loop:
+        - { port: '22', proto: 'tcp' }    # SSH
+        - { port: '6443', proto: 'tcp' }  # K3s API Server
+        - { port: '80', proto: 'tcp' }    # HTTP Traefik Ingress
+        - { port: '443', proto: 'tcp' }   # HTTPS Traefik Ingress
+        - { port: '8472', proto: 'udp' }  # Flannel VXLAN overlay
+
+    - name: Enable UFW Firewall
+      ufw:
+        state: enabled
+
+    - name: 11. Harden SSH Configuration
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - { regexp: '^#?PermitRootLogin', line: 'PermitRootLogin no' }
+        - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
+      notify: Restart ssh
+
+    - name: 12. Reboot nodes to apply kernel cgroups memory flags
+      ansible.builtin.reboot:
+        msg: "Rebooting to activate cgroups memory flags"
+        reboot_timeout: 300
+
+  handlers:
+    - name: Restart journald
+      service:
+        name: systemd-journald
+        state: restarted
+
+    - name: Restart ssh
+      service:
+        name: ssh
+        state: restarted

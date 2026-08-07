@@ -1,0 +1,170 @@
+name: Smart Selective CI/CD Pipeline for Raspberry Pi K8s Stack
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  # Job 1: Detect path changes to build ONLY modified applications
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      portal: ${{ steps.filter.outputs.portal }}
+      smdp: ${{ steps.filter.outputs.smdp }}
+      device: ${{ steps.filter.outputs.device }}
+      blog: ${{ steps.filter.outputs.blog }}
+      eim: ${{ steps.filter.outputs.eim }}
+      any_changed: ${{ steps.filter.outputs.portal == 'true' || steps.filter.outputs.smdp == 'true' || steps.filter.outputs.device == 'true' || steps.filter.outputs.blog == 'true' || steps.filter.outputs.eim == 'true' }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Path Filter Inspection
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            portal:
+              - 'website/**'
+            smdp:
+              - 'smdp-plus/**'
+              - 'pom.xml'
+            device:
+              - 'device-simulator/**'
+              - 'pom.xml'
+            blog:
+              - 'blog-service/**'
+              - 'pom.xml'
+            eim:
+              - 'eim-service/**'
+              - 'pom.xml'
+
+  # Job 2: Build & Deploy ONLY modified application container images
+  build-and-deploy:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.any_changed == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU (for ARM64 compilation)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build Website Portal ONLY if website/ files changed
+      - name: Build & Push Website Portal Image
+        if: ${{ needs.detect-changes.outputs.portal == 'true' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ./website
+          file: ./website/Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/portal:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/portal:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Build SM-DP+ eSIM Service ONLY if smdp-plus/ or pom.xml changed
+      - name: Build & Push SM-DP+ eSIM Service Image
+        if: ${{ needs.detect-changes.outputs.smdp == 'true' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./smdp-plus/Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/smdp-plus:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/smdp-plus:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Build LPA Device Simulator ONLY if device-simulator/ or pom.xml changed
+      - name: Build & Push LPA Device Simulator Image
+        if: ${{ needs.detect-changes.outputs.device == 'true' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./device-simulator/Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/device-simulator:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/device-simulator:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Build Blog Service ONLY if blog-service/ or pom.xml changed
+      - name: Build & Push Blog Service Image
+        if: ${{ needs.detect-changes.outputs.blog == 'true' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./blog-service/Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/blog-service:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/blog-service:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Build eIM Service ONLY if eim-service/ or pom.xml changed
+      - name: Build & Push eIM Service Image
+        if: ${{ needs.detect-changes.outputs.eim == 'true' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./eim-service/Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/eim-service:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/eim-service:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Update Kubernetes GitOps Manifest Tags for modified images ONLY
+      - name: Update Kubernetes Manifests in Git
+        run: |
+          if [ "${{ needs.detect-changes.outputs.portal }}" = "true" ]; then
+            echo "Updating website-portal image tag..."
+            sed -i "s|image: ghcr.io/.*/portal:.*|image: ghcr.io/${{ github.repository }}/portal:${{ github.sha }}|g" website-iac/k8s/apps/website-portal.yaml
+          fi
+          if [ "${{ needs.detect-changes.outputs.smdp }}" = "true" ]; then
+            echo "Updating smdp-plus image tag..."
+            sed -i "s|image: ghcr.io/.*/smdp-plus:.*|image: ghcr.io/${{ github.repository }}/smdp-plus:${{ github.sha }}|g" website-iac/k8s/apps/smdp-plus.yaml
+          fi
+          if [ "${{ needs.detect-changes.outputs.device }}" = "true" ]; then
+            echo "Updating device-simulator image tag..."
+            sed -i "s|image: ghcr.io/.*/device-simulator:.*|image: ghcr.io/${{ github.repository }}/device-simulator:${{ github.sha }}|g" website-iac/k8s/apps/device-simulator.yaml
+          fi
+          if [ "${{ needs.detect-changes.outputs.blog }}" = "true" ]; then
+            echo "Updating blog-service image tag..."
+            sed -i "s|image: ghcr.io/.*/blog-service:.*|image: ghcr.io/${{ github.repository }}/blog-service:${{ github.sha }}|g" website-iac/k8s/apps/blog-service.yaml
+          fi
+          if [ "${{ needs.detect-changes.outputs.eim }}" = "true" ]; then
+            echo "Updating eim-service image tag..."
+            sed -i "s|image: ghcr.io/.*/eim-service:.*|image: ghcr.io/${{ github.repository }}/eim-service:${{ github.sha }}|g" website-iac/k8s/apps/eim-service.yaml
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add website-iac/k8s/apps/
+          git commit -m "ci: update modified application image tags to ${{ github.sha }} [skip ci]" || echo "No changes to commit"
+          git push

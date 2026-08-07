@@ -1,0 +1,140 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: keycloak-admin-ip-allowlist
+  namespace: default
+spec:
+  ipAllowList:
+    sourceRange:
+      - "192.168.1.0/24"       # Local Home Network Subnet
+      - "10.0.0.0/8"           # Internal VPN / Tailscale / WireGuard
+      - "127.0.0.1/32"         # Localhost Loopback
+---
+# ==============================================================================
+# Protected Ingress Route: Keycloak Admin Console & Admin APIs ONLY
+# Restricted strictly to Home IP Subnet (192.168.1.0/24)
+# ==============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: keycloak-admin-protected-ingress
+  namespace: default
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod-dns01"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    # Enforce IP Allowlist Middleware EXCLUSIVELY on Keycloak Admin paths
+    traefik.ingress.kubernetes.io/router.middlewares: default-keycloak-admin-ip-allowlist@kubernetescrd
+spec:
+  tls:
+  - hosts:
+    - auth.hutta.in
+    secretName: hutta-in-tls-cert
+  rules:
+  # Keycloak Admin Console & Master Realm REST APIs
+  - host: auth.hutta.in
+    http:
+      paths:
+      - path: /admin
+        pathType: Prefix
+        backend:
+          service:
+            name: keycloak-service
+            port:
+              number: 8080
+      - path: /realms/master
+        pathType: Prefix
+        backend:
+          service:
+            name: keycloak-service
+            port:
+              number: 8080
+---
+# ==============================================================================
+# Public Ingress Route: Public Internet Access for Portal & Microservice APIs
+# Protected by Keycloak OIDC AuthN & Spring Security JWT AuthZ
+# ==============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hutta-public-ingress
+  namespace: default
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod-dns01"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  tls:
+  - hosts:
+    - hutta.in
+    - auth.hutta.in
+    - "*.hutta.in"
+    secretName: hutta-in-tls-cert
+  rules:
+  # Public Keycloak OIDC User Login, Token & Registration Endpoints (auth.hutta.in)
+  - host: auth.hutta.in
+    http:
+      paths:
+      - path: /realms/hutta
+        pathType: Prefix
+        backend:
+          service:
+            name: keycloak-service
+            port:
+              number: 8080
+      - path: /resources
+        pathType: Prefix
+        backend:
+          service:
+            name: keycloak-service
+            port:
+              number: 8080
+      - path: /js
+        pathType: Prefix
+        backend:
+          service:
+            name: keycloak-service
+            port:
+              number: 8080
+
+  # Public Portal & Microservice APIs (hutta.in) - Protected by Keycloak OIDC JWT
+  - host: hutta.in
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: website-portal-service
+            port:
+              number: 80
+      # SM-DP+ eSIM Services (ES2+ Operator APIs & ES9+ Device Handshake)
+      - path: /api/smdp
+        pathType: Prefix
+        backend:
+          service:
+            name: smdp-plus-service
+            port:
+              number: 8092
+      # LPA Device Simulator APIs
+      - path: /api/lpa
+        pathType: Prefix
+        backend:
+          service:
+            name: device-simulator-service
+            port:
+              number: 8093
+      # Blog Technology Service APIs
+      - path: /api/blog
+        pathType: Prefix
+        backend:
+          service:
+            name: blog-service-service
+            port:
+              number: 8094
+      # SGP.32 IoT eIM Remote Manager APIs
+      - path: /api/eim
+        pathType: Prefix
+        backend:
+          service:
+            name: eim-service-service
+            port:
+              number: 8096

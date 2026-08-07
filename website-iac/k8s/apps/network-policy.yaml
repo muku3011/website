@@ -1,0 +1,42 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: platform-microservices-netpol
+  namespace: default
+spec:
+  podSelector:
+    matchExpressions:
+    - {key: app, operator: In, values: [smdp-plus, device-simulator, blog-service, eim-service, website-portal, keycloak-sso]}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow traffic from Traefik Ingress Controller
+  - from:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: traefik
+  # Allow inter-pod traffic between microservices
+  - from:
+    - podSelector:
+        matchExpressions:
+        - {key: app, operator: In, values: [smdp-plus, device-simulator, blog-service, eim-service, website-portal, keycloak-sso]}
+  egress:
+  # Allow microservices to talk to PostgreSQL database
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres-db
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Allow DNS resolution
+  - to:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53

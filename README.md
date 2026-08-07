@@ -1,275 +1,119 @@
-# hutta.in Portfolio & Platform: Consumer eSIM SM-DP+ & Secure Server Gateway
+# hutta.in Platform: Automated 3-Node Raspberry Pi Kubernetes Cluster
 
-This repository contains the Infrastructure as Code (IaC), secure web portal assets, Keycloak SSO authentication configurations, Certbot SSL/TLS certificate automation, and eSIM Remote SIM Provisioning (RSP) services needed to run a secure server gateway, status dashboard, and a local SM-DP+ eSIM provisioning environment on a home-hosted Raspberry Pi.
-
----
-
-## 1. Dynamic DNS (DDNS) Architecture Overview
-
-This diagram represents the flow for user access and the automated A-record updates when the home public IP changes.
-
-```mermaid
-flowchart LR
-    subgraph Public Internet
-        Browser["Web Browser"]
-        DNS["GCP Cloud DNS"]
-        Ipify["ipify.org"]
-    end
-
-    subgraph Home Network
-        RPi["Raspberry Pi"]
-    end
-
-    Browser -->|1. DNS Lookup| DNS
-    Browser -->|2. Access Website| RPi
-    RPi -->|3. Check Public IP| Ipify
-    RPi -->|4. Update A Record if changed| DNS
-```
-
-1. **GCP Cloud DNS**: Manages the `hutta.in` DNS zone.
-2. **Terraform**: Provisions the DNS Zone, record placeholders, and a secure GCP Service Account for updates.
-3. **DDNS Script**: Runs on the Raspberry Pi. It checks its current public IP and, if it changes, logs into GCP via the service account to update the A record automatically.
+This repository contains the complete codebase, microservices, containerization Dockerfiles, and Infrastructure as Code (IaC) required to run the `hutta.in` Consumer/IoT eSIM platform on a **3-node Raspberry Pi Kubernetes cluster** (**1x Raspberry Pi 5 8GB Master** + **2x Raspberry Pi 4 8GB Workers**).
 
 ---
 
-## 2. Secure HTTPS & SSL/TLS via Certbot
-
-To ensure all public-facing HTTP traffic is encrypted and secure, **Certbot (Let's Encrypt)** is integrated into the hosting environment.
+## 1. System & Architecture Overview
 
 ```mermaid
 flowchart TD
-    Timer["systemd certbot.timer"]
-    Certbot["Certbot Agent"]
-    LE["Let's Encrypt CA"]
-    FS["Local Filesystem\n(/etc/letsencrypt)"]
-    Apache["Apache Web Server"]
-
-    Timer -->|1. Periodic Trigger| Certbot
-    Certbot -->|2. Request Cert & Challenge| LE
-    LE -.->|3. Validate Domain| Apache
-    LE -->|4. Issue Signed Certs| Certbot
-    Certbot -->|5. Save Private Key & Chain| FS
-    Certbot -->|6. Reload Server Service| Apache
-    Apache -->|7. Load Active Certs| FS
-
-    style Timer fill:#fca5a5,stroke:#ef4444,stroke-width:2px,color:#000
-    style Certbot fill:#93c5fd,stroke:#3b82f6,stroke-width:2px,color:#000
-    style LE fill:#c084fc,stroke:#a855f7,stroke-width:2px,color:#000
-    style FS fill:#cbd5e1,stroke:#64748b,stroke-width:2px,color:#000
-    style Apache fill:#86efac,stroke:#22c55e,stroke-width:2px,color:#000
-```
-
-* **Certificate Acquisition**: Certbot automatically provisions trusted, free SSL/TLS certificates from Let's Encrypt for `hutta.in` (and wildcard/subdomains).
-* **Apache HTTPS Integration**: The certificates (private key and full chain cert) are loaded into the Apache HTTP Server (`/etc/apache2/sites-available/000-default-le-ssl.conf`), forcing all connections to upgrade to **HTTPS (port 443)** using modern TLS protocols.
-* **Automated Renewals**: A systemd timer (`certbot.timer`) runs automatically twice a day to renew certificates nearing expiration and reloads Apache to apply the renewed certificates seamlessly without downtime.
-
----
-
-## 3. Web Portal & eSIM Services System Architecture
-
-This diagram shows how user devices, reverse proxy, Keycloak authentication, and persistent database tiers interface on the Raspberry Pi.
-
-```mermaid
-flowchart TD
-    subgraph Client ["Client Devices"]
-        Browser["Web Browser"]
-        LPA_Client["Device LPA Client"]
+    subgraph Internet ["1. Public Internet & Cloud Services"]
+        GH["GitHub Repository"]
+        GCP_DNS["GCP Cloud DNS (hutta.in & auth.hutta.in)"]
+        LE["Let's Encrypt CA"]
+        GHCR["Container Registry (ghcr.io)"]
     end
 
-    subgraph RPi ["Raspberry Pi Gateway"]
-        direction TB
-        subgraph Proxy ["Apache Reverse Proxy (Port 443)"]
-            Static["Static Web Assets (index, tools, profiles, blog, sentinel)"]
-            OIDC["mod_auth_openidc (consumer.html, /api/blog/ write methods)"]
+    subgraph Cluster ["2. 3-Node K3s Cluster (Raspberry Pi)"]
+        subgraph Master ["Pi 5 (8GB) - Master Node (192.168.1.100 over wlan0)"]
+            Traefik["Traefik Ingress Controller (TLS 1.3)"]
+            ArgoCD["ArgoCD GitOps Engine"]
+            CertManager["cert-manager (ACME DNS-01)"]
+            Keycloak["Keycloak SSO (auth.hutta.in)"]
+            DDNS["GCP Cloud DNS DDNS CronJob"]
         end
 
-        subgraph Auth ["Auth System"]
-            Keycloak["Keycloak SSO — auth.hutta.in (loopback :8080)"]
-        end
-
-        subgraph Backend ["Backend Services"]
-            SMDP["SM-DP+ eSIM Server (Port 8092)"]
-            LPA_Sim["LPA Simulator (Port 8093)"]
-            BlogService["Blog Service (Port 8094)"]
-            MonitorService["Monitor Service (Port 8095)"]
-        end
-
-        subgraph DB ["Database Tier"]
-            PostgreSQL[(PostgreSQL Server: Port 5432)]
-            smdpdb[(Database: smdpdb)]
-            lpadb[(Database: lpadb)]
-            keycloakdb[(Database: keycloakdb)]
-            blogdb[(Database: blogdb)]
-            monitordb[(Database: monitordb)]
+        subgraph Workers ["Pi 4 (8GB) - Worker Nodes (192.168.1.110 & 192.168.1.120 over wlan0)"]
+            Postgres["PostgreSQL StatefulSet (:5432)"]
+            SMDP["SM-DP+ eSIM Server (:8092)"]
+            LPA["LPA Device Simulator (:8093)"]
+            Blog["Blog Service (:8094)"]
+            Portal["Static Web Portal Gateway (:80)"]
         end
     end
 
-    %% Client Access
-    Browser -->|HTTPS hutta.in| Static
-    Browser -->|HTTPS auth.hutta.in| Keycloak
-    Browser -->|Authenticate| OIDC
-    LPA_Client -->|Download Handshake /es9plus| SMDP
-
-    %% Proxy Routing
-    OIDC -->|OIDC flow| Keycloak
-    Proxy -->|Proxy /gsma/rsp/v2/| SMDP
-    Proxy -->|Proxy /lpa/| LPA_Sim
-    Proxy -->|Proxy /api/blog/| BlogService
-    Proxy -->|Proxy /api/sentinel/| MonitorService
-
-    %% Authentication
-    Keycloak <-->|JPA / Flyway| keycloakdb
-
-    %% eSIM provisioning & database
-    LPA_Sim -->|Trigger ES9+ Provisioning| SMDP
-    SMDP <-->|JPA / Flyway| smdpdb
-    LPA_Sim <-->|JPA / Flyway| lpadb
-    BlogService <-->|JPA / Flyway| blogdb
-    MonitorService <-->|JPA / Flyway| monitordb
-    smdpdb -.->|Part of| PostgreSQL
-    lpadb -.->|Part of| PostgreSQL
-    keycloakdb -.->|Part of| PostgreSQL
-    blogdb -.->|Part of| PostgreSQL
-    monitordb -.->|Part of| PostgreSQL
+    GH -->|1. Triggers Multi-Arch Build| GHA["GitHub Actions CI"]
+    GHA -->|2. Pushes ARM64 Docker Images| GHCR
+    GHA -->|3. Updates Manifest Tags| GH
+    GH -->|4. Syncs Manifests| ArgoCD
+    ArgoCD -->|5. Zero-Downtime Rolling Deployment| Workers
+    CertManager -->|6. DNS-01 Challenge| GCP_DNS
+    GCP_DNS -->|7. Issues Wildcard TLS Cert| LE
+    LE -->|8. Loads TLS Certificate| Traefik
+    DDNS -->|9. Periodic Dynamic IP Sync| GCP_DNS
 ```
-
-* **Apache HTTP Server**: Serves the website frontend assets (including Sentinel service dashboard) and acts as a secure reverse proxy with OIDC integration (`mod_auth_openidc`) for private routes and write methods.
-* **Keycloak**: Identity provider running on `auth.hutta.in` (bare metal, HTTP on loopback, Apache terminates TLS). Manages users natively and provides OIDC/OAuth2 for the site. Admin console is restricted to home network; Account console is public.
-* **Blog Service**: Exposes backend endpoints for publishing, reading, and deleting technology articles, with database-backed image uploads, persisting to the `blogdb` database.
-* **Monitor Service (Sentinel)**: Aggregates systemd service health status and queries installed software versions dynamically, persisting state history to the `monitordb` database.
-* **SM-DP+ eSIM Server**: Implements the standard GSMA SGP.22 endpoints (ES2+ and ES9+), backed by a persistent PostgreSQL database (`smdpdb`) and Flyway database migration controller.
-* **LPA Simulator**: Simulates eUICC operations and triggers remote SIM provisioning downloads, storing downloaded profiles in a persistent PostgreSQL database (`lpadb`).
 
 ---
 
-## 4. Projects & Repository Layout
+## 2. Infrastructure as Code (IaC) Directory (`website-iac/`)
 
-This repository is split into six main areas:
+All infrastructure code, playbooks, manifests, and scripts reside inside [`website-iac/`](file:///Users/muku/Projects/website/website-iac):
 
-### 1. [Infrastructure as Code & DDNS Automation (website-iac/)](website-iac/README.md)
-Contains all GCP infrastructure provisioning and backend Dynamic DNS setup:
-- Terraform configurations (`dns.tf`, `iam.tf`, `variables.tf`, etc.) for managing DNS zones and records.
-- Zero-dependency Dynamic DNS Python script (`ddns.py`).
-- Setup instructions for automating DDNS updates on the Raspberry Pi using systemd or cron.
-- **Go to [website-iac/README.md](website-iac/README.md) for setup and deployment instructions.**
-
-### 2. [Website Frontend (website/)](website/README.md)
-Contains the server dashboard and portfolio site assets deployed on the Raspberry Pi:
-- Frontend code (`index.html`, `index.css`, `consumer.html`, `blog.html`) for serving the portfolio site, eSIM profiles registry, LPA download simulator, and technology blog.
-- Deployment configuration for Apache HTTP Server and HTTPS (SSL/TLS) via Let's Encrypt.
-- GitHub Actions CI/CD setup via self-hosted runners.
-- **Go to [website/README.md](website/README.md) for frontend deployment and automation setup instructions.**
-
-### 3. [Keycloak Identity Provider (scripts/)](scripts/)
-Contains the Keycloak bare-metal installer and related setup assets:
-- `setup_all.sh` — recommended entry point for provisioning the local Keycloak environment.
-- `setup_keycloak.sh` — installs and configures Keycloak on Pi 5, configures PostgreSQL, and creates the systemd service.
-- `setup_apache.sh` — configures Apache integration points for Keycloak when needed.
-- `keycloak/` — legacy theme assets retained for reference only.
-- **Go to [scripts/setup_all.sh](scripts/setup_all.sh) for the full one-command deployment.**
-
-### 4. [SM-DP+ eSIM Server (smdp-plus/)](smdp-plus/README.md)
-Contains a reference implementation of a GSMA SGP.22 v3.1 compliant Subscription Manager Data Preparation+ (SM-DP+) server:
-- REST API controllers for ES2+ (Operator) and ES9+ (LPA client) interfaces.
-- Persistent PostgreSQL database backend and Flyway schema versioning.
-- Auto-deployment via self-hosted GitHub Actions workflows and systemd service.
-- **Go to [smdp-plus/README.md](smdp-plus/README.md) for build, testing, and deployment instructions.**
-
-### 5. [eSIM LPA Download Simulator (lpa-simulator/)](lpa-simulator/README.md)
-Contains a client-side simulation helper that triggers standard remote SIM provisioning (RSP) download handshakes:
-- REST API controller for starting profile download via activation code.
-- Persistent PostgreSQL database backend and Flyway schema versioning.
-- Automatic deployment configuration via systemd service on the Raspberry Pi.
-- **Go to [lpa-simulator/README.md](lpa-simulator/README.md) for build, testing, and deployment instructions.**
+```text
+website-iac/
+├── terraform/                      # Terraform GCP Cloud DNS & Service Account IAM
+├── ansible/                        # Ansible OS Hardening (tmpfs, noatime, UFW) & K3s Install
+├── k8s/                            # Declarative Kubernetes Manifests (Synced by ArgoCD)
+│   ├── argocd/                     # GitOps Root Application
+│   ├── infrastructure/             # PostgreSQL DB, Keycloak SSO, cert-manager, DDNS, Monitoring
+│   └── apps/                       # Web Portal, SM-DP+, LPA Simulator, Blog Service, Ingress
+├── scripts/                        # Health Diagnostic Verification Script
+└── README.md                       # Comprehensive IaC Execution Guide
+```
 
 ---
 
-## 5. Detailed Authentication & Authorization Flows (Apache & Keycloak)
+## 3. Platform Microservices & Containers
 
-The following diagrams illustrate how request pathways, authentication redirects, and role-based header propagations are orchestrated between the user, Apache reverse proxy (`mod_auth_openidc`), Keycloak identity provider, and downstream service daemons.
+| Service | Technology | Port | Database | Security & OIDC |
+|---|---|---|---|---|
+| **Static Web Portal Gateway** | Nginx 1.27 Alpine | 80 / 443 | - | TLS 1.3, Gzip, Security Headers |
+| **Keycloak SSO Engine** | Keycloak 26 (Quarkus) | 8080 | `keycloakdb` | OIDC Authorization Code Flow with PKCE, Admin IP Restricted (`192.168.1.0/24`) |
+| **SM-DP+ eSIM Server** | Spring Boot (Java 25 JRE Alpine) | 8092 | `smdpdb` | OIDC RS256 JWT Validation, GSMA Root CI mTLS |
+| **LPA Device Simulator** | Spring Boot (Java 25 JRE Alpine) | 8093 | `lpadb` | OIDC RS256 JWT Validation |
+| **Blog Technology Service** | Spring Boot (Java 25 JRE Alpine) | 8094 | `blogdb` | OIDC RS256 JWT Validation |
 
-### 5.1 Gateway Routing & Access Control Decision Tree
-This flowchart shows the decision tree Apache uses for public vs. protected files and APIs.
+---
 
-```mermaid
-flowchart TD
-    Request["Incoming HTTP Request"] --> Path{"Request Path?"}
+## 4. Quick Start Guide
 
-    %% Public Paths
-    Path -->|"/ (Home), /tools.html, /blog.html"| ServePublic["Apache serves static assets directly"]
-    Path -->|"GET /api/blog/* (Read Posts)"| ProxyBlogRead["Apache proxies directly to Blog Service :8094"]
-    Path -->|"/gsma/rsp/v2/* (ES9+)"| ProxySMDP["Apache proxies directly to SM-DP+ Server :8092"]
-    Path -->|"/lpa/* (LPA Console)"| ProxyLPA["Apache proxies directly to LPA Simulator :8093"]
+### Step 1: Install Raspberry Pi OS Lite & Set Static IPs
+Install Raspberry Pi OS Lite (64-bit) manually and assign static IP addresses (or router DHCP reservations):
+* **`rbpi-master`**: `192.168.1.100` (Raspberry Pi 5 8GB)
+* **`rbpi-worker-01`**: `192.168.1.110` (Raspberry Pi 4 8GB)
+* **`rbpi-worker-02`**: `192.168.1.120` (Raspberry Pi 4 8GB)
 
-    %% Protected Paths
-    Path -->|"/consumer.html OR POST/PUT/DELETE /api/blog/*"| Interceptor{"mod_auth_openidc: Valid Session?"}
-
-    %% Session Validation
-    Interceptor -->|Yes| AuthRule{"Path-specific Rule?"}
-    Interceptor -->|No| RedirectKC["Redirect browser to Keycloak Login Page\n(auth.hutta.in)"]
-
-    %% Keycloak Authentication flow
-    RedirectKC --> Login{"User enters credentials?"}
-    Login -->|Valid| AuthCode["Keycloak redirects with Authorization Code\nto /redirect_uri"]
-    Login -->|Invalid| RedirectKC
-    AuthCode --> Exchange["Apache exchanges code for ID/Access tokens\nvia backchannel (loopback :8080)"]
-    Exchange --> SaveSession["Apache saves session, sets mod_auth_openidc_session cookie,\nredirects browser back to original target"]
-    SaveSession --> Interceptor
-
-    %% Authorization rules
-    AuthRule -->|"/consumer.html"| RequireValidUser1["Require valid-user\n(Any authenticated Keycloak user)"]
-    AuthRule -->|"POST/PUT/DELETE /api/blog/*"| RequireValidUser2["LimitExcept GET: Require valid-user\n(Bypass allowed on localhost for local dev)"]
-    
-    %% Downstream Forwards
-    RequireValidUser1 --> ServeProfiles["Apache serves consumer.html\n(Sets hutta_* cookies from OIDC claims for auth-nav.js)"]
-    RequireValidUser2 --> ProxyBlogWrite["Apache forwards write request to Blog Service :8094\n(Passes preferred_username in headers)"]
+### Step 2: Apply Cloud DNS & IAM (Terraform)
+```bash
+cd website-iac/terraform
+terraform init
+terraform apply -auto-approve
+cd ../..
 ```
 
-### 5.2 End-to-End OIDC Authentication Sequence
-This diagram details the cryptographic handshake dance that secures stateful write actions.
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor User as Browser / User
-    participant Apache as Apache Gateway (mod_auth_openidc)
-    participant KC as Keycloak SSO (:8080)
-    participant Blog as Blog Backend (:8094)
-
-    User->>Apache: POST /api/blog/posts (Create Article)
-    Note over Apache: LocationMatch intercept rule triggers
-    Apache->>Apache: Check mod_auth_openidc_session cookie
-    alt Session is invalid / missing
-        Apache-->>User: HTTP 302 Redirect to Keycloak /auth
-        User->>KC: GET /auth login prompt
-        User->>KC: Enter credentials (username & password)
-        KC-->>User: HTTP 302 Redirect back to /redirect_uri?code=XYZ
-        User->>Apache: GET /redirect_uri?code=XYZ
-        Apache->>KC: Backchannel exchange: code XYZ for tokens
-        KC-->>Apache: Access Token & ID Token (JSON Web Tokens)
-        Apache->>Apache: Create server session & encrypt session cookie
-        Apache-->>User: HTTP 302 Redirect to original target /api/blog/posts
-        User->>Apache: POST /api/blog/posts (with encrypted session cookie)
-    end
-    Note over Apache: Session is valid
-    Apache->>Apache: Extract preferred_username from ID Token
-    Apache->>Blog: Proxy request with Header: OIDC_CLAIM_preferred_username
-    Note over Blog: BlogController reads author header
-    Blog->>Blog: Process write & save to blogdb
-    Blog-->>Apache: HTTP 201 Created (JSON Payload)
-    Apache-->>User: HTTP 201 Created (Article published)
+### Step 3: Run Automated Node Hardening & K3s Setup (Ansible)
+```bash
+cd website-iac/ansible
+ansible-playbook -i inventory.ini playbooks/01-prep-nodes.yml
+ansible-playbook -i inventory.ini playbooks/02-autoupdates.yml
+ansible-playbook -i inventory.ini playbooks/03-install-k3s.yml
+cd ../..
 ```
 
-### 6. [Technology Blog Service (blog-service/)](blog-service/README.md)
-Contains a lightweight, database-backed blogging backend module:
-- REST API controller for public read feeds, OIDC protected write and delete actions, and binary image uploads.
-- Persistent PostgreSQL database backend and Flyway schema versioning.
-- Systemd service daemon and automated deployment setup for Raspberry Pi.
-- **Go to [blog-service/README.md](blog-service/README.md) for build, testing, and deployment instructions.**
+### Step 4: Deploy GitOps & In-Cluster Infrastructure
+```bash
+kubectl create namespace argocd
+kubectl apply --server-side --force-conflicts -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.16.2/cert-manager.yaml
 
-### 7. [Sentinel Monitor Service (monitor-service/)](monitor-service/README.md)
-Contains a service monitoring and health aggregation backend:
-- REST API controller for public service health checks and active software version queries.
-- Dynamically retrieves software versions from JAR maven properties, Keycloak filesystem, Apache version prompts, and Postgres utilities.
-- Persistent PostgreSQL database backend (`monitordb`) and Flyway schema versioning.
-- **Go to [monitor-service/README.md](monitor-service/README.md) for setup and configuration details.**
+kubectl create secret generic gcp-sa-credentials \
+  --from-file=service-account-key.json=website-iac/terraform/service-account-key.json \
+  -n kube-system
+
+kubectl apply -f website-iac/k8s/infrastructure/postgres-db.yaml
+kubectl apply -f website-iac/k8s/infrastructure/keycloak-sso.yaml
+kubectl apply -f website-iac/k8s/infrastructure/cert-issuer.yaml
+kubectl apply -f website-iac/k8s/infrastructure/ddns-cronjob.yaml
+kubectl apply -f website-iac/k8s/argocd/root-app.yaml
+```

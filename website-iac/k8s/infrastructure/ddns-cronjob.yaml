@@ -1,0 +1,135 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: gcp-ddns-updater
+  namespace: kube-system
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: ddns-updater
+            image: python:3.12-slim
+            command: ["python", "/scripts/ddns.py"]
+            env:
+              - name: DDNS_DOMAIN
+                value: "hutta.in."
+              - name: DDNS_ZONE
+                value: "hutta-in-zone"
+              - name: DDNS_CREDENTIALS
+                value: "/secrets/service-account-key.json"
+            volumeMounts:
+              - name: gcp-secret
+                mountPath: /secrets
+                readOnly: true
+              - name: ddns-script
+                mountPath: /scripts
+                readOnly: true
+          restartPolicy: OnFailure
+          volumes:
+            - name: gcp-secret
+              secret:
+                secretName: gcp-sa-credentials
+            - name: ddns-script
+              configMap:
+                name: ddns-python-script
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ddns-python-script
+  namespace: kube-system
+data:
+  ddns.py: |
+    import os, sys, json, time, base64, subprocess, tempfile, urllib.request, urllib.parse, urllib.error
+
+    DOMAIN_NAME = os.getenv("DDNS_DOMAIN", "hutta.in.")
+    ZONE_NAME = os.getenv("DDNS_ZONE", "hutta-in-zone")
+    CREDENTIALS_FILE = os.getenv("DDNS_CREDENTIALS", "/secrets/service-account-key.json")
+
+    def get_current_ip():
+        urls = ["https://api.ipify.org", "https://ifconfig.me/ip", "https://icanhazip.com"]
+        for url in urls:
+            try:
+                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (ddns-updater)'})
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    ip = response.read().decode('utf-8').strip()
+                    if ip: return ip
+            except Exception:
+                continue
+        raise Exception("Failed to retrieve public IP address.")
+
+    def b64url_encode(data: bytes) -> str:
+        return base64.urlsafe_b64encode(data).rstrip(b'=').decode('utf-8')
+
+    def get_access_token(credentials_path):
+        with open(credentials_path, 'r') as f:
+            creds = json.load(f)
+        client_email = creds["client_email"]
+        private_key = creds["private_key"]
+        project_id = creds["project_id"]
+        
+        now = int(time.time())
+        header = {"alg": "RS256", "typ": "JWT"}
+        payload = {
+            "iss": client_email,
+            "scope": "https://www.googleapis.com/auth/ndev.clouddns.readwrite",
+            "aud": "https://oauth2.googleapis.com/token",
+            "exp": now + 3600,
+            "iat": now
+        }
+        header_b64 = b64url_encode(json.dumps(header).encode('utf-8'))
+        payload_b64 = b64url_encode(json.dumps(payload).encode('utf-8'))
+        signing_input = f"{header_b64}.{payload_b64}".encode('utf-8')
+        
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as key_file:
+            key_file.write(private_key)
+            key_path = key_file.name
+            
+        try:
+            proc = subprocess.run(["openssl", "dgst", "-sha256", "-sign", key_path], input=signing_input, capture_output=True, check=True)
+            signature = proc.stdout
+        finally:
+            os.unlink(key_path)
+                
+        jwt_token = f"{header_b64}.{payload_b64}.{b64url_encode(signature)}"
+        token_data = urllib.parse.urlencode({"grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer", "assertion": jwt_token}).encode('utf-8')
+        req = urllib.request.Request("https://oauth2.googleapis.com/token", data=token_data, headers={"Content-Type": "application/x-www-form-urlencoded"})
+        with urllib.request.urlopen(req) as response:
+            res_data = json.loads(response.read().decode('utf-8'))
+            return res_data["access_token"], project_id
+
+    def update_dns():
+        domain_fqdn = DOMAIN_NAME if DOMAIN_NAME.endswith('.') else f"{DOMAIN_NAME}."
+        current_ip = get_current_ip()
+        print(f"Detected Public IP: {current_ip}")
+        
+        access_token, project_id = get_access_token(CREDENTIALS_FILE)
+        rrsets_url = f"https://dns.googleapis.com/dns/v1/projects/{project_id}/managedZones/{ZONE_NAME}/rrsets?name={urllib.parse.quote(domain_fqdn)}&type=A"
+        req = urllib.request.Request(rrsets_url, headers={"Authorization": f"Bearer {access_token}", "Accept": "application/json"})
+        
+        with urllib.request.urlopen(req) as response:
+            data = json.loads(response.read().decode('utf-8'))
+            rrsets = data.get("rrsets", [])
+            
+        a_record = next((r for r in rrsets if r.get("name") == domain_fqdn and r.get("type") == "A"), None)
+        changes_url = f"https://dns.googleapis.com/dns/v1/projects/{project_id}/managedZones/{ZONE_NAME}/changes"
+        
+        if a_record:
+            if a_record.get("rrdatas", []) == [current_ip]:
+                print(f"GCP Cloud DNS A record is already up to date: {current_ip}")
+                return
+            clean_deletion = {"name": a_record.get("name"), "type": a_record.get("type"), "ttl": a_record.get("ttl"), "rrdatas": a_record.get("rrdatas")}
+            change_payload = {"deletions": [clean_deletion], "additions": [{"name": domain_fqdn, "type": "A", "ttl": 300, "rrdatas": [current_ip]}]}
+        else:
+            change_payload = {"additions": [{"name": domain_fqdn, "type": "A", "ttl": 300, "rrdatas": [current_ip]}]}
+            
+        req = urllib.request.Request(changes_url, data=json.dumps(change_payload).encode('utf-8'), headers={"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}, method="POST")
+        with urllib.request.urlopen(req) as response:
+            print(f"Successfully updated GCP Cloud DNS A record to {current_ip}")
+
+    if __name__ == "__main__":
+        update_dns()

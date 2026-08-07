@@ -1,5 +1,48 @@
-# macOS
+# ==============================================================================
+# Comprehensive GitIgnore for hutta.in Infrastructure & Platform Stack
+# ==============================================================================
+
+# macOS & System Files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+
+# Secrets, Credentials & Keys (CRITICAL - NEVER COMMIT)
+**/service-account-key.json
+*service-account*.json
+*credentials*.json
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+.env
+.env.*
+!.env.example
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+*.tfvars
+!*.tfvars.example
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.lock.hcl
+
+# Ansible & K3s Local State
+ansible/inventory.local.ini
+*.vault
+kubeconfig
+*.kubeconfig
 
 # Python
 __pycache__/
@@ -7,43 +50,25 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
-.env
 .venv/
 venv/
+env/
+.pytest_cache/
 
-# Terraform
-website-iac/.terraform/
-*.tfstate
-*.tfstate.*
-*.tfvars
-crash.log
-crash.*.log
-override.tf
-override.tf.json
-*_override.tf
-*_override.tf.json
-
-# Secrets / credentials
-/website-iac/service-account-key.json
-*.pem
-*.key
-*.crt
-
-# Logs
+# Java / Maven
+**/target/
+*.class
+*.jar
+*.war
 *.log
+smdp_server.log
 
-# Node / frontend, if added later
+# Node.js / Frontend
 node_modules/
 dist/
 build/
 
-# IDE/editor
+# IDE & Workspace Files
 .idea/
 .vscode/
 website.code-workspace
-
-
-# Java / Maven
-**/target/
-smdp_server.log
-

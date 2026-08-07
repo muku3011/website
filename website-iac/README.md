@@ -1,181 +1,92 @@
-# Website Infrastructure & Dynamic DNS (DDNS)
+# Infrastructure as Code (IaC) & Automation Directory
 
-This directory contains the Infrastructure as Code (IaC) and the Dynamic DNS (DDNS) script for the `hutta.in` server.
-
-## Automation & IaC Architecture
-
-```mermaid
-flowchart TD
-    subgraph local ["Local Machine"]
-        TF["Terraform IaC"]
-    end
-
-    subgraph gcp ["Google Cloud Platform"]
-        SA["GCP Service Account"]
-        DNS["GCP Cloud DNS (hutta.in Zone)"]
-    end
-
-    subgraph rpi ["Raspberry Pi (Home Network)"]
-        DDNS["ddns.py (Python Script)"]
-        Cron["Systemd Timer / Cron (Every 10m)"]
-        Ipify["ipify.org (Public IP Check)"]
-    end
-
-    TF -->|1. Provision Zone & SA| DNS
-    TF -->|2. Generate Key| SA
-    SA -->|3. Installed on RPi| DDNS
-    Cron -->|4. Triggers| DDNS
-    DDNS -->|5. Check current IP| Ipify
-    DDNS -->|6. If IP changed, update record| DNS
-```
-
-## Repository Contents
-- **`dns.tf`**: Terraform file defining the GCP DNS Zone and record sets.
-- **`iam.tf`**: Terraform file creating the Service Account with DNS update permissions.
-- **`ddns.py`**: A zero-dependency Python script that runs on the Raspberry Pi to detect public IP changes and update the GCP DNS A record.
-- **`generate_stats.py`**: Python script to collect Raspberry Pi hardware statistics and save them to `stats.json` for the frontend.
+This directory contains all Infrastructure as Code (IaC) assets, Terraform cloud resources, Ansible bare-metal playbooks, Kubernetes manifests, and flasher scripts needed to run the `hutta.in` platform on a 3-node Raspberry Pi K8s cluster (**1x Raspberry Pi 5 8GB Master** + **2x Raspberry Pi 4 8GB Workers**).
 
 ---
 
-## Setup Instructions
+## 📁 Symmetrical Directory Structure
 
-### Step 1: Deploy Terraform IaC
-
-#### 1. Prerequisites
-- **Terraform** (v1.3.0 or higher) installed locally.
-- **Google Cloud SDK** (`gcloud`) installed and authenticated (`gcloud auth application-default login`).
-- A GCP Project with billing enabled and the **Cloud DNS API** enabled.
-
-#### 2. Configure Variables
-Copy the example variables file:
-```bash
-cp terraform.tfvars.example terraform.tfvars
+```text
+website-iac/
+├── terraform/                      # Terraform Cloud Infrastructure
+│   ├── dns.tf                      # GCP Cloud DNS Zone definition
+│   ├── iam.tf                      # Service Account & Least Privilege IAM
+│   ├── ddns.py                     # Dynamic DNS update script
+│   ├── providers.tf                # GCP Terraform Provider configuration
+│   ├── variables.tf / outputs.tf   # Variables & Outputs
+│   └── service-account-key.json    # GCP Service Account key
+├── ansible/                        # Ansible OS Hardening & K3s Bootstrap
+│   ├── ansible.cfg                 # SSH Pipelining & ControlMaster configuration
+│   ├── inventory.ini               # Host IPs (rbpi-master, worker-01, worker-02)
+│   └── playbooks/
+│       ├── 01-prep-nodes.yml       # SD Protection (tmpfs, noatime), UFW, Fail2ban, SSH key-only
+│       ├── 02-autoupdates.yml      # Security unattended-upgrades & 04:00 AM reboot
+│       └── 03-install-k3s.yml      # K3s install with --flannel-iface=wlan0 Wi-Fi binding
+├── k8s/                            # Kubernetes Manifests (Synced by ArgoCD)
+│   ├── argocd/
+│   │   └── root-app.yaml           # GitOps Root Application
+│   ├── infrastructure/
+│   │   ├── postgres-db.yaml        # PostgreSQL StatefulSet (keycloakdb, smdpdb, lpadb, blogdb)
+│   │   ├── keycloak-sso.yaml       # Keycloak SSO (auth.hutta.in)
+│   │   ├── cert-issuer.yaml        # cert-manager GCP Cloud DNS ClusterIssuer
+│   │   └── ddns-cronjob.yaml       # GCP Cloud DNS Dynamic DNS CronJob
+│   └── apps/
+│       ├── website-portal.yaml     # Static Web Portal Gateway
+│       ├── smdp-plus.yaml          # SM-DP+ eSIM Provisioning Server (8092)
+│       ├── device-simulator.yaml   # LPA Device Simulator (8093)
+│       ├── blog-service.yaml       # Blog Service (8094)
+│       └── ingress.yaml            # Global Ingress (hutta.in & auth.hutta.in)
+├── scripts/
+│   └── check_cluster_health.sh     # Cluster health verification script
+└── README.md
 ```
-Edit `terraform.tfvars` and set your GCP Project ID:
-```hcl
-project_id = "your-gcp-project-id"
-```
 
-#### 3. Apply Infrastructure
-Initialize Terraform and apply the plan:
+---
+
+## 🚀 Execution Workflow
+
+### 1. Install Raspberry Pi OS Lite & Set Static IPs
+Install Raspberry Pi OS Lite (64-bit) manually and assign static IP addresses (or router DHCP reservations):
+* **`rbpi-master`**: `192.168.1.100` (Raspberry Pi 5 8GB)
+* **`rbpi-worker-01`**: `192.168.1.110` (Raspberry Pi 4 8GB)
+* **`rbpi-worker-02`**: `192.168.1.120` (Raspberry Pi 4 8GB)
+
+### 2. Provision Cloud Infrastructure (Terraform)
 ```bash
+cd website-iac/terraform
 terraform init
-terraform plan
-terraform apply
+terraform apply -auto-approve
+cd ../..
 ```
 
-Upon successful completion, Terraform will print the assigned **GCP Name Servers** and the **Service Account JSON Credentials**.
-
-#### 4. Drift Prevention (Dynamic IP)
-The A record resource in `dns.tf` includes a `lifecycle` configuration:
-```hcl
-lifecycle {
-  ignore_changes = [rrdatas]
-}
-```
-This ensures subsequent runs of `terraform apply` will ignore dynamic DNS updates done by the python script and won't overwrite your public IP back to the default `127.0.0.1`.
-
----
-
-### Step 2: Delegate DNS at your Registrar (domainz.in)
-
-1. Log in to your control panel at [www.domainz.in](http://www.domainz.in).
-2. Go to the domain management page for `hutta.in`.
-3. Locate the **Name Servers** (NS) configuration.
-4. Replace the existing name servers with the ones outputted by Terraform, **making sure to remove the trailing dot `.` at the end** of each address (e.g., enter `ns-cloud-a1.googledomains.com` instead of `ns-cloud-a1.googledomains.com.`).
-5. Save changes. Note that DNS delegation can take up to 24–48 hours to propagate worldwide.
-
----
-
-### Step 3: Setup DDNS on Raspberry Pi
-
-#### 1. Extract the Service Account Key
-Generate and save the service account credentials from Terraform:
+### 3. Run Automated Ansible Node Hardening & K3s Setup
 ```bash
-terraform output -raw ddns_private_key > service-account-key.json
+cd website-iac/ansible
+ansible-playbook -i inventory.ini playbooks/01-prep-nodes.yml
+ansible-playbook -i inventory.ini playbooks/02-autoupdates.yml
+ansible-playbook -i inventory.ini playbooks/03-install-k3s.yml
+cd ../..
 ```
-> [!WARNING]
-> Keep `service-account-key.json` secure. Do not commit it to source control.
 
-Copy `service-account-key.json` and `ddns.py` to your Raspberry Pi:
+### 4. Deploy GitOps & In-Cluster Infrastructure
 ```bash
-scp ddns.py service-account-key.json rbpi@your-raspberry-pi-ip:/home/rbpi/website/
-```
+# Verify K3s Nodes
+kubectl get nodes -o wide
 
-#### 2. Prerequisites
-The script uses only standard Python 3 libraries and the pre-installed `openssl` command. **No external python packages (such as `google-cloud-dns` or `requests`) are required!**
+# Install ArgoCD & cert-manager
+kubectl create namespace argocd
+kubectl apply --server-side --force-conflicts -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.16.2/cert-manager.yaml
 
-Ensure your Raspberry Pi has `openssl` installed:
-```bash
-ssh rbpi@your-raspberry-pi-ip
-openssl version
-```
+# Secret for GCP Cloud DNS API
+kubectl create secret generic gcp-sa-credentials \
+  --from-file=service-account-key.json=website-iac/terraform/service-account-key.json \
+  -n kube-system
 
-#### 3. Run the Script
-Test the script manually to ensure it successfully reads the credentials, authenticates via `openssl`, and updates GCP DNS:
-```bash
-cd /home/rbpi/website
-python3 ddns.py
-```
-*(You should see a message indicating the A record was created/updated or is already up-to-date).*
-
----
-
-### Step 4: Automate the DDNS Updates
-
-To make sure your website stays online if your ISP rotates your home IP, run the script periodically. You can use either a **Systemd Timer** (recommended) or a **Cron Job**.
-
-#### Option A: Systemd Service & Timer (Recommended)
-This method is modern, robust, and logs directly to the system journal.
-
-1. Create a service file `/etc/systemd/system/gcp-ddns.service`:
-```ini
-[Unit]
-Description=GCP Cloud DNS Dynamic DNS Updater
-After=network-online.target
-
-[Service]
-Type=oneshot
-User=rbpi
-WorkingDirectory=/home/rbpi/website
-ExecStart=/usr/bin/python3 /home/rbpi/website/ddns.py
-Environment="DDNS_DOMAIN=hutta.in."
-Environment="DDNS_ZONE=hutta-in-zone"
-Environment="DDNS_CREDENTIALS=/home/rbpi/website/service-account-key.json"
-```
-
-2. Create a timer file `/etc/systemd/system/gcp-ddns.timer`:
-```ini
-[Unit]
-Description=Run GCP Cloud DNS DDNS Updater every 10 minutes
-
-[Timer]
-OnBootSec=2min
-OnUnitActiveSec=10min
-
-[Install]
-WantedBy=timers.target
-```
-
-3. Enable and start the timer:
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now gcp-ddns.timer
-```
-
-4. Check the logs:
-```bash
-journalctl -u gcp-ddns.service
-```
-
----
-
-#### Option B: Cron Job (Simpler)
-Open the crontab editor:
-```bash
-crontab -e
-```
-Add the following line to run the script every 10 minutes:
-```cron
-*/10 * * * * cd /home/rbpi/website && DDNS_DOMAIN="hutta.in." DDNS_ZONE="hutta-in-zone" DDNS_CREDENTIALS="/home/rbpi/website/service-account-key.json" /usr/bin/python3 /home/rbpi/website/ddns.py >> /home/rbpi/website/ddns.log 2>&1
+# Apply In-Cluster Infrastructure & GitOps Root App
+kubectl apply -f website-iac/k8s/infrastructure/postgres-db.yaml
+kubectl apply -f website-iac/k8s/infrastructure/keycloak-sso.yaml
+kubectl apply -f website-iac/k8s/infrastructure/cert-issuer.yaml
+kubectl apply -f website-iac/k8s/infrastructure/ddns-cronjob.yaml
+kubectl apply -f website-iac/k8s/argocd/root-app.yaml
 ```

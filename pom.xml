@@ -22,7 +22,6 @@
         <module>smdp-plus</module>
         <module>device-simulator</module>
         <module>blog-service</module>
-        <module>monitor-service</module>
         <module>eim-service</module>
     </modules>
 

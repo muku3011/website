@@ -1,0 +1,54 @@
+---
+- name: Deploy K3s Master Control Plane on Raspberry Pi 5
+  hosts: masters
+  become: true
+  tasks:
+    - name: Install K3s Server on Master (rbpi-master)
+      shell: |
+        curl -sfL https://get.k3s.io | K3S_TOKEN="{{ k3s_token }}" INSTALL_K3S_VERSION="{{ k3s_version }}" INSTALL_K3S_EXEC="--flannel-iface=wlan0 --node-name=rbpi-master --kubelet-arg=container-log-max-size=5Mi --kubelet-arg=container-log-max-files=2 --kubelet-arg=eviction-hard=memory.available<250Mi --disable=servicelb" sh -
+      args:
+        creates: /usr/local/bin/k3s
+
+    - name: Ensure K3s Master service is active and enabled
+      service:
+        name: k3s
+        state: started
+        enabled: true
+
+    - name: Wait for K3s API server to listen on port 6443
+      wait_for:
+        host: 127.0.0.1
+        port: 6443
+        delay: 3
+        timeout: 60
+
+    - name: Fetch kubeconfig to local management laptop
+      fetch:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: "{{ lookup('env', 'HOME') }}/.kube/config"
+        flat: true
+
+    - name: Update IP in local kubeconfig file
+      delegate_to: localhost
+      become: false
+      replace:
+        path: "{{ lookup('env', 'HOME') }}/.kube/config"
+        regexp: '127\.0\.0\.1'
+        replace: '192.168.1.100'
+
+- name: Join Worker Nodes (Pi 4) to K3s Cluster
+  hosts: workers
+  become: true
+  tasks:
+    - name: Install K3s Agent on Workers
+      shell: |
+        curl -sfL https://get.k3s.io | K3S_URL="https://192.168.1.100:6443" K3S_TOKEN="{{ k3s_token }}" INSTALL_K3S_VERSION="{{ k3s_version }}" INSTALL_K3S_EXEC="--flannel-iface=wlan0 --node-name={{ inventory_hostname }} --kubelet-arg=container-log-max-size=5Mi --kubelet-arg=container-log-max-files=2" sh -
+      args:
+        creates: /etc/systemd/system/k3s-agent.service
+
+    - name: Ensure K3s Agent service is active and enabled
+      service:
+        name: k3s-agent
+        state: started
+        enabled: true
+      ignore_errors: true

@@ -33,6 +33,6 @@ This file provides context, architectural details, and coding conventions for th
 * GCP Cloud DNS handles domain routing for `hutta.in`.
 * Zero-dependency Python script (`ddns.py` under `website-iac/`) manages Dynamic DNS updates.
 * Deployments to the Raspberry Pi environment are automated via GitHub Actions (`website-deploy.yml`).
-* Raspberry Pi (192.168.1.150) can be accessed from my PC using SSH, for local execution, troubleshooting, and manual deployment.
+* Raspberry Pi (192.168.1.100) can be accessed from my PC using SSH, for local execution, troubleshooting, and manual deployment.
 
 

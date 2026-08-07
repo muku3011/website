@@ -1,0 +1,169 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak-sso
+  namespace: default
+  labels:
+    app: keycloak-sso
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak-sso
+  template:
+    metadata:
+      labels:
+        app: keycloak-sso
+    spec:
+      containers:
+      - name: keycloak
+        image: quay.io/keycloak/keycloak:26.1.3
+        command: ["/opt/keycloak/bin/kc.sh", "start", "--import-realm"]
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9000
+          name: http-mgmt
+        env:
+        - name: KEYCLOAK_ADMIN
+          valueFrom:
+            secretKeyRef:
+              name: keycloak-secret
+              key: admin-username
+        - name: KEYCLOAK_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: keycloak-secret
+              key: admin-password
+        - name: KC_DB
+          value: "postgres"
+        - name: KC_DB_URL
+          value: "jdbc:postgresql://postgres-service:5432/keycloakdb"
+        - name: KC_DB_USERNAME
+          value: "postgres"
+        - name: KC_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: password
+        - name: KC_HOSTNAME
+          value: "https://auth.hutta.in"
+        - name: KC_HOSTNAME_STRICT
+          value: "false"
+        - name: KC_HTTP_ENABLED
+          value: "true"
+        - name: KC_PROXY_HEADERS
+          value: "xforwarded"
+        - name: KC_HEALTH_ENABLED
+          value: "true"
+        - name: KC_METRICS_ENABLED
+          value: "true"
+        volumeMounts:
+        - name: realm-import
+          mountPath: /opt/keycloak/data/import
+          readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 9000
+          initialDelaySeconds: 90
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 9000
+          initialDelaySeconds: 90
+          periodSeconds: 10
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1536Mi"
+            cpu: "1000m"
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+      volumes:
+      - name: realm-import
+        configMap:
+          name: keycloak-hutta-realm
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak-service
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: keycloak-sso
+  ports:
+  - port: 8080
+    targetPort: 8080
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: keycloak-secret
+  namespace: default
+type: Opaque
+stringData:
+  admin-username: "hutta-admin"
+  admin-password: "HuttaProductionKeycloakPass2026!"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-hutta-realm
+  namespace: default
+data:
+  hutta-realm.json: |
+    {
+      "realm": "hutta",
+      "enabled": true,
+      "displayName": "hutta.in Platform SSO",
+      "sslRequired": "external",
+      "registrationAllowed": true,
+      "loginWithEmailAllowed": true,
+      "duplicateEmailsAllowed": false,
+      "resetPasswordAllowed": true,
+      "clients": [
+        {
+          "clientId": "hutta-portal",
+          "name": "hutta.in Web Portal",
+          "enabled": true,
+          "publicClient": true,
+          "redirectUris": [
+            "https://hutta.in/*",
+            "https://*.hutta.in/*"
+          ],
+          "webOrigins": [
+            "https://hutta.in",
+            "https://*.hutta.in"
+          ],
+          "standardFlowEnabled": true
+        },
+        {
+          "clientId": "hutta-api",
+          "name": "hutta.in Microservices API",
+          "enabled": true,
+          "bearerOnly": true
+        }
+      ],
+      "roles": {
+        "realm": [
+          {
+            "name": "user",
+            "description": "Standard hutta.in Consumer User"
+          },
+          {
+            "name": "admin",
+            "description": "Platform Administrator"
+          }
+        ]
+      }
+    }
