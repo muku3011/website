@@ -164,31 +164,16 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Update Kubernetes GitOps Manifest Tags for modified images ONLY
+      # Ensure Kubernetes GitOps Manifest Tags remain set to :latest
       - name: Update Kubernetes Manifests in Git
         run: |
-          if [ "${{ needs.detect-changes.outputs.portal }}" = "true" ]; then
-            echo "Updating website-portal image tag..."
-            sed -i "s|image: ghcr.io/.*/portal:.*|image: ghcr.io/${{ github.repository }}/portal:${{ github.sha }}|g" website-iac/k8s/apps/website-portal.yaml
-          fi
-          if [ "${{ needs.detect-changes.outputs.smdp }}" = "true" ]; then
-            echo "Updating smdp-plus image tag..."
-            sed -i "s|image: ghcr.io/.*/smdp-plus:.*|image: ghcr.io/${{ github.repository }}/smdp-plus:${{ github.sha }}|g" website-iac/k8s/apps/smdp-plus.yaml
-          fi
-          if [ "${{ needs.detect-changes.outputs.device }}" = "true" ]; then
-            echo "Updating device-simulator image tag..."
-            sed -i "s|image: ghcr.io/.*/device-simulator:.*|image: ghcr.io/${{ github.repository }}/device-simulator:${{ github.sha }}|g" website-iac/k8s/apps/device-simulator.yaml
-          fi
-          if [ "${{ needs.detect-changes.outputs.blog }}" = "true" ]; then
-            echo "Updating blog-service image tag..."
-            sed -i "s|image: ghcr.io/.*/blog-service:.*|image: ghcr.io/${{ github.repository }}/blog-service:${{ github.sha }}|g" website-iac/k8s/apps/blog-service.yaml
-          fi
-          if [ "${{ needs.detect-changes.outputs.eim }}" = "true" ]; then
-            echo "Updating eim-service image tag..."
-            sed -i "s|image: ghcr.io/.*/eim-service:.*|image: ghcr.io/${{ github.repository }}/eim-service:${{ github.sha }}|g" website-iac/k8s/apps/eim-service.yaml
-          fi
+          sed -i "s|image: ghcr.io/.*/portal:.*|image: ghcr.io/${{ github.repository }}/portal:latest|g" website-iac/k8s/apps/website-portal.yaml
+          sed -i "s|image: ghcr.io/.*/smdp-plus:.*|image: ghcr.io/${{ github.repository }}/smdp-plus:latest|g" website-iac/k8s/apps/smdp-plus.yaml
+          sed -i "s|image: ghcr.io/.*/device-simulator:.*|image: ghcr.io/${{ github.repository }}/device-simulator:latest|g" website-iac/k8s/apps/device-simulator.yaml
+          sed -i "s|image: ghcr.io/.*/blog-service:.*|image: ghcr.io/${{ github.repository }}/blog-service:latest|g" website-iac/k8s/apps/blog-service.yaml
+          sed -i "s|image: ghcr.io/.*/eim-service:.*|image: ghcr.io/${{ github.repository }}/eim-service:latest|g" website-iac/k8s/apps/eim-service.yaml
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add website-iac/k8s/apps/
-          git commit -m "ci: update modified application image tags to ${{ github.sha }} [skip ci]" || echo "No changes to commit"
+          git commit -m "ci: ensure application image tags use :latest [skip ci]" || echo "No changes to commit"
           git push
