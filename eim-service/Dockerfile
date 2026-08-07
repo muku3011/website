@@ -1,9 +1,9 @@
-# ==============================================================================
+# =============================================================================
 # Multi-Stage Build Dockerfile for eim-service (Java 25 Spring Boot)
-# ==============================================================================
+# =============================================================================
 
 # Stage 1: Build Jar Artifact using Maven
-FROM maven:3.9.9-eclipse-temurin-21-alpine AS builder
+FROM maven:3.9.16-eclipse-temurin-25-alpine AS builder
 WORKDIR /workspace
 
 # Copy parent and module pom.xml files for dependency layer caching
