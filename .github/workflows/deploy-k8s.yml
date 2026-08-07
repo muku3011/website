@@ -59,7 +59,19 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Set up QEMU (for ARM64 compilation)
+      - name: Set up Java 25 & Maven Cache
+        if: ${{ needs.detect-changes.outputs.smdp == 'true' || needs.detect-changes.outputs.device == 'true' || needs.detect-changes.outputs.blog == 'true' || needs.detect-changes.outputs.eim == 'true' }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Compile Java Microservices with Host Maven
+        if: ${{ needs.detect-changes.outputs.smdp == 'true' || needs.detect-changes.outputs.device == 'true' || needs.detect-changes.outputs.blog == 'true' || needs.detect-changes.outputs.eim == 'true' }}
+        run: mvn clean package -DskipTests
+
+      - name: Set up QEMU (for ARM64 container packaging)
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
