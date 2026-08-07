@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: blog-service
-        image: ghcr.io/muku3011/website/blog-service:latest
+        image: ghcr.io/muku3011/website/blog-service:17dc8aecc36129325ff57ba945e7d3cd49fc2c70
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8094
