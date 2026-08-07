@@ -4,7 +4,7 @@ metadata:
   name: keycloak-admin-ip-allowlist
   namespace: default
 spec:
-  ipAllowList:
+  ipWhiteList:
     sourceRange:
       - "192.168.1.0/24"       # Local Home Network Subnet
       - "10.0.0.0/8"           # Internal VPN / Tailscale / WireGuard
@@ -27,7 +27,7 @@ metadata:
 spec:
   tls:
   - hosts:
-    - auth.hutta.in
+    - "*.hutta.in"
     secretName: hutta-in-tls-cert
   rules:
   # Keycloak Admin Console & Master Realm REST APIs
@@ -65,7 +65,6 @@ spec:
   tls:
   - hosts:
     - hutta.in
-    - auth.hutta.in
     - "*.hutta.in"
     secretName: hutta-in-tls-cert
   rules:
