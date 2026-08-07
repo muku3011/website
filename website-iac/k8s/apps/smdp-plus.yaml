@@ -17,8 +17,8 @@ spec:
     spec:
       containers:
       - name: smdp-plus
-        image: ghcr.io/muku3011/website/smdp-plus:26ae05436ed3ab75ac4dd01d04554d3b3349838b
-        imagePullPolicy: IfNotPresent
+        image: ghcr.io/muku3011/website/smdp-plus:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8092
         env:
@@ -38,17 +38,22 @@ spec:
         volumeMounts:
         - name: tmp-volume
           mountPath: /tmp
+        startupProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8092
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 12
         livenessProbe:
           httpGet:
             path: /actuator/health/liveness
             port: 8092
-          initialDelaySeconds: 60
           periodSeconds: 15
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
             port: 8092
-          initialDelaySeconds: 60
           periodSeconds: 10
         resources:
           requests:
