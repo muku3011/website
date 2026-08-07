@@ -1,7 +1,18 @@
-// Unified Authentication, Navigation and Idle Session Tracker
+// Unified Keycloak OIDC Authentication, Navigation & Session Manager for Traefik & Kubernetes
 (function() {
 
-    // Utility: Parse cookies
+    // Keycloak OIDC Configuration
+    const KEYCLOAK_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:8080'
+        : 'https://auth.hutta.in';
+    const REALM = 'hutta';
+    const CLIENT_ID = 'hutta-portal';
+
+    const AUTH_ENDPOINT = `${KEYCLOAK_BASE}/realms/${REALM}/protocol/openid-connect/auth`;
+    const TOKEN_ENDPOINT = `${KEYCLOAK_BASE}/realms/${REALM}/protocol/openid-connect/token`;
+    const LOGOUT_ENDPOINT = `${KEYCLOAK_BASE}/realms/${REALM}/protocol/openid-connect/logout`;
+
+    // Cookie & Session Storage Utility Functions
     function getCookie(name) {
         const value = `; ${document.cookie}`;
         const parts = value.split(`; ${name}=`);
@@ -15,59 +26,135 @@
         return null;
     }
 
-    // mod_auth_openidc logout endpoint — clears BOTH the Apache session cookie
-    // AND the Keycloak SSO session in one flow. Never call Keycloak directly or
-    // the Apache mod_auth_openidc_session cookie will keep the user logged in.
-    //
-    // The post-logout redirect must EXACTLY match a URI registered in the
-    // Keycloak apache-portal client (Clients → apache-portal → Valid post-logout
-    // redirect URIs). Apache's <Location /redirect_uri> block expires all
-    // hutta_* cookies server-side on this response, so no client-side flag is needed.
-    const LOGOUT_URL = 'https://hutta.in/redirect_uri?logout=' + encodeURIComponent('https://hutta.in/');
+    function setCookie(name, val, maxAgeSecs = 86400) {
+        document.cookie = `${name}=${encodeURIComponent(val)}; Path=/; Max-Age=${maxAgeSecs}; Secure; SameSite=Lax`;
+    }
 
-    // Initialize Global Auth Properties from cookies set by Apache mod_auth_openidc
+    function deleteCookie(name) {
+        document.cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; Secure; SameSite=Lax`;
+    }
+
+    function parseJwt(token) {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            console.error('Failed to parse JWT token:', e);
+            return null;
+        }
+    }
+
+    // Helper: Build Keycloak Login URL
+    function getLoginUrl(redirectTarget) {
+        const redirectUri = redirectTarget || window.location.href;
+        return `${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid+profile+email`;
+    }
+
+    // Process Authorization Code Exchange if redirected back from Keycloak
+    async function handleOidcCallback() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        
+        if (code) {
+            try {
+                // Strip code from URL immediately so refresh won't reuse spent code
+                const cleanUrl = window.location.origin + window.location.pathname;
+                window.history.replaceState({}, document.title, cleanUrl);
+
+                const bodyParams = new URLSearchParams();
+                bodyParams.append('grant_type', 'authorization_code');
+                bodyParams.append('client_id', CLIENT_ID);
+                bodyParams.append('code', code);
+                bodyParams.append('redirect_uri', cleanUrl);
+
+                const res = await fetch(TOKEN_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: bodyParams
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.id_token || data.access_token) {
+                        const claims = parseJwt(data.id_token || data.access_token);
+                        if (claims) {
+                            const username = claims.preferred_username || claims.sub || 'user';
+                            const name = claims.name || claims.given_name || username;
+                            const email = claims.email || `${username}@hutta.in`;
+                            const roles = claims.realm_access?.roles || ['user'];
+
+                            setCookie('hutta_user', username);
+                            setCookie('hutta_name', name);
+                            setCookie('hutta_email', email);
+                            setCookie('hutta_groups', roles.join(','));
+                            sessionStorage.setItem('hutta_access_token', data.access_token);
+                            sessionStorage.setItem('hutta_id_token', data.id_token);
+                        }
+                    }
+                } else {
+                    console.error('Token exchange failed:', await res.text());
+                }
+            } catch (e) {
+                console.error('OIDC code exchange error:', e);
+            }
+        }
+    }
+
+    // Global Auth State initialization
     window.userNameVal = getCookie('hutta_user');
     window.displayNameVal = getCookie('hutta_name') || window.userNameVal;
     window.userEmailVal = getCookie('hutta_email') || 'no-email@hutta.in';
     const groupsRaw = getCookie('hutta_groups') || '';
     window.userGroups = groupsRaw.split(',').map(g => g.trim()).filter(Boolean);
-    
-    // Determine userRole from OIDC groups
-    if (window.userGroups.includes('admins')) {
+
+    if (window.userGroups.includes('admin')) {
         window.userRole = 'admin';
-    } else if (window.userGroups.includes('operators')) {
+    } else if (window.userGroups.includes('operator') || window.userGroups.includes('operators')) {
         window.userRole = 'operator';
     } else {
         window.userRole = 'viewer';
+    }
+
+    // Protected Page Guard Enforcement
+    function enforcePageSecurity() {
+        const path = window.location.pathname.toLowerCase();
+        const isProtectedPage = path.endsWith('/consumer.html') || 
+                                path.endsWith('/iot.html') || 
+                                path.endsWith('/sentinel.html');
+
+        const isLoggedIn = !!window.userNameVal;
+
+        if (isProtectedPage && !isLoggedIn) {
+            console.log(`Protected page ${path} accessed without auth — redirecting to Keycloak...`);
+            window.location.href = getLoginUrl();
+        }
     }
 
     // Dynamic Navigation Tab Visibility Rules
     function initNavigation() {
         const navProfiles = document.getElementById('nav-profiles');
         const navSentinel = document.getElementById('nav-sentinel');
+        const navIot = document.getElementById('nav-iot');
+        const navHsm = document.getElementById('nav-hsm');
+
         const isLoggedIn = !!window.userNameVal;
 
-        // Profiles tab: visible to any authenticated user
         if (navProfiles) {
             navProfiles.style.display = isLoggedIn ? 'inline-block' : 'none';
         }
-        // Sentinel tab: visible to any authenticated user
         if (navSentinel) {
             navSentinel.style.display = isLoggedIn ? 'inline-block' : 'none';
         }
-        
-        // IoT eIM tab: visible to any authenticated user
-        const navIot = document.getElementById('nav-iot');
         if (navIot) {
             navIot.style.display = isLoggedIn ? 'inline-block' : 'none';
         }
-        
-        // HSM tab: visible to admins only
-        const navHsm = document.getElementById('nav-hsm');
         if (navHsm) {
             navHsm.style.display = (isLoggedIn && window.userRole === 'admin') ? 'inline-block' : 'none';
         }
-        // Admin tab has been removed — user management is done in Keycloak console
     }
 
     // Dynamic Header Controls Injection
@@ -78,7 +165,6 @@
         const isLoggedIn = !!window.userNameVal;
 
         if (isLoggedIn) {
-            // Render Profile Dropdown
             const initials = (window.displayNameVal || 'U').substring(0, 1).toUpperCase();
             const roleText = window.userRole === 'admin' 
                 ? 'Administrator' 
@@ -121,7 +207,6 @@
                 </div>
             `;
 
-            // Dropdown Click Toggle
             const profileMenu = document.getElementById('user-profile-menu');
             const profileTrigger = document.getElementById('user-profile-trigger');
             if (profileTrigger && profileMenu) {
@@ -137,16 +222,14 @@
                 });
             }
 
-            // Sign Out Listener
             const logoutBtn = document.getElementById('logout-btn');
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', window.logoutUser);
             }
         } else {
-            // Render Sign In Button
-            const redirectParam = encodeURIComponent(window.location.href);
+            const loginUrl = getLoginUrl();
             container.innerHTML = `
-                <a href="consumer.html?redirect_to=${redirectParam}" id="login-btn" class="btn btn-primary" style="margin-right: 0.5rem; text-decoration: none; padding: 0.45rem 0.9rem; border-radius: var(--border-radius-sm); font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem;">
+                <a href="${loginUrl}" id="login-btn" class="btn btn-primary" style="margin-right: 0.5rem; text-decoration: none; padding: 0.45rem 0.9rem; border-radius: var(--border-radius-sm); font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                     <span>Sign In</span>
                 </a>
@@ -154,24 +237,19 @@
         }
     }
 
-    // HTML Escaper helper
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    // Secure Full Logout Flow
+    // Secure Keycloak Logout Flow
     window.logoutUser = function() {
-        // Belt-and-suspenders: expire hutta_* cookies client-side using the same
-        // attributes Apache used to set them (Secure; SameSite=Lax; Path=/).
-        // The authoritative clear happens server-side via Apache's Header directive
-        // on the /redirect_uri location (see setup_apache.sh).
-        const cookieNames = ['hutta_user', 'hutta_groups', 'hutta_auth', 'hutta_name', 'hutta_email'];
-        cookieNames.forEach(name => {
-            document.cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; Secure; SameSite=Lax`;
+        ['hutta_user', 'hutta_groups', 'hutta_auth', 'hutta_name', 'hutta_email'].forEach(name => {
+            deleteCookie(name);
         });
+        sessionStorage.removeItem('hutta_access_token');
+        sessionStorage.removeItem('hutta_id_token');
 
-        // Show themed full-screen logout overlay
         const overlay = document.createElement('div');
         overlay.id = 'logout-loading-overlay';
         overlay.style.cssText = `
@@ -221,30 +299,24 @@
         document.body.appendChild(overlay);
         setTimeout(() => { overlay.style.opacity = '1'; }, 50);
 
-        // Redirect to mod_auth_openidc logout endpoint.
-        // This clears the Apache OIDC session cookie first, then calls Keycloak's
-        // end_session_endpoint — ensuring the user must re-enter credentials next time.
+        const homeUrl = 'https://hutta.in/';
+        const redirectLogoutUrl = `${LOGOUT_ENDPOINT}?client_id=${CLIENT_ID}&post_logout_redirect_uri=${encodeURIComponent(homeUrl)}`;
+
         setTimeout(() => {
-            window.location.replace(LOGOUT_URL);
+            window.location.replace(redirectLogoutUrl);
         }, 600);
     };
 
-    // Activity Session Timer
-    // Keycloak enforces server-side SSO session idle timeout (Realm → Sessions → SSO Session Idle).
-    // This client-side timer provides a UI-level safety net for the same duration.
     let idleTimer = null;
-    const IDLE_TIMEOUT_MINUTES = 15; // Keep in sync with Keycloak Realm → Sessions → SSO Session Idle
+    const IDLE_TIMEOUT_MINUTES = 15;
 
     function initIdleTimer() {
         if (!window.userNameVal) return;
 
         const timeoutMs = IDLE_TIMEOUT_MINUTES * 60 * 1000;
-        console.log(`Inactivity timer: ${IDLE_TIMEOUT_MINUTES} min for user: ${window.userNameVal}`);
-
         function resetIdleTimer() {
             if (idleTimer) clearTimeout(idleTimer);
             idleTimer = setTimeout(() => {
-                console.log(`Idle timeout of ${IDLE_TIMEOUT_MINUTES} min reached — logging out.`);
                 window.logoutUser();
             }, timeoutMs);
         }
@@ -267,351 +339,31 @@
                 localStorage.setItem('theme', nextTheme);
             });
         }
-
-        // Listen for system preference changes (only if user hasn't explicitly set a preference)
-        if (window.matchMedia) {
-            window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
-                if (!localStorage.getItem('theme')) {
-                    document.body.classList.remove('light-theme', 'dark-theme');
-                    document.body.classList.add(e.matches ? 'light-theme' : 'dark-theme');
-                }
-            });
-        }
-    }
-
-    function initContactDialog() {
-        const BLOG_BACKEND_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-            ? 'http://localhost:8094' 
-            : '';
-
-        const contactTrigger = document.getElementById('contact-trigger');
-        const contactDialog = document.getElementById('contact-dialog');
-        const closeDialogBtn = document.getElementById('close-contact-dialog');
-        const contactForm = document.getElementById('contact-form');
-        const isLoggedIn = !!window.userNameVal;
-
-        if (!contactDialog) return;
-
-        // Create or configure the messages dialog if logged in
-        let messagesDialog = null;
-        if (isLoggedIn) {
-            messagesDialog = document.getElementById('messages-dialog');
-            if (!messagesDialog) {
-                messagesDialog = document.createElement('dialog');
-                messagesDialog.id = 'messages-dialog';
-                messagesDialog.className = 'contact-dialog-modal';
-                messagesDialog.style.cssText = 'max-width: 700px; width: 95%;';
-                messagesDialog.innerHTML = `
-                    <div class="dialog-content" style="max-height: 80vh; display: flex; flex-direction: column;">
-                        <div class="dialog-header">
-                            <h2>Contact Messages</h2>
-                            <button id="close-messages-dialog" class="btn-icon close-dialog-btn" aria-label="Close dialog">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                            </button>
-                        </div>
-                        <div id="messages-container" style="overflow-y: auto; flex: 1; padding-right: 0.5rem; display: flex; flex-direction: column; gap: 1rem; margin-bottom: 0.5rem;">
-                            <!-- Messages will be rendered dynamically -->
-                        </div>
-                    </div>
-                `;
-                document.body.appendChild(messagesDialog);
-
-                // Close events
-                const closeMessagesBtn = messagesDialog.querySelector('#close-messages-dialog');
-                const closeMessages = () => {
-                    messagesDialog.close();
-                    document.body.style.overflow = '';
-                };
-                if (closeMessagesBtn) {
-                    closeMessagesBtn.addEventListener('click', closeMessages);
-                }
-                messagesDialog.addEventListener('click', (e) => {
-                    const rect = messagesDialog.getBoundingClientRect();
-                    const isInDialog = (
-                        rect.top <= e.clientY &&
-                        e.clientY <= rect.top + rect.height &&
-                        rect.left <= e.clientX &&
-                        e.clientX <= rect.left + rect.width
-                    );
-                    if (!isInDialog) {
-                        closeMessages();
-                    }
-                });
-                messagesDialog.addEventListener('cancel', () => {
-                    document.body.style.overflow = '';
-                });
-            }
-
-            // Update contact me button to View Messages on main page
-            if (contactTrigger) {
-                contactTrigger.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round" style="margin-right: 0.25rem;">
-                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                        <polyline points="22,6 12,13 2,6"></polyline>
-                    </svg>
-                    View Messages
-                `;
-            }
-        }
-
-        if (contactTrigger) {
-            contactTrigger.addEventListener('click', () => {
-                if (isLoggedIn && messagesDialog) {
-                    messagesDialog.showModal();
-                    document.body.style.overflow = 'hidden';
-                    loadMessages();
-                } else {
-                    contactDialog.showModal();
-                    document.body.style.overflow = 'hidden';
-                }
-            });
-        }
-
-        const closeDialog = () => {
-            contactDialog.close();
-            document.body.style.overflow = '';
-        };
-
-        if (closeDialogBtn) {
-            closeDialogBtn.addEventListener('click', closeDialog);
-        }
-
-        // Close when clicking outside modal box
-        contactDialog.addEventListener('click', (e) => {
-            const rect = contactDialog.getBoundingClientRect();
-            const isInDialog = (
-                rect.top <= e.clientY &&
-                e.clientY <= rect.top + rect.height &&
-                rect.left <= e.clientX &&
-                e.clientX <= rect.left + rect.width
-            );
-            if (!isInDialog) {
-                closeDialog();
-            }
-        });
-
-        // Handle escape cancel scroll lock release
-        contactDialog.addEventListener('cancel', () => {
-            document.body.style.overflow = '';
-        });
-
-        if (contactForm) {
-            contactForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-
-                const name = document.getElementById('contact-name').value;
-                const email = document.getElementById('contact-email').value;
-                const subject = document.getElementById('contact-subject').value;
-                const message = document.getElementById('contact-message').value;
-                const honeypot = document.getElementById('contact-honeypot') ? document.getElementById('contact-honeypot').value : '';
-
-                if (!name || !email || !subject || !message) {
-                    return;
-                }
-
-                const submitBtn = contactForm.querySelector('.form-submit-btn');
-                const originalContent = submitBtn.innerHTML;
-                
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = `
-                    <div style="display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-radius: 50%; border-top-color: transparent; animation: messages-spin 0.6s linear infinite; margin-right: 0.25rem;"></div>
-                    Sending...
-                `;
-
-                fetch(`${BLOG_BACKEND_BASE}/api/blog/contact`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ name, email, subject, message, honeypot })
-                })
-                .then(res => {
-                    if (res.status === 429) {
-                        throw new Error('Too many requests. Please wait a minute before sending another message.');
-                    }
-                    if (!res.ok) {
-                        throw new Error('Failed to send message');
-                    }
-                    return res.json();
-                })
-                .then(data => {
-                    submitBtn.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.25rem;"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        Message Sent!
-                    `;
-                    submitBtn.style.backgroundColor = 'var(--success-glow)';
-                    submitBtn.style.color = 'white';
-
-                    setTimeout(() => {
-                        closeDialog();
-                        contactForm.reset();
-                        submitBtn.innerHTML = originalContent;
-                        submitBtn.style.backgroundColor = '';
-                        submitBtn.style.color = '';
-                        submitBtn.disabled = false;
-                    }, 2000);
-                })
-                .catch(err => {
-                    console.error(err);
-                    submitBtn.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.25rem;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                        ${err.message.includes('Too many requests') ? 'Too Many Requests' : 'Failed to Send'}
-                    `;
-                    submitBtn.style.backgroundColor = 'var(--warning-glow)';
-                    submitBtn.style.color = 'white';
-
-                    setTimeout(() => {
-                        submitBtn.innerHTML = originalContent;
-                        submitBtn.style.backgroundColor = '';
-                        submitBtn.style.color = '';
-                        submitBtn.disabled = false;
-                    }, 3000);
-                });
-            });
-        }
-
-        function loadMessages() {
-            const container = document.getElementById('messages-container');
-            if (!container) return;
-
-            container.innerHTML = `
-                <div class="messages-loader">
-                    <div class="messages-spinner"></div>
-                </div>
-            `;
-
-            fetch(`${BLOG_BACKEND_BASE}/api/blog/messages`)
-                .then(res => {
-                    if (res.status === 401 || res.status === 403) {
-                        throw new Error('Unauthorized');
-                    }
-                    if (!res.ok) {
-                        throw new Error('Failed to load messages');
-                    }
-                    return res.json();
-                })
-                .then(messages => {
-                    if (!messages || messages.length === 0) {
-                        container.innerHTML = `
-                            <div class="no-messages-placeholder">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5;">
-                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                                </svg>
-                                <p>No messages found in inbox.</p>
-                            </div>
-                        `;
-                        return;
-                    }
-
-                    container.innerHTML = '';
-                    messages.forEach(msg => {
-                        const card = document.createElement('div');
-                        card.className = 'message-card';
-                        card.id = `msg-card-${msg.id}`;
-
-                        const dateStr = new Date(msg.createdAt).toLocaleString(undefined, {
-                            dateStyle: 'medium',
-                            timeStyle: 'short'
-                        });
-
-                        card.innerHTML = `
-                            <div class="message-card-header">
-                                <div class="message-sender-info">
-                                    <span class="message-sender-name">${escapeHtml(msg.name)}</span>
-                                    <span class="message-sender-email">${escapeHtml(msg.email)}</span>
-                                </div>
-                                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <span class="message-date">${dateStr}</span>
-                                    <button class="message-delete-btn" data-id="${msg.id}" aria-label="Delete message">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="message-subject">${escapeHtml(msg.subject)}</div>
-                            <div class="message-text">${escapeHtml(msg.message)}</div>
-                        `;
-
-                        const deleteBtn = card.querySelector('.message-delete-btn');
-                        deleteBtn.addEventListener('click', () => {
-                            if (confirm('Are you sure you want to delete this message?')) {
-                                deleteMessage(msg.id, card);
-                            }
-                        });
-
-                        container.appendChild(card);
-                    });
-                })
-                .catch(err => {
-                    console.error(err);
-                    container.innerHTML = `
-                        <div class="no-messages-placeholder" style="color: var(--warning-glow);">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="8" x2="12" y2="12"></line>
-                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                            </svg>
-                            <p>${err.message === 'Unauthorized' ? 'Session expired. Please sign in again.' : 'Failed to load messages. Please try again.'}</p>
-                        </div>
-                    `;
-                });
-        }
-
-        function deleteMessage(id, cardElement) {
-            fetch(`${BLOG_BACKEND_BASE}/api/blog/messages/${id}`, {
-                method: 'DELETE'
-            })
-            .then(res => {
-                if (!res.ok) {
-                    throw new Error('Failed to delete message');
-                }
-                cardElement.classList.add('removing');
-                setTimeout(() => {
-                    cardElement.remove();
-                    const container = document.getElementById('messages-container');
-                    if (container && container.querySelectorAll('.message-card').length === 0) {
-                        container.innerHTML = `
-                            <div class="no-messages-placeholder">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.5;">
-                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                                </svg>
-                                <p>No messages found in inbox.</p>
-                            </div>
-                        `;
-                    }
-                }, 300);
-            })
-            .catch(err => {
-                console.error(err);
-                alert('Error: Failed to delete message.');
-            });
-        }
     }
 
     // Trigger DOM Initializations
-    document.addEventListener('DOMContentLoaded', () => {
-        // Handle redirect_to query parameter if user is logged in
-        if (window.userNameVal) {
-            const urlParams = new URLSearchParams(window.location.search);
-            const redirectTo = urlParams.get('redirect_to');
-            if (redirectTo) {
-                try {
-                    const targetUrl = new URL(redirectTo, window.location.origin);
-                    if (targetUrl.origin === window.location.origin) {
-                        window.location.replace(redirectTo);
-                        return; // Stop initialization as we are redirecting away
-                    }
-                } catch (e) {
-                    console.error('Invalid redirect_to URL:', e);
-                }
-            }
+    document.addEventListener('DOMContentLoaded', async () => {
+        await handleOidcCallback();
+
+        // Refresh global state after code exchange
+        window.userNameVal = getCookie('hutta_user');
+        window.displayNameVal = getCookie('hutta_name') || window.userNameVal;
+        window.userEmailVal = getCookie('hutta_email') || 'no-email@hutta.in';
+        const rawGroups = getCookie('hutta_groups') || '';
+        window.userGroups = rawGroups.split(',').map(g => g.trim()).filter(Boolean);
+
+        if (window.userGroups.includes('admin')) {
+            window.userRole = 'admin';
+        } else if (window.userGroups.includes('operator') || window.userGroups.includes('operators')) {
+            window.userRole = 'operator';
+        } else {
+            window.userRole = 'viewer';
         }
 
+        enforcePageSecurity();
         initThemeToggle();
         initNavigation();
         initHeaderActions();
         initIdleTimer();
-        initContactDialog();
     });
 })();
