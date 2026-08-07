@@ -11,7 +11,6 @@ COPY pom.xml .
 COPY smdp-plus/pom.xml smdp-plus/
 COPY device-simulator/pom.xml device-simulator/
 COPY blog-service/pom.xml blog-service/
-COPY monitor-service/pom.xml monitor-service/
 COPY eim-service/pom.xml eim-service/
 
 RUN mvn dependency:go-offline -B --fail-never
