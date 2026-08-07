@@ -3,6 +3,13 @@ name: Smart Selective CI/CD Pipeline for Raspberry Pi K8s Stack
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      force_clean_cache:
+        description: 'Force clean build (ignore Docker cache)'
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   # Job 1: Detect path changes to build ONLY modified applications
@@ -74,6 +81,7 @@ jobs:
           file: ./website/Dockerfile
           platforms: linux/arm64
           push: true
+          no-cache: ${{ inputs.force_clean_cache == true }}
           tags: |
             ghcr.io/${{ github.repository }}/portal:${{ github.sha }}
             ghcr.io/${{ github.repository }}/portal:latest
@@ -89,6 +97,7 @@ jobs:
           file: ./smdp-plus/Dockerfile
           platforms: linux/arm64
           push: true
+          no-cache: ${{ inputs.force_clean_cache == true }}
           tags: |
             ghcr.io/${{ github.repository }}/smdp-plus:${{ github.sha }}
             ghcr.io/${{ github.repository }}/smdp-plus:latest
@@ -104,6 +113,7 @@ jobs:
           file: ./device-simulator/Dockerfile
           platforms: linux/arm64
           push: true
+          no-cache: ${{ inputs.force_clean_cache == true }}
           tags: |
             ghcr.io/${{ github.repository }}/device-simulator:${{ github.sha }}
             ghcr.io/${{ github.repository }}/device-simulator:latest
@@ -119,6 +129,7 @@ jobs:
           file: ./blog-service/Dockerfile
           platforms: linux/arm64
           push: true
+          no-cache: ${{ inputs.force_clean_cache == true }}
           tags: |
             ghcr.io/${{ github.repository }}/blog-service:${{ github.sha }}
             ghcr.io/${{ github.repository }}/blog-service:latest
@@ -134,6 +145,7 @@ jobs:
           file: ./eim-service/Dockerfile
           platforms: linux/arm64
           push: true
+          no-cache: ${{ inputs.force_clean_cache == true }}
           tags: |
             ghcr.io/${{ github.repository }}/eim-service:${{ github.sha }}
             ghcr.io/${{ github.repository }}/eim-service:latest
