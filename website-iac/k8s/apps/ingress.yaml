@@ -10,6 +10,16 @@ spec:
       - "10.0.0.0/8"           # Internal VPN / Tailscale / WireGuard
       - "127.0.0.1/32"         # Localhost Loopback
 ---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-to-https
+  namespace: default
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
 # ==============================================================================
 # Protected Ingress Route: Keycloak Admin Console & Admin APIs ONLY
 # Restricted strictly to Home IP Subnet (192.168.1.0/24)
@@ -21,7 +31,7 @@ metadata:
   namespace: default
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod-dns01"
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.entrypoints: web, websecure
     # Enforce IP Allowlist Middleware EXCLUSIVELY on Keycloak Admin paths
     traefik.ingress.kubernetes.io/router.middlewares: default-keycloak-admin-ip-allowlist@kubernetescrd
 spec:
@@ -60,7 +70,7 @@ metadata:
   namespace: default
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod-dns01"
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.entrypoints: web, websecure
 spec:
   tls:
   - hosts:
