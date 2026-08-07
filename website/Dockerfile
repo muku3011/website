@@ -3,6 +3,8 @@
 # ==============================================================================
 FROM nginx:1.27-alpine
 
+RUN apk add --no-cache curl
+
 WORKDIR /usr/share/nginx/html
 
 RUN rm -rf ./*

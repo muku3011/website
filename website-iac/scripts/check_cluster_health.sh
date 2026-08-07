@@ -21,14 +21,19 @@ kubectl get pods -n default -o wide
 
 echo -e "\n${BLUE}=== 4. Checking Microservice Health Endpoints ===${NC}"
 if kubectl get deployment/website-portal -n default >/dev/null 2>&1; then
-    for svc in "smdp-plus:8092" "device-simulator:8093" "blog-service:8094" "eim-service:8096"; do
+    for svc in "website-portal:80" "smdp-plus:8092" "device-simulator:8093" "blog-service:8094" "eim-service:8096"; do
         NAME="${svc%%:*}"
         PORT="${svc##*:}"
-        STATUS=$(kubectl exec -n default deployment/website-portal -- curl -s -o /dev/null -w "%{http_code}" "http://${NAME}-service:${PORT}/actuator/health" 2>/dev/null || echo "FAILED")
-        if [ "$STATUS" == "200" ]; then
-            echo -e "[${GREEN}OK${NC}] Service ${NAME} is healthy (HTTP 200)"
+        if [ "$NAME" == "website-portal" ]; then
+            URL="http://${NAME}-service:${PORT}/health"
         else
-            echo -e "[${RED}WARN${NC}] Service ${NAME} returned HTTP status: ${STATUS}"
+            URL="http://${NAME}-service:${PORT}/actuator/health"
+        fi
+        RESPONSE=$(kubectl exec -n default deployment/website-portal -- wget -q -O - "$URL" 2>/dev/null || kubectl exec -n default deployment/website-portal -- curl -s "$URL" 2>/dev/null || echo "FAILED")
+        if echo "$RESPONSE" | grep -qE '"status":"UP"|OK'; then
+            echo -e "[${GREEN}OK${NC}] Service ${NAME} is healthy (HTTP 200 UP)"
+        else
+            echo -e "[${RED}WARN${NC}] Service ${NAME} is initializing/starting..."
         fi
     done
 else

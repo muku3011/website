@@ -11,7 +11,8 @@ spec:
     solvers:
     - dns01:
         cloudDNS:
-          project: hutta-in-production
+          project: gcp-project-499019
+          hostedZoneName: hutta-in-zone
           serviceAccountSecretRef:
             name: gcp-sa-credentials
             key: service-account-key.json
