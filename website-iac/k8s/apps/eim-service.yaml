@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: eim-service
-        image: ghcr.io/muku3011/website/eim-service:17dc8aecc36129325ff57ba945e7d3cd49fc2c70
+        image: ghcr.io/muku3011/website/eim-service:26ae05436ed3ab75ac4dd01d04554d3b3349838b
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8096
