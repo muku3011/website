@@ -1,7 +1,7 @@
 # SM-DP+ eSIM Remote Provisioning Service — Spring Boot configuration
 server:
   port: 8092
-  address: 127.0.0.1
+  address: 0.0.0.0
   jetty:
     threads:
       max: 20
