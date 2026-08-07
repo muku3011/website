@@ -17,10 +17,17 @@ spec:
     spec:
       containers:
       - name: web-app
-        image: ghcr.io/muku3011/website/portal:17dc8aecc36129325ff57ba945e7d3cd49fc2c70
+        image: ghcr.io/muku3011/website/portal:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
+        volumeMounts:
+        - name: nginx-cache
+          mountPath: /var/cache/nginx
+        - name: nginx-run
+          mountPath: /var/run
+        - name: tmp-dir
+          mountPath: /tmp
         resources:
           requests:
             memory: "64Mi"
@@ -30,10 +37,17 @@ spec:
             cpu: "250m"
         securityContext:
           runAsNonRoot: true
-          runAsUser: 10001
+          runAsUser: 101
           allowPrivilegeEscalation: false
           capabilities:
             drop: ["ALL"]
+      volumes:
+      - name: nginx-cache
+        emptyDir: {}
+      - name: nginx-run
+        emptyDir: {}
+      - name: tmp-dir
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service

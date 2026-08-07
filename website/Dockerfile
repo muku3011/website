@@ -5,17 +5,17 @@ FROM nginx:1.27-alpine
 
 WORKDIR /usr/share/nginx/html
 
-# Clean default assets
 RUN rm -rf ./*
-
-# Copy web application assets
 COPY . .
-
-# Copy custom Nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Set permissions for non-root execution
-RUN touch /var/run/nginx.pid && \
+# Pre-create all Nginx temporary cache directories with full non-root nginx user permissions
+RUN mkdir -p /var/cache/nginx/client_temp \
+             /var/cache/nginx/proxy_temp \
+             /var/cache/nginx/fastcgi_temp \
+             /var/cache/nginx/uwsgi_temp \
+             /var/cache/nginx/scgi_temp && \
+    touch /var/run/nginx.pid && \
     chown -R nginx:nginx /var/run/nginx.pid /var/cache/nginx /usr/share/nginx/html /etc/nginx/conf.d
 
 USER nginx
